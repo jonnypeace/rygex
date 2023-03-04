@@ -64,14 +64,14 @@ pk.add_argument('-i', '--insensitive',
         required=False)
 
 pk.add_argument('-of', '--omitfirst',
-        help='optional argument for exc. This will exclude 1 character at the start of string',
+        help='optional argument for exc. This will exclude 1 character at the start of string. Right now only works in start and end args',
         type=str,
         nargs='?',
         const='exc',
         required=False)
 
 pk.add_argument('-ol', '--omitlast',
-        help='optional argument for exc. This will exclude 1 character at the end of string',
+        help='optional argument for exc. This will exclude 1 character at the end of string. Right now only works in start and end args',
         type=str,
         nargs='?',
         const='exc',
@@ -260,10 +260,10 @@ def pygrep_search(line, pos_val='0', insense=True):
                     indexerror when list exceeds index available
                     valueError due to pos_val being a string'''
                 except (UnboundLocalError, IndexError, ValueError):
-                    if args.pyreg[1] == 'line' or args.pyreg[1] == 'all'  or type(pos_val) == int:
+                    if args.pyreg[1] == 'all'  or type(pos_val) == int:
                         pass
                     else:
-                        print(f'{gcolours.FAIL}only strings allowed to be used with pyreg are "line" and "all", check args{gcolours.ENDC}')
+                        print(f'{gcolours.FAIL}only string allowed to be used with pyreg is "all", check args{gcolours.ENDC}')
                         exit(1)
     elif pygen_length == 1: # defaults to first reg_match in line
         if reg_match:
