@@ -95,14 +95,13 @@ pk.add_argument('-l', '--lines',
 args = pk.parse_args()
 
 class gcolours:
-
     # default values for fail and return of terminal colour
     FAIL = '\033[91m'
     ENDC = '\033[0m'
 
 if args.insensitive and not args.insensitive == 'True':
     print(f'{args.insensitive} error. --insensitive has no args')
-    exit()
+    exit(1)
 
 # if not stdin or file, error
 if not args.file and sys.stdin.isatty():
@@ -156,6 +155,7 @@ pyreg_last_list = []
 start_end = []
 counts = 0
 
+# Lower start seach is case insensitive
 def lower_search(line, exc_val=0):
     global start_end
     # variables from the optional argument of excluding one character
@@ -191,6 +191,7 @@ def lower_search(line, exc_val=0):
         except ValueError:
             pass
 
+# Normal start search, case sensitive
 def normal_search(line, exc_val=0):
     global start_end
     # variables from the optional argument of excluding one character
@@ -225,6 +226,7 @@ def normal_search(line, exc_val=0):
         except ValueError:
             pass
 
+# Py regex search, can be either case sensitive or insensitive
 def pygrep_search(line, pos_val='0', insense=True):
     # variables from the optional argument of excluding one character
     global counts
@@ -267,7 +269,8 @@ def pygrep_search(line, pos_val='0', insense=True):
         if reg_match:
             pyreg_last_list.append(line)
 
-def last_line_func(start_end):
+# Arrange lines using args from commandline.
+def line_func(start_end):
     # args for args.line
     global start_end_line
     start_end_line = []
@@ -338,7 +341,7 @@ if args.file:
                 for line in file_list_split:
                     lower_search(line)
                     continue                
-            last_line_func(start_end)
+            line_func(start_end)
             if line_range == True:
                 for i in start_end_line:
                     print(i)
@@ -365,7 +368,7 @@ if args.file:
             for line in start_end:
                 pygrep_search(line, insense=test_insense)
             # final line filter search
-            last_line_func(start_end=pyreg_last_list)
+            line_func(start_end=pyreg_last_list)
             if line_range == True: # multiline
                 for i in start_end_line:
                     print(i)
@@ -414,7 +417,7 @@ if args.file:
             for line in file_list_split:
                 pygrep_search(line, insense=test_insense)
             # final search
-            last_line_func(start_end=pyreg_last_list)
+            line_func(start_end=pyreg_last_list)
             if line_range == True: # multiline
                 for i in start_end_line:
                     print(i)
@@ -456,7 +459,7 @@ if not sys.stdin.isatty():
                 for line in sys.stdin.read().splitlines():
                     lower_search(line)
                     continue                
-            last_line_func(start_end)
+            line_func(start_end)
             if line_range == True:
                 for i in start_end_line:
                     print(i)
@@ -483,7 +486,7 @@ if not sys.stdin.isatty():
             for line in start_end:
                 pygrep_search(line, insense=test_insense)
             # final line filter search
-            last_line_func(start_end=pyreg_last_list)
+            line_func(start_end=pyreg_last_list)
             if line_range == True: # multiline
                 for i in start_end_line:
                     print(i)
@@ -532,7 +535,7 @@ if not sys.stdin.isatty():
             for line in sys.stdin.read().splitlines():
                 pygrep_search(line, insense=test_insense)
             # final search
-            last_line_func(start_end=pyreg_last_list)
+            line_func(start_end=pyreg_last_list)
             if line_range == True: # multiline
                 for i in start_end_line:
                     print(i)
