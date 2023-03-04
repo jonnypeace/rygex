@@ -56,13 +56,6 @@ pk.add_argument('-f', '--file',
         type=str,
         required=False)
 
-pk.add_argument('-o', '--omit',
-        help='optional argument for exc. This will exclude 1 character on each side of the string',
-        type=str,
-        nargs='?',
-        const='exc',
-        required=False)
-
 pk.add_argument('-i', '--insensitive',
         help='This is just a flag for case insensitive for the start flag, no args required, just flag',
         type=str,
