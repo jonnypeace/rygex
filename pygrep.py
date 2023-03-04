@@ -78,7 +78,7 @@ pk.add_argument('-ol', '--omitlast',
         required=False)
 
 pk.add_argument('-p', '--pyreg',
-        metavar="'python regex' '[int]' / '[all]' / [line]",
+        metavar="'python regex' '[int]' / '[all]'",
         help='optional argument, internal pyreg to regex filter output. For instance, a tcpdump SRC ip may be search but DEST ip required',
         type=str,
         nargs='+',
