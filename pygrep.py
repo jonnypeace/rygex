@@ -3,9 +3,8 @@
 """
  Under Development
  Things to add...
- * Regex with re module - in progress
- * Adding lines to be displayed - in progress
  * Perhaps substitution like sed
+ * More documentation
 
  Examples
  Run script with...
@@ -71,8 +70,6 @@ pk.add_argument('-i', '--insensitive',
         const='True',
         required=False)
 
-#### Temporary holding this until I figure out a weird bug with --omitlast
-
 pk.add_argument('-of', '--omitfirst',
         help='optional argument for exc. This will exclude 1 character at the start of string',
         type=str,
@@ -101,13 +98,6 @@ pk.add_argument('-l', '--lines',
         nargs=1,
         required=False)
 
-pk.add_argument('-c', '--colour',
-        #help='optional colour output, colours included are purple, blue, cyan, green, orange, red, white',
-        help='CURRENTLY DISABLED',
-        type=str,
-        nargs=1,
-        required=False)
-
 # our variables args parses the function (argparse)
 args = pk.parse_args()
 
@@ -116,36 +106,6 @@ class gcolours:
     # default values for fail and return of terminal colour
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-
-    #defining constructor for colour options. Default is orange - this section currently disabled due to issues when used with other programmes.
-    def __init__(self, colourOption='ORANGE'):
-        
-        match colourOption:
-            case 'PURPLE':
-                self.colour = '\033[95m'
-            case 'BLUE':
-                self.colour = '\033[94m'
-            case 'CYAN':
-                self.colour = '\033[96m'
-            case 'GREEN':
-                self.colour = '\033[92m'
-            case 'ORANGE':
-                self.colour = '\033[93m'
-            case 'RED':
-                self.colour = '\033[31m'
-            case 'WHITE':
-                self.colour = '\033[97m'
-            case _:
-                print('No match found, try using uppercase')
-
-# The parser automagically returns the value from the commandline - this is the way!
-
-# colour output (not really using for now, as it doesn't play well with other programmes)
-if args.colour:
-    colourStr = args.colour[0].upper()
-    colourPrint = gcolours(colourStr)
-else:
-    colourPrint = gcolours()
 
 if args.insensitive and not args.insensitive == 'True':
     print(f'{args.insensitive} error. --insensitive has no args')
@@ -179,7 +139,7 @@ if args.start and len(args.start) > 2:
     exit(1)
 
 if args.pyreg:
-    if len(args.pyreg) < 2 or args.pyreg[1] == 'line' or args.pyreg[1] == 'all':
+    if len(args.pyreg) < 2 or args.pyreg[1] == 'all':
         pass
     else:
         try:
@@ -193,38 +153,19 @@ Change arg.start[1] to int, since it will be a string.'''
 if args.start and args.start[1] != 'all':
     iter_start = int(args.start[1])
 
-# parse lines if exists
-if args.lines:
-    line_num = args.lines[0]
-    if '-' in line_num:
-        line_cond = True
-        last_line = False
-        last_line_range = False
-        line_num_split = line_num.split('-')
-        if line_num_split[0] == '$':
-            last_line_range = True
-    if line_num == '$':
-        line_cond = False
-        last_line = True
-        last_line_range = False
-    elif '-' not in line_num:
-        line_cond = False
-        last_line = False
-        last_line_range = False
-
 # Ommiting the argument for end will allow output to end of line, so using default value
 # null-or-zero helps with this ommition.
 if args.end != 'null-or-zero':
     iter_end = int(args.end[1])
 
-for_pyreg = []
 last_line_list = []
 pyreg_last_list = []
+start_end = []
 counts = 0
 
-def lower_search(line):
+def lower_search(line, exc_val=0):
+    global start_end
     # variables from the optional argument of excluding one character
-    exc_val = 0
     lower_line = line.casefold()
     lower_str = args.start[0].casefold()
     lower_end = args.end[0].casefold()
@@ -238,8 +179,6 @@ def lower_search(line):
                 new_index = new_str.casefold().index(lower_str)
                 for occur_end in range(iter_start -1):
                     new_index = new_str.casefold().index(lower_str, new_index + 1)
-                if args.omit == 'exc':
-                    exc_val = 1
                 if args.omitfirst == 'exc':
                     exc_val = 1
                 new_str = str(new_str)[new_index + exc_val:]
@@ -249,51 +188,19 @@ def lower_search(line):
                 length_end = len(args.end[0])
                 for occur_end in range(iter_end -1):
                     new_index = new_str.casefold().index(lower_end, new_index + 1)
-                if args.omit == 'exc':
-                    exc_val = -1
                 if args.omitlast == 'exc':
                     exc_val = -1
                 new_str = str(new_str)[:new_index + length_end + exc_val]
-            global counts
-            counts += 1
-            if args.lines and last_line_range == True:
-                for_pyreg.append(new_str)
-            else:
-                if args.lines and line_cond == True:
-                    if counts >= int(line_num_split[0]) and counts <= int(line_num_split[1]):
-                        for_pyreg.append(new_str)
-                        if args.pyreg is None:
-                            print(f"{new_str}")
-                    else:
-                        pass
-                elif args.lines and last_line == True:
-                    for_pyreg.append(new_str)
-                    pass
-                elif args.lines and line_cond == False:
-                    if counts == int(args.lines[0]):
-                        for_pyreg.append(new_str)
-                        if args.pyreg is None:
-                            print(f"{new_str}")
-                else:
-                    for_pyreg.append(new_str)
-                    if args.pyreg is None:
-                        print(f"{new_str}")
-                global last_line_str
-                try:
-                    last_line_str = for_pyreg[-1]
-                except IndexError:
-                    if not args.lines and not line_num_split[0]:
-                        print('problems with indexing') # occurs when range is above 1
-
-                '''ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
-                ValueError will probably occur also if you want an instance number from the start search, which does not exist,
-                so we would want to pass those as well.'''
+            start_end.append(new_str)
+            '''ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
+            ValueError will probably occur also if you want an instance number from the start search, which does not exist,
+            so we would want to pass those as well.'''
         except ValueError:
             pass
 
-def normal_search(line):
+def normal_search(line, exc_val=0):
+    global start_end
     # variables from the optional argument of excluding one character
-    exc_val = 0
     if args.start[0] in line:
         try:
             new_str = str(line)
@@ -304,8 +211,6 @@ def normal_search(line):
                 new_index = new_str.index(args.start[0])
                 for occur_end in range(iter_start -1):
                     new_index = new_str.index(args.start[0], new_index + 1)
-                if args.omit == 'exc':
-                    exc_val = 1
                 if args.omitfirst == 'exc':
                     exc_val = 1
                 new_str = str(new_str)[new_index + exc_val:]
@@ -315,153 +220,91 @@ def normal_search(line):
                 length_end = len(args.end[0])
                 for occur_end in range(iter_end -1):
                     new_index = new_str.index(args.end[0], new_index + 1)
-                if args.omit == 'exc':
-                    exc_val = -1
                 if args.omitlast == 'exc':
                     exc_val = -1
                 new_str = str(new_str)[:new_index + length_end + exc_val]
-            global counts
-            counts += 1
-            if args.lines and last_line_range == True:
-                for_pyreg.append(new_str)
-            else:
-                if args.lines and line_cond == True:
-                    if counts >= int(line_num_split[0]) and counts <= int(line_num_split[1]):
-                        for_pyreg.append(new_str)
-                        if args.pyreg is None:
-                            print(f"{new_str}")
-                    else:
-                        pass
-                elif args.lines and last_line == True:
-                    for_pyreg.append(new_str)
-                    pass
-                elif args.lines and line_cond == False:
-                    if counts == int(args.lines[0]):
-                        for_pyreg.append(new_str)
-                        if args.pyreg is None:
-                            print(f"{new_str}")
-                else:
-                    for_pyreg.append(new_str)
-                    if args.pyreg is None:
-                        print(f"{new_str}")
-                global last_line_str
-                try:
-                    last_line_str = for_pyreg[-1]
-                except IndexError:
-                    if not args.lines and not line_num_split[0]:
-                        print('problems with indexing') # occurs when range is above 1
-                    '''
-                    ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
-                    ValueError will probably occur also if you want an instance number from the start search, which does not exist,
-                    so we would want to pass those as well.
-                    '''
+            start_end.append(new_str)
+            '''
+            ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
+            ValueError will probably occur also if you want an instance number from the start search, which does not exist,
+            so we would want to pass those as well.
+            '''
         except ValueError:
             pass
 
-def pygrep_search(line):
+def pygrep_search(line, pos_val='0', insense=True):
     # variables from the optional argument of excluding one character
     global counts
-    global pyreg_last
     global pyreg_last_list
-#    pos_val = 0
+    try:
+        pos_val = args.pyreg[1]
+    except IndexError: # only if no group arg is added on commandline 
+        pass
+
     test_re = args.pyreg[0]
     pygen_length = len(args.pyreg)
-    reg_match = re.findall(rf'(?i){test_re}', line) # (?i) is for case insensitive
+    if insense == True:
+        reg_match = re.findall(rf'(?i){test_re}', line) # (?i) is for case insensitive
+    else:
+        reg_match = re.findall(rf'{test_re}', line)
     if pygen_length == 2:
-        if args.pyreg[1] == 'line':
-            if reg_match and args.lines and last_line_range == True:
-                pyreg_last_list.append(line)
-            else:
-                if reg_match and args.lines and line_cond == True:
-                    counts += 1
-                    if counts >= int(line_num_split[0]) and counts <= int(line_num_split[1]):
-                        print(f'{line}')
-                elif reg_match and args.lines and last_line == True:
-                    counts += 1
-                    pyreg_last = line
-                elif reg_match and args.lines and line_cond == False:
-                    counts += 1
-                    if counts == int(args.lines[0]):
-                        print(f'{line}')
-                elif reg_match:
-                    counts += 1
-                    print(f'{line}')
-        if args.pyreg[1] == 'all':
-            if reg_match and args.lines and last_line_range == True:
+        if reg_match:
+            if args.pyreg[1] == 'all':
+                print('all')
                 pyreg_last_list.append(reg_match)
             else:
-                if reg_match and args.lines and line_cond == True:
-                    counts += 1
-                    if counts >= int(line_num_split[0]) and counts <= int(line_num_split[1]):
-                        print(f'{reg_match}')
-                elif reg_match and args.lines and last_line == True:
-                    counts += 1
-                    pyreg_last = reg_match
-                elif reg_match and args.lines and line_cond == False:
-                    counts += 1
-                    if counts == int(args.lines[0]):
-                        print(f'{reg_match}')
-                elif reg_match:
-                    counts += 1
-                    print(f'{reg_match}')
-        else:
-            try:
-                pos_val = int(args.pyreg[1])
-                if reg_match and args.lines and last_line_range == True:
-                    pyreg_last_list.append(reg_match[0][pos_val - 1])
-                elif pos_val:
-                    if reg_match and args.lines and line_cond == True:
-                        counts += 1
-                        if counts >= int(line_num_split[0]) and counts <= int(line_num_split[1]):
-                            print(reg_match[0][pos_val -1])
-                    elif reg_match and args.lines and last_line == True:
-                        counts += 1
-                        pyreg_last = reg_match[pos_val - 1]
-                    elif reg_match and args.lines and line_cond == False:
-                        counts += 1
-                        if counts == int(args.lines[0]):
-                            print(reg_match[0][pos_val -1])
-                    elif reg_match:
-                        counts += 1
-                        print(reg_match[0][pos_val -1])
-                '''Unboundlocal error due to line in args.pyreg[1] and unassigned pos_val (i.e. index will be a string).
-                indexerror when list exceeds index available
-                valueError due to pos_val being a string'''
-            except (UnboundLocalError, IndexError, ValueError):
-                if args.pyreg[1] == 'line' or args.pyreg[1] == 'all'  or type(pos_val) == int:
-                    pass
-                else:
-                    print(f'{gcolours.FAIL}only strings allowed to be used with pyreg are "line" and "all", check args{gcolours.ENDC}')
-                    exit(1)
+                try:
+                    pos_val = int(args.pyreg[1])
+                    if reg_match:
+                        if len(reg_match[0][pos_val - 1]) != 1:
+                            pyreg_last_list.append(reg_match[0][pos_val - 1])
+                        else:
+                            pyreg_last_list.append(reg_match[pos_val - 1])
+                            
+                    '''Unboundlocal error due to line in args.pyreg[1] and unassigned pos_val (i.e. index will be a string).
+                    indexerror when list exceeds index available
+                    valueError due to pos_val being a string'''
+                except (UnboundLocalError, IndexError, ValueError):
+                    if args.pyreg[1] == 'line' or args.pyreg[1] == 'all'  or type(pos_val) == int:
+                        pass
+                    else:
+                        print(f'{gcolours.FAIL}only strings allowed to be used with pyreg are "line" and "all", check args{gcolours.ENDC}')
+                        exit(1)
     elif pygen_length == 1: # defaults to first reg_match in line
-        if reg_match and args.lines and last_line_range == True:
-            pyreg_last_list.append(reg_match[0][0])
-        else:    
-            if reg_match and args.lines and line_cond == True:
-                counts += 1
-                if counts >= int(line_num_split[0]) and counts <= int(line_num_split[1]):
-                    print(f'{reg_match[0][0]}')
-            elif reg_match and args.lines and last_line == True:
-                counts += 1
-                pyreg_last = reg_match[0][0]
-            elif reg_match and args.lines and line_cond == False:
-                counts += 1
-                if counts == int(args.lines[0]):
-                    print(f'{reg_match[0][0]}')
-            elif reg_match:
-                counts += 1
-                print(f'{reg_match[0][0]}')
+        if reg_match:
+            pyreg_last_list.append(line)
 
-# for using piped std input.
-if not sys.stdin.isatty():
-    for line in sys.stdin.read().splitlines():
-        if args.pyreg and not args.start:
-            pygrep_search(line)
-            continue
-        if args.insensitive == 'True':
-            lower_search(line)
+def last_line_func(start_end):
+    # args for args.line
+    global start_end_line
+    start_end_line = []
+    line_num_split = []
+    line_num = args.lines[0]
+    
+    # if last line range
+    if '-' in line_num:
+        global line_range
+        line_range = True
+        line_num_split = line_num.split('-')
+        if '$' in line_num:
+            if line_num_split[0] == '$':
+                for rev_count in range(int(line_num_split[1]), 0, -1):
+                    start_end_line.append(start_end[-rev_count])
+            elif line_num_split[1] == '$':
+                for rev_count in range(int(line_num_split[0]), 0, -1):
+                    start_end_line.append(start_end[-rev_count])
         else:
-            normal_search(line)
+            high_num = max(int(line_num_split[0]),int(line_num_split[1]))
+            for rev_count in range(1, high_num + 1, 1):
+                start_end_line.append(start_end[rev_count])
+    else: # no range
+        # if last line
+        line_range = False
+        if line_num == '$':
+            start_end_line = start_end[-1]
+        else:
+            line_num = int(line_num)
+            start_end_line = start_end[line_num]
 
 '''
 Currently, opens a file and splits it on newline into a list.
@@ -474,40 +317,232 @@ if args.file:
     with open(args.file, 'r') as my_file:
         file_list = my_file.read()
         file_list_split = file_list.split('\n')
-        counts = 0
-        for num, line in enumerate(file_list_split, 0):
-            if args.pyreg and not args.start:
-                pygrep_search(line)
-                continue
-            if args.insensitive == 'True':
-                lower_search(line)
-            else:
+        # start end omits 
+        if args.start and not args.pyreg and not args.insensitive and not args.lines:
+            for line in file_list_split:
                 normal_search(line)
+                continue
+            for i in start_end:
+                print(i)
+########
+        # start end omits case insensitive
+        if args.start and args.insensitive and not args.pyreg and not args.lines:
+            for line in file_list_split:
+                lower_search(line)
+                continue
+            for i in start_end:
+                print(i)
+########
+        # start end omits lines
+        if args.start and args.lines and not args.pyreg:
+            if not args.insensitive:
+                # initial start search
+                for line in file_list_split:
+                    normal_search(line)
+                    continue
+            else:
+                # initial start search
+                for line in file_list_split:
+                    lower_search(line)
+                    continue                
+            last_line_func(start_end)
+            if line_range == True:
+                for i in start_end_line:
+                    print(i)
+            else:
+                print(start_end_line)
+########
+        # start end lines omits pyreg 
+        if args.start and args.lines and args.pyreg:
+            # check for case insensitive
+            if not args.insensitive:
+                test_insense = False
+                # initial start search
+                for line in file_list_split:
+                    normal_search(line)
+                    continue
+            else:               
+                test_insense = True
+                # initial start search
+                for line in file_list_split:
+                    lower_search(line)
+                    continue 
+            # regex search
+            del line
+            for line in start_end:
+                pygrep_search(line, insense=test_insense)
+            # final line filter search
+            last_line_func(start_end=pyreg_last_list)
+            if line_range == True: # multiline
+                for i in start_end_line:
+                    print(i)
+            else: # one line only
+                print(start_end_line)
+########
+        # start end omits pyreg 
+        if args.start and not args.lines and args.pyreg:
+            # check for case insensitive
+            if not args.insensitive:
+                test_insense = False
+            else:
+                test_insense = True
+            # initial start search    
+            for line in file_list_split:
+                normal_search(line)
+                continue
+            # regex search
+            del line
+            for line in start_end:
+                pygrep_search(line, insense=test_insense)
+            # final print loop
+            for i in pyreg_last_list:
+                print(i)
+########
+        # pyreg only
+        if args.pyreg and not args.start and not args.lines:
+            if not args.insensitive:
+                test_insense = False
+            else:
+                test_insense = True
+            # initial regex search
+            for line in file_list_split:
+                pygrep_search(line, insense=test_insense)
+            # final loop
+            for i in pyreg_last_list:
+                print(i)
+########
+        # pyreg lines
+        if args.pyreg and not args.start and args.lines:
+            if not args.insensitive:
+                test_insense = False
+            else:
+                test_insense = True
+            # initial regex search
+            for line in file_list_split:
+                pygrep_search(line, insense=test_insense)
+            # final search
+            last_line_func(start_end=pyreg_last_list)
+            if line_range == True: # multiline
+                for i in start_end_line:
+                    print(i)
+            else: # one line only
+                print(start_end_line)
+########
         my_file.close
 
-# Last line args and output
-if args.lines and last_line == True and args.pyreg is None:
-    print(f'{last_line_str}')
-if args.pyreg and args.lines and last_line == True:
-    print(f'{pyreg_last}')
+######################################################################################
 
-# Last line ranges
-if args.lines and last_line_range == True:
-    for rev_count in reversed(range(1, int(line_num_split[1]) + 1, 1)):
-        if pyreg_last_list:
-            print(f'{pyreg_last_list[-rev_count]}')
-        if for_pyreg:
-            print(f'{for_pyreg[-rev_count]}')
-
-# matches for args start and args pyreg
-if args.pyreg is None or args.lines and last_line_range == True:
-    exit()
-elif args.start and args.pyreg:
-    del line
-    test_re = args.pyreg[0]
-    pygen_length = len(args.pyreg)
-    [
-        pygrep_search(line) for line in for_pyreg
-    ]
-
-
+# for using piped std input.
+if not sys.stdin.isatty():
+########
+        # start end omits 
+        if args.start and not args.pyreg and not args.insensitive and not args.lines:
+            for line in sys.stdin.read().splitlines():
+                normal_search(line)
+                continue
+            for i in start_end:
+                print(i)
+########
+        # start end omits case insensitive
+        if args.start and args.insensitive and not args.pyreg and not args.lines:
+            for line in sys.stdin.read().splitlines():
+                lower_search(line)
+                continue
+            for i in start_end:
+                print(i)
+########
+        # start end omits lines
+        if args.start and args.lines and not args.pyreg:
+            if not args.insensitive:
+                # initial start search
+                for line in sys.stdin.read().splitlines():
+                    normal_search(line)
+                    continue
+            else:
+                # initial start search
+                for line in sys.stdin.read().splitlines():
+                    lower_search(line)
+                    continue                
+            last_line_func(start_end)
+            if line_range == True:
+                for i in start_end_line:
+                    print(i)
+            else:
+                print(start_end_line)
+########
+        # start end lines omits pyreg 
+        if args.start and args.lines and args.pyreg:
+            # check for case insensitive
+            if not args.insensitive:
+                test_insense = False
+                # initial start search
+                for line in sys.stdin.read().splitlines():
+                    normal_search(line)
+                    continue
+            else:               
+                test_insense = True
+                # initial start search
+                for line in sys.stdin.read().splitlines():
+                    lower_search(line)
+                    continue 
+            # regex search
+            del line
+            for line in start_end:
+                pygrep_search(line, insense=test_insense)
+            # final line filter search
+            last_line_func(start_end=pyreg_last_list)
+            if line_range == True: # multiline
+                for i in start_end_line:
+                    print(i)
+            else: # one line only
+                print(start_end_line)
+########
+        # start end omits pyreg 
+        if args.start and not args.lines and args.pyreg:
+            # check for case insensitive
+            if not args.insensitive:
+                test_insense = False
+            else:
+                test_insense = True
+            # initial start search    
+            for line in sys.stdin.read().splitlines():
+                normal_search(line)
+                continue
+            # regex search
+            del line
+            for line in start_end:
+                pygrep_search(line, insense=test_insense)
+            # final print loop
+            for i in pyreg_last_list:
+                print(i)
+########
+        # pyreg only
+        if args.pyreg and not args.start and not args.lines:
+            if not args.insensitive:
+                test_insense = False
+            else:
+                test_insense = True
+            # initial regex search
+            for line in sys.stdin.read().splitlines():
+                pygrep_search(line, insense=test_insense)
+            # final loop
+            for i in pyreg_last_list:
+                print(i)
+########
+        # pyreg lines
+        if args.pyreg and not args.start and args.lines:
+            if not args.insensitive:
+                test_insense = False
+            else:
+                test_insense = True
+            # initial regex search
+            for line in sys.stdin.read().splitlines():
+                pygrep_search(line, insense=test_insense)
+            # final search
+            last_line_func(start_end=pyreg_last_list)
+            if line_range == True: # multiline
+                for i in start_end_line:
+                    print(i)
+            else: # one line only
+                print(start_end_line)
+########
