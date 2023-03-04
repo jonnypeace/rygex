@@ -7,8 +7,6 @@
  * Adding lines to be displayed - in progress
  * Perhaps substitution like sed
 
- Currently it's quite slow (~ 0.082s to parse syslog with 37256 lines), so I will be looking to make speed improvements where possible. Some of the repeitive code might be better called from classes/functions.
-
  Examples
  Run script with...
  ./pygrep.py -s <keyword/character> <position> [-e <keyword/character> <position>] -f /path/to/file
