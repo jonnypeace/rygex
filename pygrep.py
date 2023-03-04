@@ -313,6 +313,7 @@ if args.file:
     with open(args.file, 'r') as my_file:
         file_list = my_file.read()
         file_list_split = file_list.split('\n')
+########   
         # start end omits 
         if args.start and not args.pyreg and not args.insensitive and not args.lines:
             for line in file_list_split:
@@ -380,12 +381,16 @@ if args.file:
             # check for case insensitive
             if not args.insensitive:
                 test_insense = False
-            else:
+                # initial start search
+                for line in file_list_split:
+                    normal_search(line)
+                    continue
+            else:               
                 test_insense = True
-            # initial start search    
-            for line in file_list_split:
-                normal_search(line)
-                continue
+                # initial start search
+                for line in file_list_split:
+                    lower_search(line)
+                    continue 
             # regex search
             del line
             for line in start_end:
