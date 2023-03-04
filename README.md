@@ -9,9 +9,11 @@
 
  Examples
  Run script with...
+ ```
  ./pygrep.py -s <keyword/character> <position> [-e <keyword/character> <position>] -f /path/to/file
 
  -s can be run with position being equal to all, to capture the start of the line
+ 
  ./pygrep.py -s root all -f /etc/passwd                 ## output: root:x:0:0::/root:/bin/bash
  ./pygrep.py -s root 1 -e \: 4 -f /etc/passwd           ## output: root:x:0:0:
  ./pygrep.py -s CRON 1 -e \) 2 -f /var/log/syslog       ## Output: CRON[108490]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
@@ -29,3 +31,4 @@
 
  with -p
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -f ufw.test
+```
