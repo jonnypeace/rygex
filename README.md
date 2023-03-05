@@ -4,12 +4,14 @@
 
 ## Basic Rules
 
-* Required at least --start or --pyreg otherwise the programme won't do anything
+* Required args are at least --start or --pyreg otherwise the programme won't do anything
 * Requires input from --file or if using piped input from another command.
-* --omitlast and --omitfirst options don't currently work with --pyreg, idea being, --pyreg uses python regular expressions, and could potential be built into the regex. If using --start with --pyreg, the --omitlast and --omitfirst will operate on the --start string, but not take place on the --pyreg. I might add something in --pyreg since the idea of this programme is to make it easy to find strings in files.
+* When using --start with --pyreg, the --start function runs first, and then further filtering takes place using --pyreg.
+* --start and --end and --omitlast and --omitfirst takes place before --pyreg when used with --pyreg.
+* --pyreg doesn't use --end and --omitlast and --omitfirst
 
 ## String Searches
-Basic string searches using -s / --start and -3 / --end
+Basic string searches using -s / --start and -e / --end
 * -s / --start can be used standlone (without --pyreg) or with --pyreg for some extra filtering. This uses a starting string/word/character on a line, and can take an optional number value or 'all'. The number value will switch to a different index in the line. For example.. if you require the 2nd position of string/word/character in the line, you would simply follow with the number 2. 
 ```./pygrep.py --start string 2 -f filename ```
 * -e / --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
