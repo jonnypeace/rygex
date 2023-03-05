@@ -6,11 +6,11 @@ PYGREP - Python string and regex search
 
 SYNOPSIS
 ========
-./pygrep.py -s [keyword/character [position]] [-p regex [position|all]] [-e keyword/character position] [-i] [-l int|$|$-int|int-int] [-of] [-ol] [-f /path/to/file]
+./pygrep.py [-s keyword/character [position]] | [-p regex [position|all]] [-e keyword/character position] [-i] [-l int|$|$-int|int-int] [-of] [-ol] [-f /path/to/file]
 
 Author and Github
 =================
-Author: Jonny Peace, email jonnypeace@outlook.com
+Author: Jonny Peace, email: jonnypeace@outlook.com
 Link for further information can be found here...
 https://github.com/jonnypeace/pygrep/blob/main/README.md
 
