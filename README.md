@@ -33,7 +33,12 @@ https://docs.python.org/3/library/re.html
 ```bash
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=(123.12.123.12)' 1 -i -l 1 -f ufw.test
 
-# This is using python regex. \d is for numerical value, + is more than 1. the first group in this example is the ip address of the SRC. The second group is the ip address for DST. I've followed the regex with a number value of 1, which will display the ip address in group 1 (enclosed in brackets). Also in this example, i've included case insensitive with -i and also asked for only the first line with -l 1.
+# This is using python regex. \d is for numerical value, + is more than 1.
+# the first group in this example is the ip address of the SRC. The second 
+# group is the ip address for DST. I've followed the regex with a number 
+# value of 1, which will display the ip address in group 1 (enclosed in 
+# brackets). Also in this example, i've included case insensitive with -i 
+# and also asked for only the first line with -l 1.
 ```
 
  ## Examples
