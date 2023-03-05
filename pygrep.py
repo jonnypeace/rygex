@@ -131,9 +131,7 @@ if args.start and len(args.start) > 2:
     exit(1)
 
 if args.pyreg:
-    if len(args.pyreg) < 2 or args.pyreg[1] == 'all':
-        pass
-    else:
+    if len(args.pyreg) > 1 and args.pyreg[1] != 'all':
         try:
             pos_val = int(args.pyreg[1])
         except:
