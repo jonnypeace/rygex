@@ -135,7 +135,7 @@ if args.pyreg:
         try:
             pos_val = int(args.pyreg[1])
         except:
-            print(f'{gcolours.FAIL}Incorrect input for pyreg - only strings allowed to be used with pyreg are "line" and "all", or integars. Check args{gcolours.ENDC}')
+            print(f'{gcolours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{gcolours.ENDC}')
             exit(1)
 
 '''Passing a second argument of all for the start option will return output for the start of line
