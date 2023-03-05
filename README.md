@@ -15,7 +15,7 @@ Basic string searches using -s / --start and -e / --end
 * -s / --start can be used standlone (without --pyreg) or with --pyreg for some extra filtering. This uses a starting string/word/character on a line, and can take an optional number value or 'all'. The number value will switch to a different index in the line. For example.. if you require the 2nd position of string/word/character in the line, you would simply follow with the number 2. 
 ```./pygrep.py --start string 2 -f filename ```
 * -e / --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
-```./pygrep.py --start \( 1 --end \) 1 -f filename ```
+```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
 * -of / --omitfirst is optional for deleting the first character of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. No further args required. Not supported with --pyreg option
 * -ol / --omitlast is optional and same as --omitfirst. Not supported with --pyreg option
 * -l / --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5' last line
