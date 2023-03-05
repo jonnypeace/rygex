@@ -35,7 +35,7 @@ import re
 import sys
 
 # Settings args parser witi the -s option, requiring a string
-pk = argparse.ArgumentParser(prog='pygrep',description='search files with keywords or characters')
+pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
 
 pk.add_argument('-s', '--start',
         help='This is the starting string search <keyword/character> <position>',
@@ -57,8 +57,7 @@ pk.add_argument('-f', '--file',
 
 pk.add_argument('-i', '--insensitive',
         help='This is just a flag for case insensitive for the start flag, no args required, just flag',
-        action='store_const',
-        const='True',
+        action='store_true',
         required=False)
 
 pk.add_argument('-of', '--omitfirst',
@@ -129,19 +128,18 @@ Change arg.start[1] to int, since it will be a string.'''
 if args.start and args.start[1] != 'all':
     iter_start = int(args.start[1])
 
-# Ommiting the argument for end will allow output to end of line, so using default value
-# null-or-zero helps with this ommition.
-try:
-    if args.end:
+# Sense check args.end and ensure 2nd arg is an int
+if args.end:
+    try:
         iter_end = int(args.end[1])
-except ValueError:
-    print(f'{gcolours.FAIL}ValueError: -e / --end only accepts number values{gcolours.ENDC}')
-    exit(1)
+    except ValueError:
+        print(f'{gcolours.FAIL}ValueError: -e / --end only accepts number values{gcolours.ENDC}')
+        exit(1)
 
+# Empty lists which will be populated in the main loops
 last_line_list = []
 pyreg_last_list = []
 start_end = []
-counts = 0
 
 # Lower start seach is case insensitive
 def lower_search(line, exc_val=0):
@@ -220,10 +218,6 @@ def pygrep_search(line, pos_val='0', insense=True):
     # variables from the optional argument of excluding one character
     global counts
     global pyreg_last_list
-    try:
-        pos_val = args.pyreg[1]
-    except IndexError: # only if no group arg is added on commandline 
-        pass
 
     test_re = args.pyreg[0]
     pygen_length = len(args.pyreg)
@@ -340,6 +334,10 @@ if args.file:
 ########
         # start end lines omits pyreg 
         if args.start and args.lines and args.pyreg:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             # check for case insensitive
             if not args.insensitive:
                 test_insense = False
@@ -367,6 +365,10 @@ if args.file:
 ########
         # start end omits pyreg 
         if args.start and not args.lines and args.pyreg:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             # check for case insensitive
             if not args.insensitive:
                 test_insense = False
@@ -390,6 +392,10 @@ if args.file:
 ########
         # pyreg only
         if args.pyreg and not args.start and not args.lines:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             if not args.insensitive:
                 test_insense = False
             else:
@@ -403,6 +409,10 @@ if args.file:
 ########
         # pyreg lines
         if args.pyreg and not args.start and args.lines:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             if not args.insensitive:
                 test_insense = False
             else:
@@ -462,6 +472,10 @@ if not sys.stdin.isatty():
 ########
         # start end lines omits pyreg 
         if args.start and args.lines and args.pyreg:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             # check for case insensitive
             if not args.insensitive:
                 test_insense = False
@@ -489,6 +503,10 @@ if not sys.stdin.isatty():
 ########
         # start end omits pyreg 
         if args.start and not args.lines and args.pyreg:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass            
             # check for case insensitive
             if not args.insensitive:
                 test_insense = False
@@ -508,6 +526,10 @@ if not sys.stdin.isatty():
 ########
         # pyreg only
         if args.pyreg and not args.start and not args.lines:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             if not args.insensitive:
                 test_insense = False
             else:
@@ -521,6 +543,10 @@ if not sys.stdin.isatty():
 ########
         # pyreg lines
         if args.pyreg and not args.start and args.lines:
+            try:
+                pos_val = args.pyreg[1]
+            except IndexError: # only if no group arg is added on commandline 
+                pass
             if not args.insensitive:
                 test_insense = False
             else:
