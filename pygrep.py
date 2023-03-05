@@ -1,16 +1,37 @@
 #!/usr/bin/python3
 
 """
-Author: Jonny Peace
+PYGREP - Python string and regex search
+=======================================
 
+SYNOPSIS
+========
+./pygrep.py -s [keyword/character [position]] [-p regex [position|all]] [-e keyword/character position] [-i] [-l int|$|$-int|int-int] [-of] [-ol] [-f /path/to/file]
+
+Author and Github
+=================
+Author: Jonny Peace, email jonnypeace@outlook.com
 Link for further information can be found here...
-
 https://github.com/jonnypeace/pygrep/blob/main/README.md
 
- Examples
- Run script with...
- ./pygrep.py -s [<keyword/character> [<position>]] [-p <regex> [<position/all>]] [-e <keyword/character> <position>] [-i] [-l <int>] [-of] [-ol] -f /path/to/file
+Description
+===========
+Python string and regex search made easy. Select characters/keywords from and to sections of a line, further enhance with python regex, and specific lines.
+Can accept stdin from a pipe or using the -f|--file flag
 
+OPTIONS
+=======
+-s  | --start       can be used standlone (without --pyreg) or with --pyreg. [keyword/character [position]]
+-e  | --end         is optional. Provides an end to the line you are searching for. [keyword/character position]
+-of | --omitfirst   is optional for deleting the first character of your match. No further args required. Only works with --start
+-ol | --omitlast    is optional and same as --omitfirst. Only works with --start
+-l  | --lines       is optional and to save piping using tail, head or sed. [int|$|$-int|int-int]
+-p  | --pyreg       can be used standlone (without --start) or with --start. [regex [position|all]]
+-i  | --insensitive When used, case insensitive search is used. No args required.
+-f  | --file        /path/to/file.
+
+Examples
+========
  -s can be run with position being equal to all, to capture the start of the line
  ./pygrep.py -s root all -f /etc/passwd                 ## output: root:x:0:0::/root:/bin/bash
  ./pygrep.py -s root 1 -e \: 4 -f /etc/passwd           ## output: root:x:0:0:
