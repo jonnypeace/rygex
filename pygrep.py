@@ -276,7 +276,7 @@ def line_func(start_end):
         else:
             high_num = max(int(line_num_split[0]),int(line_num_split[1]))
             for rev_count in range(1, high_num + 1, 1):
-                start_end_line.append(start_end[rev_count])
+                start_end_line.append(start_end[rev_count - 1])
     else: # no range
         # if last line
         line_range = False
@@ -284,7 +284,7 @@ def line_func(start_end):
             start_end_line = start_end[-1]
         else:
             line_num = int(line_num)
-            start_end_line = start_end[line_num]
+            start_end_line = start_end[line_num - 1]
 
 '''
 Currently, opens a file and splits it on newline into a list.
