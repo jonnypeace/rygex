@@ -48,7 +48,6 @@ pk.add_argument('-e', '--end',
         help='end of string search <keyword/character> <position>',
         type=str,
         nargs=2,
-        default='null-or-zero',
         required=False)
 
 pk.add_argument('-f', '--file',
@@ -58,22 +57,19 @@ pk.add_argument('-f', '--file',
 
 pk.add_argument('-i', '--insensitive',
         help='This is just a flag for case insensitive for the start flag, no args required, just flag',
-        type=str,
-        nargs='?',
+        action='store_const',
         const='True',
         required=False)
 
 pk.add_argument('-of', '--omitfirst',
         help='optional argument for exc. This will exclude 1 character at the start of string. Right now only works in start and end args',
-        type=str,
-        nargs='?',
+        action='store_const',
         const='exc',
         required=False)
 
 pk.add_argument('-ol', '--omitlast',
         help='optional argument for exc. This will exclude 1 character at the end of string. Right now only works in start and end args',
-        type=str,
-        nargs='?',
+        action='store_const',
         const='exc',
         required=False)
 
@@ -99,18 +95,9 @@ class gcolours:
     FAIL = '\033[91m'
     ENDC = '\033[0m'
 
-if args.insensitive and not args.insensitive == 'True':
-    print(f'{args.insensitive} error. --insensitive has no args')
-    exit(1)
-
 # if not stdin or file, error
 if not args.file and sys.stdin.isatty():
     print(f"{gcolours.FAIL}Requires stdin from somewhere, either from --file or pipe{gcolours.ENDC}")
-    exit(1)
-
-# Leaving this conditional in until more bug testing carried out with the omit syntax
-if args.omitfirst == 'exc' and args.omit == 'exc' or args.omitlast == 'exc' and args.omit == 'exc':
-    print(f"{gcolours.FAIL}Only use omitfirst with omitlast, but not with omit{gcolours.ENDC}")
     exit(1)
 
 # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
@@ -130,13 +117,12 @@ if args.start and len(args.start) > 2:
     print(f'{gcolours.FAIL}--start has too many arguments, character or word followed by occurent number{gcolours.ENDC}')
     exit(1)
 
-if args.pyreg:
-    if len(args.pyreg) > 1 and args.pyreg[1] != 'all':
-        try:
-            pos_val = int(args.pyreg[1])
-        except:
-            print(f'{gcolours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{gcolours.ENDC}')
-            exit(1)
+if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
+    try:
+        pos_val = int(args.pyreg[1])
+    except:
+        print(f'{gcolours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{gcolours.ENDC}')
+        exit(1)
 
 '''Passing a second argument of all for the start option will return output for the start of line
 Change arg.start[1] to int, since it will be a string.'''
@@ -145,8 +131,12 @@ if args.start and args.start[1] != 'all':
 
 # Ommiting the argument for end will allow output to end of line, so using default value
 # null-or-zero helps with this ommition.
-if args.end != 'null-or-zero':
-    iter_end = int(args.end[1])
+try:
+    if args.end:
+        iter_end = int(args.end[1])
+except ValueError:
+    print(f'{gcolours.FAIL}ValueError: -e / --end only accepts number values{gcolours.ENDC}')
+    exit(1)
 
 last_line_list = []
 pyreg_last_list = []
@@ -159,7 +149,8 @@ def lower_search(line, exc_val=0):
     # variables from the optional argument of excluding one character
     lower_line = line.casefold()
     lower_str = args.start[0].casefold()
-    lower_end = args.end[0].casefold()
+    if args.end:
+        lower_end = args.end[0].casefold()
     if lower_str in lower_line:
         try:
             new_str = str(line)
@@ -174,7 +165,7 @@ def lower_search(line, exc_val=0):
                     exc_val = 1
                 new_str = str(new_str)[new_index + exc_val:]
             # End Arg positions and final string creation
-            if args.end != 'null-or-zero':
+            if args.end:
                 new_index = new_str.casefold().index(lower_end)
                 length_end = len(args.end[0])
                 for occur_end in range(iter_end -1):
@@ -207,7 +198,7 @@ def normal_search(line, exc_val=0):
                     exc_val = 1
                 new_str = str(new_str)[new_index + exc_val:]
             # End Arg positions and final string creation
-            if args.end != 'null-or-zero':
+            if args.end:
                 new_index = new_str.index(args.end[0])
                 length_end = len(args.end[0])
                 for occur_end in range(iter_end -1):
