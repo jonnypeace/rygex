@@ -31,7 +31,7 @@ I recommend having a read of the python docs for some helpful regular expression
 
 https://docs.python.org/3/library/re.html
 
-* -p / --pyreg can be used standlone (without --start) or with --start for some extra filtering. It 2 arguments, one for the regex and the other is for whether you want positional values on the regex using groups - this arg is a number value. Instead of the number value, you could use the keyword 'all', which will show all groups you've enclosed in brackets. The default without any 2nd argument is to print the line.
+* -p / --pyreg can be used standlone (without --start) or with --start for some extra filtering. Up to 2 arguments, one for the regex and the other is for whether you want positional values on the regex using groups - this arg is a number value. Instead of the number value, you could use the keyword 'all', which will show all groups you've enclosed in brackets. The default without any 2nd argument is to print the line.
 ```bash
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=(123.12.123.12)' 1 -i -l 1 -f ufw.test
 
