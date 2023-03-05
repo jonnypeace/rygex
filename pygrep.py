@@ -1,14 +1,15 @@
 #!/usr/bin/python3
 
 """
- Under Development
- Things to add...
- * Perhaps substitution like sed
- * More documentation
+Author: Jonny Peace
+
+Link for further information can be found here...
+
+https://github.com/jonnypeace/pygrep/blob/main/README.md
 
  Examples
  Run script with...
- ./pygrep.py -s <keyword/character> <position> [-e <keyword/character> <position>] -f /path/to/file
+ ./pygrep.py -s [<keyword/character> [<position>]] [-p <regex> [<position/all>]] [-e <keyword/character> <position>] [-i] [-l <int>] [-of] [-ol] -f /path/to/file
 
  -s can be run with position being equal to all, to capture the start of the line
  ./pygrep.py -s root all -f /etc/passwd                 ## output: root:x:0:0::/root:/bin/bash
