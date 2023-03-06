@@ -154,6 +154,8 @@ if args.start and args.start[1] != 'all':
 if args.end:
     try:
         iter_end = int(args.end[1])
+        if args.start[0] == args.end[0]:
+            iter_end += 1
     except ValueError:
         print(f'{gcolours.FAIL}ValueError: -e / --end only accepts number values{gcolours.ENDC}')
         exit(1)
@@ -221,7 +223,7 @@ def normal_search(line, exc_val=0):
             if args.end:
                 new_index = new_str.index(args.end[0])
                 length_end = len(args.end[0])
-                for occur_end in range(iter_end -1):
+                for _ in range(iter_end -1):
                     new_index = new_str.index(args.end[0], new_index + 1)
                 if args.omitlast == 'exc':
                     exc_val = -1
