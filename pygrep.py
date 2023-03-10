@@ -216,18 +216,14 @@ def normal_search(line, exc_val=0):
                 new_index = new_str.index(args.start[0])
                 for occur_end in range(iter_start -1):
                     new_index = new_str.index(args.start[0], new_index + 1)
-                if args.omitfirst == 'exc':
-                    exc_val = 1
-                new_str = str(new_str)[new_index + exc_val:]
+                new_str = str(new_str)[new_index:]
             # End Arg positions and final string creation
             if args.end:
                 new_index = new_str.index(args.end[0])
                 length_end = len(args.end[0])
                 for _ in range(iter_end -1):
                     new_index = new_str.index(args.end[0], new_index + 1)
-                if args.omitlast == 'exc':
-                    exc_val = -1
-                new_str = str(new_str)[:new_index + length_end + exc_val]
+                new_str = str(new_str)[:new_index + length_end]
             start_end.append(new_str)
             '''
             ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
@@ -309,6 +305,19 @@ def line_func(start_end):
             line_num = int(line_num)
             start_end_line = start_end[line_num - 1]
 
+class Omit:
+    def __init__(self, first: int=0, last: int=0):
+        self.first = first
+        self.last = last
+    def checkFirst(self):
+        if args.omitfirst == 'exc':
+            self.first = 1
+            return self.first
+    def checkLast(self):
+        if args.omitlast == 'exc':
+            self.last = -1
+            return self.last
+
 '''
 Currently, opens a file and splits it on newline into a list.
 The args.start is then searched through each line, and each new indexing is performed
@@ -320,13 +329,22 @@ if args.file:
     with open(args.file, 'r') as my_file:
         file_list = tuple(file.strip() for file in my_file)
 ########   
-        # start end omits 
-        if args.start and not args.pyreg and not args.insensitive and not args.lines:
+        # start end
+        if args.start and not args.pyreg and not args.insensitive and not args.lines and not args.omitfirst and not args.omitlast:
             for line in file_list:
                 normal_search(line)
                 continue
             for i in start_end:
                 print(i)
+########   
+        # start end omits 
+        if args.start and not args.pyreg and not args.insensitive and not args.lines and (args.omitfirst or args.omitlast):
+            for line in file_list:
+                normal_search(line)
+                continue
+            test_omit = Omit()
+            for i in start_end:
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end omits case insensitive
         if args.start and args.insensitive and not args.pyreg and not args.lines:
