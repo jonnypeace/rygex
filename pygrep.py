@@ -60,14 +60,14 @@ import sys
 pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
 
 pk.add_argument('-s', '--start',
-        help='This is the starting string search <keyword/character> <position>',
+        help='This is the starting string search [keyword|character [position]]',
         type=str,
         required=False,
         nargs='+',
         )
 
 pk.add_argument('-e', '--end',
-        help='end of string search <keyword/character> <position>',
+        help='end of string search [keyword|character position]',
         type=str,
         nargs=2,
         required=False)
@@ -95,14 +95,14 @@ pk.add_argument('-ol', '--omitlast',
         required=False)
 
 pk.add_argument('-p', '--pyreg',
-        metavar="'python regex' '[int]' / '[all]'",
+        metavar="[regex [position|all]]",
         help='optional argument, internal pyreg to regex filter output. For instance, a tcpdump SRC ip may be search but DEST ip required',
         type=str,
         nargs='+',
         required=False)
 
 pk.add_argument('-l', '--lines',
-        metavar="'1-10' / '1' / '$-3'",
+        metavar="'1-10' | '1' | '$-3'",
         help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
         type=str,
         nargs=1,
