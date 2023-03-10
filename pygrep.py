@@ -269,7 +269,7 @@ def pygrep_search(line: str, pos_val: int=0, insense: bool=True):
             pyreg_last_list.append(line)
 
 # Arrange lines using args from commandline.
-def line_func(start_end: list):
+def line_func(start_end: tuple):
     # args for args.line
     global start_end_line
     start_end_line = []
@@ -286,7 +286,8 @@ def line_func(start_end: list):
                 for rev_count in range(int(line_num_split[1]), 0, -1):
                     start_end_line.append(start_end[-rev_count])
             elif line_num_split[1] == '$':
-                for rev_count in range(int(line_num_split[0]), 0, -1):
+                line_count = len(start_end) - int(line_num_split[0]) + 1
+                for rev_count in range(int(line_count), 0, -1):
                     start_end_line.append(start_end[-rev_count])
         else:
             high_num = max(int(line_num_split[0]),int(line_num_split[1]))
