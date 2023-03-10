@@ -7,8 +7,8 @@
 * Required args are at least --start or --pyreg otherwise the programme won't do anything
 * Requires input from --file or if using piped input from another command.
 * When using --start with --pyreg, the --start function runs first, and then further filtering takes place using --pyreg.
-* --start and --end and --omitlast and --omitfirst takes place before --pyreg when used with --pyreg.
-* --pyreg doesn't use --end and --omitlast and --omitfirst
+* --start and --end takes place before --pyreg when used with --pyreg.
+* --pyreg doesn't use --end
 
 ## String Searches
 Basic string searches using -s | --start and -e | --end
@@ -16,8 +16,8 @@ Basic string searches using -s | --start and -e | --end
 ```./pygrep.py --start string 2 -f filename ```
 * -e | --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
-* -of | --omitfirst is optional for deleting the first character of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. No further args required. Not supported with --pyreg option
-* -ol | --omitlast is optional and same as --omitfirst. Not supported with --pyreg option
+* -of | --omitfirst is optional for deleting the first character of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. No further args required.
+* -ol | --omitlast is optional and same as --omitfirst.
 * -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5' last line
 ```
 ./pygrep.py --start string -l '$' -f filename # last line
