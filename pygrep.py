@@ -165,9 +165,9 @@ if args.end:
         exit(1)
 
 # Empty lists which will be populated in the main loops
-last_line_list = []
-pyreg_last_list = []
-start_end = []
+last_line_list: list= []
+pyreg_last_list: list= []
+start_end: list= []
 
 # Lower start seach is case insensitive
 def lower_search(line: str):
@@ -266,14 +266,19 @@ def pygrep_search(line: str, pos_val: int=0, insense: bool=True):
                     if args.pyreg[1] == 'all'  or type(pos_val) == int:
                         pass
                     else:
-                        print(f'{PrintColours.FAIL}only string allowed to be used with pyreg is "all", check args{PrintColours.ENDC}')
+                        print(f'{PrintColours.FAIL}only string allowed to be used with pyreg is "all", check args{PrintColours.END}')
                         exit(1)
     elif pygen_length == 1: # defaults to first reg_match in line
         if reg_match:
             pyreg_last_list.append(line)
 
 # Arrange lines using args from commandline.
-def line_func(start_end: tuple):
+
+# keeps mypy happy having this declared outside the line_func below.
+start_end_line: list
+line_range: bool
+
+def line_func(start_end: list):
     # args for args.line
     global start_end_line
     start_end_line = []
