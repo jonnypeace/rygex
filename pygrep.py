@@ -166,7 +166,7 @@ pyreg_last_list = []
 start_end = []
 
 # Lower start seach is case insensitive
-def lower_search(line, exc_val=0):
+def lower_search(line: str):
     global start_end
     # variables from the optional argument of excluding one character
     lower_line = line.casefold()
@@ -199,7 +199,7 @@ def lower_search(line, exc_val=0):
             pass
 
 # Normal start search, case sensitive
-def normal_search(line, exc_val=0):
+def normal_search(line: str):
     global start_end
     # variables from the optional argument of excluding one character
     if args.start[0] in line:
@@ -230,7 +230,7 @@ def normal_search(line, exc_val=0):
             pass
 
 # Py regex search, can be either case sensitive or insensitive
-def pygrep_search(line, pos_val='0', insense=True):
+def pygrep_search(line: str, pos_val: int=0, insense: bool=True):
     # variables from the optional argument of excluding one character
     global counts
     global pyreg_last_list
@@ -269,7 +269,7 @@ def pygrep_search(line, pos_val='0', insense=True):
             pyreg_last_list.append(line)
 
 # Arrange lines using args from commandline.
-def line_func(start_end):
+def line_func(start_end: list):
     # args for args.line
     global start_end_line
     start_end_line = []
@@ -301,6 +301,7 @@ def line_func(start_end):
             line_num = int(line_num)
             start_end_line = start_end[line_num - 1]
 
+# Checking whether the first or last characters will be omitted.
 class Omit:
     def __init__(self, first: int=0, last: int=0):
         self.first = first
