@@ -183,18 +183,14 @@ def lower_search(line, exc_val=0):
                 new_index = new_str.casefold().index(lower_str)
                 for occur_end in range(iter_start -1):
                     new_index = new_str.casefold().index(lower_str, new_index + 1)
-                if args.omitfirst == 'exc':
-                    exc_val = 1
-                new_str = str(new_str)[new_index + exc_val:]
+                new_str = str(new_str)[new_index:]
             # End Arg positions and final string creation
             if args.end:
                 new_index = new_str.casefold().index(lower_end)
                 length_end = len(args.end[0])
                 for occur_end in range(iter_end -1):
                     new_index = new_str.casefold().index(lower_end, new_index + 1)
-                if args.omitlast == 'exc':
-                    exc_val = -1
-                new_str = str(new_str)[:new_index + length_end + exc_val]
+                new_str = str(new_str)[:new_index + length_end]
             start_end.append(new_str)
             '''ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
             ValueError will probably occur also if you want an instance number from the start search, which does not exist,
@@ -329,16 +325,8 @@ if args.file:
     with open(args.file, 'r') as my_file:
         file_list = tuple(file.strip() for file in my_file)
 ########   
-        # start end
-        if args.start and not args.pyreg and not args.insensitive and not args.lines and not args.omitfirst and not args.omitlast:
-            for line in file_list:
-                normal_search(line)
-                continue
-            for i in start_end:
-                print(i)
-########   
         # start end omits 
-        if args.start and not args.pyreg and not args.insensitive and not args.lines and (args.omitfirst or args.omitlast):
+        if args.start and not args.pyreg and not args.insensitive and not args.lines:
             for line in file_list:
                 normal_search(line)
                 continue
@@ -351,8 +339,18 @@ if args.file:
             for line in file_list:
                 lower_search(line)
                 continue
+            test_omit = Omit()
             for i in start_end:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
+########
+        # start end omits case insensitive
+        if args.start and args.insensitive and not args.pyreg and not args.lines:
+            for line in file_list:
+                lower_search(line)
+                continue
+            test_omit = Omit()
+            for i in start_end:
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end omits lines
         if args.start and args.lines and not args.pyreg:
@@ -367,11 +365,12 @@ if args.file:
                     lower_search(line)
                     continue                
             line_func(start_end)
+            test_omit = Omit()
             if line_range == True:
                 for i in start_end_line:
-                    print(i)
+                    print(i[test_omit.checkFirst():test_omit.checkLast()])
             else:
-                print(start_end_line)
+                print(start_end_line[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end lines omits pyreg 
         if args.start and args.lines and args.pyreg:
@@ -398,11 +397,12 @@ if args.file:
                 pygrep_search(line, insense=test_insense)
             # final line filter search
             line_func(start_end=pyreg_last_list)
+            test_omit = Omit()
             if line_range == True: # multiline
                 for i in start_end_line:
-                    print(i)
+                    print(i[test_omit.checkFirst():test_omit.checkLast()])
             else: # one line only
-                print(start_end_line)
+                print(start_end_line[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end omits pyreg 
         if args.start and not args.lines and args.pyreg:
@@ -425,11 +425,12 @@ if args.file:
                     continue 
             # regex search
             del line
+            test_omit = Omit()
             for line in start_end:
                 pygrep_search(line, insense=test_insense)
             # final print loop
             for i in pyreg_last_list:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # pyreg only
         if args.pyreg and not args.start and not args.lines:
@@ -445,8 +446,9 @@ if args.file:
             for line in file_list:
                 pygrep_search(line, insense=test_insense)
             # final loop
+            test_omit = Omit()
             for i in pyreg_last_list:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # pyreg lines
         if args.pyreg and not args.start and args.lines:
@@ -462,12 +464,13 @@ if args.file:
             for line in file_list:
                 pygrep_search(line, insense=test_insense)
             # final search
+            test_omit = Omit()
             line_func(start_end=pyreg_last_list)
             if line_range == True: # multiline
                 for i in start_end_line:
-                    print(i)
+                    print(i[test_omit.checkFirst():test_omit.checkLast()])
             else: # one line only
-                print(start_end_line)
+                print(start_end_line[test_omit.checkFirst():test_omit.checkLast()])
 ########
         my_file.close
 
@@ -481,16 +484,18 @@ if not sys.stdin.isatty():
             for line in sys.stdin.read().splitlines():
                 normal_search(line)
                 continue
+            test_omit = Omit()
             for i in start_end:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end omits case insensitive
         if args.start and args.insensitive and not args.pyreg and not args.lines:
             for line in sys.stdin.read().splitlines():
                 lower_search(line)
                 continue
+            test_omit = Omit()
             for i in start_end:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end omits lines
         if args.start and args.lines and not args.pyreg:
@@ -505,11 +510,12 @@ if not sys.stdin.isatty():
                     lower_search(line)
                     continue                
             line_func(start_end)
+            test_omit = Omit()
             if line_range == True:
                 for i in start_end_line:
-                    print(i)
+                    print(i[test_omit.checkFirst():test_omit.checkLast()])
             else:
-                print(start_end_line)
+                print(start_end_line[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end lines omits pyreg 
         if args.start and args.lines and args.pyreg:
@@ -536,11 +542,12 @@ if not sys.stdin.isatty():
                 pygrep_search(line, insense=test_insense)
             # final line filter search
             line_func(start_end=pyreg_last_list)
+            test_omit = Omit()
             if line_range == True: # multiline
                 for i in start_end_line:
-                    print(i)
+                    print(i[test_omit.checkFirst():test_omit.checkLast()])
             else: # one line only
-                print(start_end_line)
+                print(start_end_line[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # start end omits pyreg 
         if args.start and not args.lines and args.pyreg:
@@ -562,8 +569,9 @@ if not sys.stdin.isatty():
             for line in start_end:
                 pygrep_search(line, insense=test_insense)
             # final print loop
+            test_omit = Omit()
             for i in pyreg_last_list:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # pyreg only
         if args.pyreg and not args.start and not args.lines:
@@ -579,8 +587,9 @@ if not sys.stdin.isatty():
             for line in sys.stdin.read().splitlines():
                 pygrep_search(line, insense=test_insense)
             # final loop
+            test_omit = Omit()
             for i in pyreg_last_list:
-                print(i)
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
         # pyreg lines
         if args.pyreg and not args.start and args.lines:
@@ -596,10 +605,11 @@ if not sys.stdin.isatty():
             for line in sys.stdin.read().splitlines():
                 pygrep_search(line, insense=test_insense)
             # final search
+            test_omit = Omit()
             line_func(start_end=pyreg_last_list)
             if line_range == True: # multiline
                 for i in start_end_line:
-                    print(i)
+                    print(i[test_omit.checkFirst():test_omit.checkLast()])
             else: # one line only
-                print(start_end_line)
+                print(start_end_line[test_omit.checkFirst():test_omit.checkLast()])
 ########
