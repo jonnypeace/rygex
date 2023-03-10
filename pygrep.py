@@ -148,7 +148,11 @@ if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
 '''Passing a second argument of all for the start option will return output for the start of line
 Change arg.start[1] to int, since it will be a string.'''
 if args.start and args.start[1] != 'all':
-    iter_start = int(args.start[1])
+    try:
+        iter_start = int(args.start[1])
+    except:
+        print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}')
+        exit(1)
 
 # Sense check args.end and ensure 2nd arg is an int
 if args.end:
