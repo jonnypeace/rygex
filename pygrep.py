@@ -318,12 +318,11 @@ Finally the args.end indexing is performed to produce the final string > see fun
 
 if args.file:
     with open(args.file, 'r') as my_file:
-        file_list = my_file.read()
-        file_list_split = file_list.split('\n')
+        file_list = tuple(file.strip() for file in my_file)
 ########   
         # start end omits 
         if args.start and not args.pyreg and not args.insensitive and not args.lines:
-            for line in file_list_split:
+            for line in file_list:
                 normal_search(line)
                 continue
             for i in start_end:
@@ -331,7 +330,7 @@ if args.file:
 ########
         # start end omits case insensitive
         if args.start and args.insensitive and not args.pyreg and not args.lines:
-            for line in file_list_split:
+            for line in file_list:
                 lower_search(line)
                 continue
             for i in start_end:
@@ -341,12 +340,12 @@ if args.file:
         if args.start and args.lines and not args.pyreg:
             if not args.insensitive:
                 # initial start search
-                for line in file_list_split:
+                for line in file_list:
                     normal_search(line)
                     continue
             else:
                 # initial start search
-                for line in file_list_split:
+                for line in file_list:
                     lower_search(line)
                     continue                
             line_func(start_end)
@@ -366,13 +365,13 @@ if args.file:
             if not args.insensitive:
                 test_insense = False
                 # initial start search
-                for line in file_list_split:
+                for line in file_list:
                     normal_search(line)
                     continue
             else:               
                 test_insense = True
                 # initial start search
-                for line in file_list_split:
+                for line in file_list:
                     lower_search(line)
                     continue 
             # regex search
@@ -397,13 +396,13 @@ if args.file:
             if not args.insensitive:
                 test_insense = False
                 # initial start search
-                for line in file_list_split:
+                for line in file_list:
                     normal_search(line)
                     continue
             else:               
                 test_insense = True
                 # initial start search
-                for line in file_list_split:
+                for line in file_list:
                     lower_search(line)
                     continue 
             # regex search
@@ -425,7 +424,7 @@ if args.file:
             else:
                 test_insense = True
             # initial regex search
-            for line in file_list_split:
+            for line in file_list:
                 pygrep_search(line, insense=test_insense)
             # final loop
             for i in pyreg_last_list:
@@ -442,7 +441,7 @@ if args.file:
             else:
                 test_insense = True
             # initial regex search
-            for line in file_list_split:
+            for line in file_list:
                 pygrep_search(line, insense=test_insense)
             # final search
             line_func(start_end=pyreg_last_list)
