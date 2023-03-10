@@ -111,23 +111,23 @@ pk.add_argument('-l', '--lines',
 # our variables args parses the function (argparse)
 args = pk.parse_args()
 
-class gcolours:
+class PrintColours:
     # default values for fail and return of terminal colour
     FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    END = '\033[0m'
 
 # if not stdin or file, error
 if not args.file and sys.stdin.isatty():
-    print(f"{gcolours.FAIL}Requires stdin from somewhere, either from --file or pipe{gcolours.ENDC}")
+    print(f"{PrintColours.FAIL}Requires stdin from somewhere, either from --file or pipe{PrintColours.END}")
     exit(1)
 
 # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
 if not args.start and not args.pyreg:
-    print(f'{gcolours.FAIL}This programme requires the --start or --pyreg flag to work properly{gcolours.ENDC}')
+    print(f'{PrintColours.FAIL}This programme requires the --start or --pyreg flag to work properly{PrintColours.END}')
     exit(1)
 
 if args.pyreg and len(args.pyreg) > 2:
-    print(f'{gcolours.FAIL}--pyreg can only have 2 args... search pattern and option{gcolours.ENDC}')
+    print(f'{PrintColours.FAIL}--pyreg can only have 2 args... search pattern and option{PrintColours.END}')
     exit(1)
 
 # If positional number value not set, default to all.
@@ -135,14 +135,14 @@ if args.start and len(args.start) < 2:
     args.start.append('all')
 
 if args.start and len(args.start) > 2:
-    print(f'{gcolours.FAIL}--start has too many arguments, character or word followed by occurent number{gcolours.ENDC}')
+    print(f'{PrintColours.FAIL}--start has too many arguments, character or word followed by occurent number{PrintColours.END}')
     exit(1)
 
 if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
     try:
         pos_val = int(args.pyreg[1])
     except:
-        print(f'{gcolours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{gcolours.ENDC}')
+        print(f'{PrintColours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{PrintColours.END}')
         exit(1)
 
 '''Passing a second argument of all for the start option will return output for the start of line
@@ -157,7 +157,7 @@ if args.end:
         if args.start[0] == args.end[0]:
             iter_end += 1
     except ValueError:
-        print(f'{gcolours.FAIL}ValueError: -e / --end only accepts number values{gcolours.ENDC}')
+        print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}')
         exit(1)
 
 # Empty lists which will be populated in the main loops
@@ -262,7 +262,7 @@ def pygrep_search(line: str, pos_val: int=0, insense: bool=True):
                     if args.pyreg[1] == 'all'  or type(pos_val) == int:
                         pass
                     else:
-                        print(f'{gcolours.FAIL}only string allowed to be used with pyreg is "all", check args{gcolours.ENDC}')
+                        print(f'{PrintColours.FAIL}only string allowed to be used with pyreg is "all", check args{PrintColours.ENDC}')
                         exit(1)
     elif pygen_length == 1: # defaults to first reg_match in line
         if reg_match:
@@ -336,7 +336,7 @@ if args.file:
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
-        # start end omits case insensitive
+        # start end omits case-insensitive
         if args.start and args.insensitive and not args.pyreg and not args.lines:
             for line in file_list:
                 lower_search(line)
@@ -345,7 +345,7 @@ if args.file:
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
 ########
-        # start end omits case insensitive
+        # start end omits case-insensitive
         if args.start and args.insensitive and not args.pyreg and not args.lines:
             for line in file_list:
                 lower_search(line)
@@ -380,7 +380,7 @@ if args.file:
                 pos_val = args.pyreg[1]
             except IndexError: # only if no group arg is added on commandline 
                 pass
-            # check for case insensitive
+            # check for case-insensitive
             if not args.insensitive:
                 test_insense = False
                 # initial start search
@@ -412,7 +412,7 @@ if args.file:
                 pos_val = args.pyreg[1]
             except IndexError: # only if no group arg is added on commandline 
                 pass
-            # check for case insensitive
+            # check for case-insensitive
             if not args.insensitive:
                 test_insense = False
                 # initial start search
