@@ -340,7 +340,6 @@ if args.file:
         if args.start and not args.pyreg and not args.insensitive and not args.lines:
             for line in file_list:
                 normal_search(line)
-                continue
             test_omit = Omit()
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
@@ -349,7 +348,6 @@ if args.file:
         if args.start and args.insensitive and not args.pyreg and not args.lines:
             for line in file_list:
                 lower_search(line)
-                continue
             test_omit = Omit()
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
@@ -358,7 +356,6 @@ if args.file:
         if args.start and args.insensitive and not args.pyreg and not args.lines:
             for line in file_list:
                 lower_search(line)
-                continue
             test_omit = Omit()
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
@@ -369,12 +366,10 @@ if args.file:
                 # initial start search
                 for line in file_list:
                     normal_search(line)
-                    continue
             else:
                 # initial start search
                 for line in file_list:
                     lower_search(line)
-                    continue                
             line_func(start_end)
             test_omit = Omit()
             if line_range == True:
@@ -395,13 +390,11 @@ if args.file:
                 # initial start search
                 for line in file_list:
                     normal_search(line)
-                    continue
             else:               
                 test_insense = True
                 # initial start search
                 for line in file_list:
                     lower_search(line)
-                    continue 
             # regex search
             del line
             for line in start_end:
@@ -427,13 +420,11 @@ if args.file:
                 # initial start search
                 for line in file_list:
                     normal_search(line)
-                    continue
             else:               
                 test_insense = True
                 # initial start search
                 for line in file_list:
                     lower_search(line)
-                    continue 
             # regex search
             del line
             test_omit = Omit()
@@ -494,7 +485,6 @@ if not sys.stdin.isatty():
         if args.start and not args.pyreg and not args.insensitive and not args.lines:
             for line in sys.stdin.read().splitlines():
                 normal_search(line)
-                continue
             test_omit = Omit()
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
@@ -503,7 +493,6 @@ if not sys.stdin.isatty():
         if args.start and args.insensitive and not args.pyreg and not args.lines:
             for line in sys.stdin.read().splitlines():
                 lower_search(line)
-                continue
             test_omit = Omit()
             for i in start_end:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
@@ -514,12 +503,10 @@ if not sys.stdin.isatty():
                 # initial start search
                 for line in sys.stdin.read().splitlines():
                     normal_search(line)
-                    continue
             else:
                 # initial start search
                 for line in sys.stdin.read().splitlines():
                     lower_search(line)
-                    continue                
             line_func(start_end)
             test_omit = Omit()
             if line_range == True:
@@ -540,13 +527,11 @@ if not sys.stdin.isatty():
                 # initial start search
                 for line in sys.stdin.read().splitlines():
                     normal_search(line)
-                    continue
             else:               
                 test_insense = True
                 # initial start search
                 for line in sys.stdin.read().splitlines():
                     lower_search(line)
-                    continue 
             # regex search
             del line
             for line in start_end:
@@ -574,7 +559,6 @@ if not sys.stdin.isatty():
             # initial start search    
             for line in sys.stdin.read().splitlines():
                 normal_search(line)
-                continue
             # regex search
             del line
             for line in start_end:
