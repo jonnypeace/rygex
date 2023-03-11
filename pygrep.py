@@ -295,7 +295,7 @@ def line_func(start_end: list):
                 for rev_count in range(int(line_num_split[1]), 0, -1):
                     start_end_line.append(start_end[-rev_count])
             elif line_num_split[1] == '$':
-                line_count = len(start_end) - int(line_num_split[0]) + 1
+                line_count = len(start_end) - int(line_num_split[0]) + 2
                 for rev_count in range(int(line_count), 0, -1):
                     start_end_line.append(start_end[-rev_count])
         else:
