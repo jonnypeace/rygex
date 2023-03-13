@@ -56,7 +56,7 @@ import argparse
 import re
 import sys
 
-# Settings args parser witi the -s option, requiring a string
+# Setting arg parser args - will consider wrapping this in a function in my effort to make it more portable.
 pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
 
 pk.add_argument('-s', '--start',
