@@ -116,6 +116,8 @@ class PrintColours:
     FAIL = '\033[91m'
     END = '\033[0m'
 
+################# sense checking 'if conditions' below. Needs a cleanup, probably with functions or classes.
+
 # if not stdin or file, error
 if not args.file and sys.stdin.isatty():
     print(f"{PrintColours.FAIL}Requires stdin from somewhere, either from --file or pipe{PrintColours.END}")
