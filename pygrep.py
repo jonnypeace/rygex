@@ -467,4 +467,5 @@ if __name__ == '__main__':
         else: # one line only
             print(second_search[test_omit.checkFirst():test_omit.checkLast()])
 ########
-    my_file.close
+    if args.file:
+        my_file.close
