@@ -351,234 +351,118 @@ if __name__ == '__main__':
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
-    ########   
-            # start end omits 
-            if args.start and not args.pyreg and not args.insensitive and not args.lines:
-                first_search = normal_search(file_list)
-                test_omit = Omit()
-                for i in first_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end omits case-insensitive
-            if args.start and args.insensitive and not args.pyreg and not args.lines:
-                first_search = lower_search(file_list)
-                test_omit = Omit()
-                for i in first_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end omits lines
-            if args.start and args.lines and not args.pyreg:
-                if not args.insensitive:
-                    # initial start search
-                    first_search = normal_search(file_list)
-                else:
-                    # initial start search
-                    first_search = lower_search(file_list)
-                second_search = line_func(start_end=first_search)
-                test_omit = Omit()
-                if line_range == True:
-                    for i in second_search:
-                        print(i[test_omit.checkFirst():test_omit.checkLast()])
-                else:
-                    print(second_search[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end lines omits pyreg 
-            if args.start and args.lines and args.pyreg:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                # check for case-insensitive
-                if not args.insensitive:
-                    test_insense = False
-                    # initial start search
-                    first_search = normal_search(file_list)
-                else:               
-                    test_insense = True
-                    # initial start search
-                    first_search = lower_search(file_list)
-                # regex search
-                second_search = pygrep_search(insense=test_insense, func_search=first_search)
-                # final line filter search
-                third_search = line_func(start_end=second_search)
-                test_omit = Omit()
-                if line_range == True: # multiline
-                    for i in third_search:
-                        print(i[test_omit.checkFirst():test_omit.checkLast()])
-                else: # one line only
-                    print(third_search[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end omits pyreg 
-            if args.start and not args.lines and args.pyreg:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                # check for case-insensitive
-                if not args.insensitive:
-                    test_insense = False
-                    # initial start search
-                    first_search = normal_search(file_list)
-                else:               
-                    test_insense = True
-                    # initial start search
-                    first_search = lower_search(file_list)
-                # regex search
-                test_omit = Omit()
-                second_search = pygrep_search(insense=test_insense, func_search=first_search)
-                # final print loop
-                for i in second_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # pyreg only
-            if args.pyreg and not args.start and not args.lines:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                case_insense = TestInsense()
-                # initial regex search
-                first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
-                # final loop
-                test_omit = Omit()
-                for i in first_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-                print(case_insense.checkInsense())
-    ########
-            # pyreg lines
-            if args.pyreg and not args.start and args.lines:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                case_insense = TestInsense()
-                # initial regex search
-                first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
-                # final search
-                test_omit = Omit()
-                second_search = line_func(start_end=first_search)
-                if line_range == True: # multiline
-                    for i in second_search:
-                        print(i[test_omit.checkFirst():test_omit.checkLast()])
-                else: # one line only
-                    print(second_search[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            my_file.close
-
-######################################################################################
-
-    # for using piped std input.
-    if not sys.stdin.isatty():
+    elif not sys.stdin.isatty(): # for using piped std input. 
             file_list = tuple(sys.stdin.read().splitlines())
-    ########   
-            # start end omits 
-            if args.start and not args.pyreg and not args.insensitive and not args.lines:
-                first_search = normal_search(file_list)
-                test_omit = Omit()
-                for i in first_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end omits case-insensitive
-            if args.start and args.insensitive and not args.pyreg and not args.lines:
-                first_search = lower_search(file_list)
-                test_omit = Omit()
-                for i in first_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end omits lines
-            if args.start and args.lines and not args.pyreg:
-                if not args.insensitive:
-                    # initial start search
-                    first_search = normal_search(file_list)
-                else:
-                    # initial start search
-                    first_search = lower_search(file_list)
-                second_search = line_func(start_end=first_search)
-                test_omit = Omit()
-                if line_range == True:
-                    for i in second_search:
-                        print(i[test_omit.checkFirst():test_omit.checkLast()])
-                else:
-                    print(second_search[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end lines omits pyreg 
-            if args.start and args.lines and args.pyreg:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                # check for case-insensitive
-                if not args.insensitive:
-                    test_insense = False
-                    # initial start search
-                    first_search = normal_search(file_list)
-                else:               
-                    test_insense = True
-                    # initial start search
-                    first_search = lower_search(file_list)
-                # regex search
-                second_search = pygrep_search(insense=test_insense, func_search=first_search)
-                # final line filter search
-                third_search = line_func(start_end=second_search)
-                test_omit = Omit()
-                if line_range == True: # multiline
-                    for i in third_search:
-                        print(i[test_omit.checkFirst():test_omit.checkLast()])
-                else: # one line only
-                    print(third_search[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # start end omits pyreg 
-            if args.start and not args.lines and args.pyreg:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                # check for case-insensitive
-                if not args.insensitive:
-                    test_insense = False
-                    # initial start search
-                    first_search = normal_search(file_list)
-                else:               
-                    test_insense = True
-                    # initial start search
-                    first_search = lower_search(file_list)
-                # regex search
-                test_omit = Omit()
-                second_search = pygrep_search(insense=test_insense, func_search=first_search)
-                # final print loop
-                for i in second_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-    ########
-            # pyreg only
-            if args.pyreg and not args.start and not args.lines:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                case_insense = TestInsense()
-                # initial regex search
-                first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
-                # final loop
-                test_omit = Omit()
-                for i in first_search:
-                    print(i[test_omit.checkFirst():test_omit.checkLast()])
-                print(case_insense.checkInsense())
-    ########
-            # pyreg lines
-            if args.pyreg and not args.start and args.lines:
-                try:
-                    pos_val = args.pyreg[1]
-                except IndexError: # only if no group arg is added on commandline 
-                    pass
-                case_insense = TestInsense()
-                # initial regex search
-                first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
-                # final search
-                test_omit = Omit()
-                second_search = line_func(start_end=first_search)
-                if line_range == True: # multiline
-                    for i in second_search:
-                        print(i[test_omit.checkFirst():test_omit.checkLast()])
-                else: # one line only
-                    print(second_search[test_omit.checkFirst():test_omit.checkLast()])
-    ########
+########   
+    # start end omits 
+    if args.start and not args.pyreg and not args.insensitive and not args.lines:
+        first_search = normal_search(file_list)
+        test_omit = Omit()
+        for i in first_search:
+            print(i[test_omit.checkFirst():test_omit.checkLast()])
+########
+    # start end omits case-insensitive
+    if args.start and args.insensitive and not args.pyreg and not args.lines:
+        first_search = lower_search(file_list)
+        test_omit = Omit()
+        for i in first_search:
+            print(i[test_omit.checkFirst():test_omit.checkLast()])
+########
+    # start end omits lines
+    if args.start and args.lines and not args.pyreg:
+        if not args.insensitive:
+            # initial start search
+            first_search = normal_search(file_list)
+        else:
+            # initial start search
+            first_search = lower_search(file_list)
+        second_search = line_func(start_end=first_search)
+        test_omit = Omit()
+        if line_range == True:
+            for i in second_search:
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
+        else:
+            print(second_search[test_omit.checkFirst():test_omit.checkLast()])
+########
+    # start end lines omits pyreg 
+    if args.start and args.lines and args.pyreg:
+        try:
+            pos_val = args.pyreg[1]
+        except IndexError: # only if no group arg is added on commandline 
+            pass
+        # check for case-insensitive
+        if not args.insensitive:
+            test_insense = False
+            # initial start search
+            first_search = normal_search(file_list)
+        else:               
+            test_insense = True
+            # initial start search
+            first_search = lower_search(file_list)
+        # regex search
+        second_search = pygrep_search(insense=test_insense, func_search=first_search)
+        # final line filter search
+        third_search = line_func(start_end=second_search)
+        test_omit = Omit()
+        if line_range == True: # multiline
+            for i in third_search:
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
+        else: # one line only
+            print(third_search[test_omit.checkFirst():test_omit.checkLast()])
+########
+    # start end omits pyreg 
+    if args.start and not args.lines and args.pyreg:
+        try:
+            pos_val = args.pyreg[1]
+        except IndexError: # only if no group arg is added on commandline 
+            pass
+        # check for case-insensitive
+        if not args.insensitive:
+            test_insense = False
+            # initial start search
+            first_search = normal_search(file_list)
+        else:               
+            test_insense = True
+            # initial start search
+            first_search = lower_search(file_list)
+        # regex search
+        test_omit = Omit()
+        second_search = pygrep_search(insense=test_insense, func_search=first_search)
+        # final print loop
+        for i in second_search:
+            print(i[test_omit.checkFirst():test_omit.checkLast()])
+########
+    # pyreg only
+    if args.pyreg and not args.start and not args.lines:
+        try:
+            pos_val = args.pyreg[1]
+        except IndexError: # only if no group arg is added on commandline 
+            pass
+        case_insense = TestInsense()
+        # initial regex search
+        first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
+        # final loop
+        test_omit = Omit()
+        for i in first_search:
+            print(i[test_omit.checkFirst():test_omit.checkLast()])
+        print(case_insense.checkInsense())
+########
+    # pyreg lines
+    if args.pyreg and not args.start and args.lines:
+        try:
+            pos_val = args.pyreg[1]
+        except IndexError: # only if no group arg is added on commandline 
+            pass
+        case_insense = TestInsense()
+        # initial regex search
+        first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
+        # final search
+        test_omit = Omit()
+        second_search = line_func(start_end=first_search)
+        if line_range == True: # multiline
+            for i in second_search:
+                print(i[test_omit.checkFirst():test_omit.checkLast()])
+        else: # one line only
+            print(second_search[test_omit.checkFirst():test_omit.checkLast()])
+########
+    my_file.close
