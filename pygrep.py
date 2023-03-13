@@ -332,7 +332,7 @@ depending on which iteration of the string is required.
 Finally the args.end indexing is performed to produce the final string > see functions above.
 '''
 
-if args.file:
+if args.file and __name__ == '__main__':
     with open(args.file, 'r') as my_file:
         file_list = tuple(file.strip() for file in my_file)
 ########   
@@ -479,7 +479,7 @@ if args.file:
 ######################################################################################
 
 # for using piped std input.
-if not sys.stdin.isatty():
+if not sys.stdin.isatty() and __name__ == '__main__':
 ########
         # start end omits 
         if args.start and not args.pyreg and not args.insensitive and not args.lines:
