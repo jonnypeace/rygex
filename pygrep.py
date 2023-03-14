@@ -296,9 +296,7 @@ class TestInsense:
             self.case_in = False
         return self.case_in
 
-
 #Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
-
 if __name__ == '__main__':
     # Setting arg parser args
     pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
@@ -361,18 +359,17 @@ if __name__ == '__main__':
             my_file.close
     elif not sys.stdin.isatty(): # for using piped std input. 
             file_list = tuple(sys.stdin.read().splitlines())
-########   
+######## 
+    # Initial case-insensitivity check
+    case_insense = TestInsense()
+    if args.start:
+        # check for case-insensitive & initial 'start' search
+        if case_insense.checkInsense() == False:
+            first_search = normal_search(file_list)
+        else:               
+            first_search = lower_search(file_list)
     # start end omits 
-    if args.start and not args.pyreg and not args.insensitive and not args.lines:
-        first_search = normal_search(file_list)
-        test_omit = Omit()
-        for i in first_search:
-            print(i[test_omit.checkFirst():test_omit.checkLast()])
-        exit(0)
-########
-    # start end omits case-insensitive
-    if args.start and args.insensitive and not args.pyreg and not args.lines:
-        first_search = lower_search(file_list)
+    if args.start and not args.pyreg and not args.lines:
         test_omit = Omit()
         for i in first_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
@@ -380,12 +377,6 @@ if __name__ == '__main__':
 ########
     # start end omits lines
     if args.start and args.lines and not args.pyreg:
-        if not args.insensitive:
-            # initial start search
-            first_search = normal_search(file_list)
-        else:
-            # initial start search
-            first_search = lower_search(file_list)
         second_search, line_range = line_func(start_end=first_search)
         test_omit = Omit()
         if line_range == True:
@@ -401,17 +392,8 @@ if __name__ == '__main__':
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline 
             pass
-        # check for case-insensitive
-        if not args.insensitive:
-            test_insense = False
-            # initial start search
-            first_search = normal_search(file_list)
-        else:               
-            test_insense = True
-            # initial start search
-            first_search = lower_search(file_list)
         # regex search
-        second_search = pygrep_search(insense=test_insense, func_search=first_search)
+        second_search = pygrep_search(insense=case_insense.checkInsense(), func_search=first_search)
         # final line filter search
         third_search, line_range = line_func(start_end=second_search)
         #line_range = third_search[1] # grabbing boolean from line_func
@@ -429,13 +411,6 @@ if __name__ == '__main__':
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline 
             pass
-        # check for case-insensitive
-        case_insense = TestInsense()
-        # initial start search
-        if case_insense.checkInsense() == False:
-            first_search = normal_search(file_list)
-        else:               
-            first_search = lower_search(file_list)
         # regex search
         test_omit = Omit()
         second_search = pygrep_search(insense=case_insense.checkInsense(), func_search=first_search)
@@ -450,7 +425,6 @@ if __name__ == '__main__':
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline 
             pass
-        case_insense = TestInsense()
         # initial regex search
         first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
         # final loop
@@ -465,7 +439,6 @@ if __name__ == '__main__':
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline 
             pass
-        case_insense = TestInsense()
         # initial regex search
         first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
         # final search
