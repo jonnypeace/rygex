@@ -436,17 +436,15 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # check for case-insensitive
-        if not args.insensitive:
-            test_insense = False
-            # initial start search
+        case_insense = TestInsense()
+        # initial start search
+        if case_insense.checkInsense() == False:
             first_search = normal_search(file_list)
         else:               
-            test_insense = True
-            # initial start search
             first_search = lower_search(file_list)
         # regex search
         test_omit = Omit()
-        second_search = pygrep_search(insense=test_insense, func_search=first_search)
+        second_search = pygrep_search(insense=case_insense.checkInsense(), func_search=first_search)
         # final print loop
         for i in second_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
