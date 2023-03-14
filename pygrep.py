@@ -306,12 +306,8 @@ class TestInsense:
             self.case_in = False
         return self.case_in
 
-'''
-Currently, opens a file and splits it on newline into a list.
-The args.start is then searched through each line, and each new indexing is performed
-depending on which iteration of the string is required.
-Finally the args.end indexing is performed to produce the final string > see functions above.
-'''
+
+#Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
 
 if __name__ == '__main__':
     # Setting arg parser args
