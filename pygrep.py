@@ -61,7 +61,7 @@ class PrintColours:
     FAIL = '\033[91m'
     END = '\033[0m'
 
-################# sense checking 'if conditions' below. Needs a cleanup, probably with functions or classes.
+# sense checking commandline input.
 def sense_check():
 # if not stdin or file, error
     if not args.file and sys.stdin.isatty():
@@ -243,10 +243,6 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=()):
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
-
-# keeps mypy happy having this declared outside the line_func below... will implement a better solution, maybe a line_Class would be better.
-#line_range: bool
-
 def line_func(start_end: list):
     # args for args.line
     #global start_end_line
