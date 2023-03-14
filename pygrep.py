@@ -25,7 +25,7 @@ OPTIONS
 -e  | --end         is optional. Provides an end to the line you are searching for. [keyword/character position]
 -of | --omitfirst   is optional for deleting the first character of your match. No further args required. Only works with --start
 -ol | --omitlast    is optional and same as --omitfirst. Only works with --start
--l  | --lines       is optional and to save piping using tail, head or sed. [int|$|$-int|int-int]
+-l  | --lines       is optional and to save piping using tail, head or sed. [int|$|$-int|int-int|int-$]
 -p  | --pyreg       can be used standlone (without --start) or with --start. [regex [position|all]]
 -i  | --insensitive When used, case insensitive search is used. No args required.
 -f  | --file        /path/to/file.
