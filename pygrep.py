@@ -369,7 +369,7 @@ Finally the args.end indexing is performed to produce the final string > see fun
 '''
 
 if __name__ == '__main__':
-
+    sense_check
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
@@ -378,7 +378,6 @@ if __name__ == '__main__':
 ########   
     # start end omits 
     if args.start and not args.pyreg and not args.insensitive and not args.lines:
-        sense_check
         first_search = normal_search(file_list)
         test_omit = Omit()
         for i in first_search:
