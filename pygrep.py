@@ -77,10 +77,6 @@ def sense_check():
         print(f'{PrintColours.FAIL}--pyreg can only have 2 args... search pattern and option{PrintColours.END}')
         exit(1)
 
-    # If positional number value not set, default to all.
-    if args.start and len(args.start) < 2:
-        args.start.append('all')
-
     if args.start and len(args.start) > 2:
         print(f'{PrintColours.FAIL}--start has too many arguments, character or word followed by occurent number{PrintColours.END}')
         exit(1)
@@ -92,7 +88,7 @@ def lower_search(file_list: tuple):
         args.start.append('all')
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
-    if args.start and args.start[1] != 'all':
+    if args.start[1] != 'all':
         try:
             iter_start = int(args.start[1])
         except:
@@ -148,7 +144,7 @@ def normal_search(file_list: tuple):
         args.start.append('all')
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
-    if args.start and args.start[1] != 'all':
+    if args.start[1] != 'all':
         try:
             iter_start = int(args.start[1])
         except:
