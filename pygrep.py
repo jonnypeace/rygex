@@ -460,7 +460,6 @@ if __name__ == '__main__':
         test_omit = Omit()
         for i in first_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
-        print(case_insense.checkInsense())
 ########
     # pyreg lines
     if args.pyreg and not args.start and args.lines:
