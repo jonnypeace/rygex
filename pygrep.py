@@ -56,61 +56,6 @@ import argparse
 import re
 import sys
 
-# Setting arg parser args - will consider wrapping this in a function in my effort to make it more portable.
-pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
-
-pk.add_argument('-s', '--start',
-        help='This is the starting string search [keyword|character [position]]',
-        type=str,
-        required=False,
-        nargs='+',
-        )
-
-pk.add_argument('-e', '--end',
-        help='end of string search [keyword|character position]',
-        type=str,
-        nargs=2,
-        required=False)
-
-pk.add_argument('-f', '--file',
-        help='filename to string search through',
-        type=str,
-        required=False)
-
-pk.add_argument('-i', '--insensitive',
-        help='This is just a flag for case insensitive for the start flag, no args required, just flag',
-        action='store_true',
-        required=False)
-
-pk.add_argument('-of', '--omitfirst',
-        help='optional argument for exc. This will exclude 1 character at the start of string. Right now only works in start and end args',
-        action='store_const',
-        const='exc',
-        required=False)
-
-pk.add_argument('-ol', '--omitlast',
-        help='optional argument for exc. This will exclude 1 character at the end of string. Right now only works in start and end args',
-        action='store_const',
-        const='exc',
-        required=False)
-
-pk.add_argument('-p', '--pyreg',
-        metavar="[regex [position|all]]",
-        help='optional argument, internal pyreg to regex filter output. For instance, a tcpdump SRC ip may be search but DEST ip required',
-        type=str,
-        nargs='+',
-        required=False)
-
-pk.add_argument('-l', '--lines',
-        metavar="'1-10' | '1' | '$-3'",
-        help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
-        type=str,
-        nargs=1,
-        required=False)
-
-# our variables args parses the function (argparse)
-args = pk.parse_args()
-
 class PrintColours:
     # default values for fail and return of terminal colour
     FAIL = '\033[91m'
@@ -369,10 +314,65 @@ Finally the args.end indexing is performed to produce the final string > see fun
 '''
 
 if __name__ == '__main__':
-    sense_check
+    # Setting arg parser args
+    pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
+
+    pk.add_argument('-s', '--start',
+            help='This is the starting string search [keyword|character [position]]',
+            type=str,
+            required=False,
+            nargs='+',
+            )
+
+    pk.add_argument('-e', '--end',
+            help='end of string search [keyword|character position]',
+            type=str,
+            nargs=2,
+            required=False)
+
+    pk.add_argument('-f', '--file',
+            help='filename to string search through',
+            type=str,
+            required=False)
+
+    pk.add_argument('-i', '--insensitive',
+            help='This is just a flag for case insensitive for the start flag, no args required, just flag',
+            action='store_true',
+            required=False)
+
+    pk.add_argument('-of', '--omitfirst',
+            help='optional argument for exc. This will exclude 1 character at the start of string. Right now only works in start and end args',
+            action='store_const',
+            const='exc',
+            required=False)
+
+    pk.add_argument('-ol', '--omitlast',
+            help='optional argument for exc. This will exclude 1 character at the end of string. Right now only works in start and end args',
+            action='store_const',
+            const='exc',
+            required=False)
+
+    pk.add_argument('-p', '--pyreg',
+            metavar="[regex [position|all]]",
+            help='optional argument, internal pyreg to regex filter output. For instance, a tcpdump SRC ip may be search but DEST ip required',
+            type=str,
+            nargs='+',
+            required=False)
+
+    pk.add_argument('-l', '--lines',
+            metavar="'1-10' | '1' | '$-3'",
+            help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
+            type=str,
+            nargs=1,
+            required=False)
+
+    # our variables args parses the function (argparse)
+    args = pk.parse_args()
+    sense_check()
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
+            my_file.close
     elif not sys.stdin.isatty(): # for using piped std input. 
             file_list = tuple(sys.stdin.read().splitlines())
 ########   
@@ -488,5 +488,3 @@ if __name__ == '__main__':
         else: # one line only
             print(second_search[test_omit.checkFirst():test_omit.checkLast()])
 ########
-    if args.file:
-        my_file.close
