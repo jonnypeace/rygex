@@ -117,57 +117,52 @@ class PrintColours:
     END = '\033[0m'
 
 ################# sense checking 'if conditions' below. Needs a cleanup, probably with functions or classes.
-
+def sense_check():
 # if not stdin or file, error
-if not args.file and sys.stdin.isatty():
-    print(f"{PrintColours.FAIL}Requires stdin from somewhere, either from --file or pipe{PrintColours.END}")
-    exit(1)
-
-# Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
-if not args.start and not args.pyreg:
-    print(f'{PrintColours.FAIL}This programme requires the --start or --pyreg flag to work properly{PrintColours.END}')
-    exit(1)
-
-if args.pyreg and len(args.pyreg) > 2:
-    print(f'{PrintColours.FAIL}--pyreg can only have 2 args... search pattern and option{PrintColours.END}')
-    exit(1)
-
-# If positional number value not set, default to all.
-if args.start and len(args.start) < 2:
-    args.start.append('all')
-
-if args.start and len(args.start) > 2:
-    print(f'{PrintColours.FAIL}--start has too many arguments, character or word followed by occurent number{PrintColours.END}')
-    exit(1)
-
-if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
-    try:
-        pos_val = int(args.pyreg[1])
-    except:
-        print(f'{PrintColours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{PrintColours.END}')
+    if not args.file and sys.stdin.isatty():
+        print(f"{PrintColours.FAIL}Requires stdin from somewhere, either from --file or pipe{PrintColours.END}")
         exit(1)
 
-'''Passing a second argument of all for the start option will return output for the start of line
-Change arg.start[1] to int, since it will be a string.'''
-if args.start and args.start[1] != 'all':
-    try:
-        iter_start = int(args.start[1])
-    except:
-        print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}')
+    # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
+    if not args.start and not args.pyreg:
+        print(f'{PrintColours.FAIL}This programme requires the --start or --pyreg flag to work properly{PrintColours.END}')
         exit(1)
 
-# Sense check args.end and ensure 2nd arg is an int
-if args.end:
-    try:
-        iter_end = int(args.end[1])
-        if args.start[0] == args.end[0]:
-            iter_end += 1
-    except ValueError:
-        print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}')
+    if args.pyreg and len(args.pyreg) > 2:
+        print(f'{PrintColours.FAIL}--pyreg can only have 2 args... search pattern and option{PrintColours.END}')
+        exit(1)
+
+    # If positional number value not set, default to all.
+    if args.start and len(args.start) < 2:
+        args.start.append('all')
+
+    if args.start and len(args.start) > 2:
+        print(f'{PrintColours.FAIL}--start has too many arguments, character or word followed by occurent number{PrintColours.END}')
         exit(1)
 
 # Lower start seach is case insensitive
 def lower_search(file_list: tuple):
+    # If positional number value not set, default to all.
+    if args.start and len(args.start) < 2:
+        args.start.append('all')
+    '''If arg.start[1] does not equal 'all'...
+    Change arg.start[1] to int, since it will be a string.'''
+    if args.start and args.start[1] != 'all':
+        try:
+            iter_start = int(args.start[1])
+        except:
+            print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}')
+            exit(1)
+
+    # Sense check args.end and ensure 2nd arg is an int
+    if args.end:
+        try:
+            iter_end = int(args.end[1])
+            if args.start[0] == args.end[0]:
+                iter_end += 1
+        except ValueError:
+            print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}')
+            exit(1)
     #global start_end
     start_end: list= []
     # variables from the optional argument of excluding one character
@@ -204,6 +199,27 @@ def lower_search(file_list: tuple):
 
 # Normal start search, case sensitive
 def normal_search(file_list: tuple):
+    # If positional number value not set, default to all.
+    if args.start and len(args.start) < 2:
+        args.start.append('all')
+    '''If arg.start[1] does not equal 'all'...
+    Change arg.start[1] to int, since it will be a string.'''
+    if args.start and args.start[1] != 'all':
+        try:
+            iter_start = int(args.start[1])
+        except:
+            print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}')
+            exit(1)
+
+    # Sense check args.end and ensure 2nd arg is an int
+    if args.end:
+        try:
+            iter_end = int(args.end[1])
+            if args.start[0] == args.end[0]:
+                iter_end += 1
+        except ValueError:
+            print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}')
+            exit(1)
     #global start_end
     start_end: list= []
     # variables from the optional argument of excluding one character
@@ -238,9 +254,13 @@ def normal_search(file_list: tuple):
 
 # Py regex search, can be either case sensitive or insensitive
 def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=()):
-    # variables from the optional argument of excluding one character
-    global counts
-#    global pyreg_last_list
+    # if not all, try and make the pos_val an int, if not able then incorrect value, so fail and exit.
+    if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
+        try:
+            pos_val = int(args.pyreg[1])
+        except:
+            print(f'{PrintColours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{PrintColours.END}')
+            exit(1)
     pyreg_last_list: list= []
     for line in func_search:
         test_re = args.pyreg[0]
@@ -280,7 +300,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=()):
 # Arrange lines using args from commandline.
 
 # keeps mypy happy having this declared outside the line_func below... will implement a better solution, maybe a line_Class would be better.
-line_range: bool
+#line_range: bool
 
 def line_func(start_end: list):
     # args for args.line
@@ -291,7 +311,7 @@ def line_func(start_end: list):
     
     # if last line range
     if '-' in line_num:
-        global line_range
+        #global line_range
         line_range = True
         line_num_split = line_num.split('-')
         if '$' in line_num:
@@ -314,7 +334,7 @@ def line_func(start_end: list):
         else:
             line_num = int(line_num)
             start_end_line = start_end[line_num - 1]
-    return start_end_line
+    return start_end_line, line_range
 
 # Checking whether the first or last characters will be omitted.
 class Omit:
@@ -358,6 +378,7 @@ if __name__ == '__main__':
 ########   
     # start end omits 
     if args.start and not args.pyreg and not args.insensitive and not args.lines:
+        sense_check
         first_search = normal_search(file_list)
         test_omit = Omit()
         for i in first_search:
@@ -378,7 +399,7 @@ if __name__ == '__main__':
         else:
             # initial start search
             first_search = lower_search(file_list)
-        second_search = line_func(start_end=first_search)
+        second_search, line_range = line_func(start_end=first_search)
         test_omit = Omit()
         if line_range == True:
             for i in second_search:
@@ -404,7 +425,8 @@ if __name__ == '__main__':
         # regex search
         second_search = pygrep_search(insense=test_insense, func_search=first_search)
         # final line filter search
-        third_search = line_func(start_end=second_search)
+        third_search, line_range = line_func(start_end=second_search)
+        #line_range = third_search[1] # grabbing boolean from line_func
         test_omit = Omit()
         if line_range == True: # multiline
             for i in third_search:
@@ -460,7 +482,7 @@ if __name__ == '__main__':
         first_search = pygrep_search(insense=case_insense.checkInsense(), func_search=file_list)
         # final search
         test_omit = Omit()
-        second_search = line_func(start_end=first_search)
+        second_search, line_range = line_func(start_end=first_search)
         if line_range == True: # multiline
             for i in second_search:
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
