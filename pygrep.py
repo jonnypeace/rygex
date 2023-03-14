@@ -84,7 +84,7 @@ def sense_check():
 # Lower start seach is case insensitive
 def lower_search(file_list: tuple):
     # If positional number value not set, default to all.
-    if args.start and len(args.start) < 2:
+    if len(args.start) < 2:
         args.start.append('all')
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
@@ -140,7 +140,7 @@ def lower_search(file_list: tuple):
 # Normal start search, case sensitive
 def normal_search(file_list: tuple):
     # If positional number value not set, default to all.
-    if args.start and len(args.start) < 2:
+    if len(args.start) < 2:
         args.start.append('all')
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
