@@ -196,7 +196,7 @@ def normal_search(file_list: tuple):
     return start_end
 
 # Py regex search, can be either case sensitive or insensitive
-def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=()):
+def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> list:
     # if not all, try and make the pos_val an int, if not able then incorrect value, so fail and exit.
     if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
         try:
@@ -241,7 +241,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=()):
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
-def line_func(start_end: list):
+def line_func(start_end: list)-> tuple[list, bool]:
     # args for args.line
     #global start_end_line
     start_end_line = []
