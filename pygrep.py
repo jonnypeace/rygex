@@ -108,7 +108,6 @@ def lower_search(file_list: tuple):
         except ValueError:
             print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}')
             exit(1)
-    #global start_end
     start_end: list= []
     # variables from the optional argument of excluding one character
     for line in file_list:
@@ -165,7 +164,6 @@ def normal_search(file_list: tuple):
         except ValueError:
             print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}')
             exit(1)
-    #global start_end
     start_end: list= []
     # variables from the optional argument of excluding one character
     for line in file_list:
