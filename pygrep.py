@@ -374,6 +374,7 @@ if __name__ == '__main__':
         test_omit = Omit()
         for i in first_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
     # start end omits case-insensitive
     if args.start and args.insensitive and not args.pyreg and not args.lines:
@@ -381,6 +382,7 @@ if __name__ == '__main__':
         test_omit = Omit()
         for i in first_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
     # start end omits lines
     if args.start and args.lines and not args.pyreg:
@@ -397,6 +399,7 @@ if __name__ == '__main__':
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
         else:
             print(second_search[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
     # start end lines omits pyreg 
     if args.start and args.lines and args.pyreg:
@@ -424,6 +427,7 @@ if __name__ == '__main__':
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
         else: # one line only
             print(third_search[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
     # start end omits pyreg 
     if args.start and not args.lines and args.pyreg:
@@ -446,6 +450,7 @@ if __name__ == '__main__':
         # final print loop
         for i in second_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
     # pyreg only
     if args.pyreg and not args.start and not args.lines:
@@ -460,6 +465,7 @@ if __name__ == '__main__':
         test_omit = Omit()
         for i in first_search:
             print(i[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
     # pyreg lines
     if args.pyreg and not args.start and args.lines:
@@ -478,4 +484,5 @@ if __name__ == '__main__':
                 print(i[test_omit.checkFirst():test_omit.checkLast()])
         else: # one line only
             print(second_search[test_omit.checkFirst():test_omit.checkLast()])
+        exit(0)
 ########
