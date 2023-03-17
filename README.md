@@ -17,7 +17,7 @@ This will be under development as i think of new things to add, and optimize the
 
 ## String Searches
 Basic string searches using -s | --start and -e | --end
-* -s | --start can be used standlone (without --pyreg) or with --pyreg for some extra filtering. This uses a starting string/word/character on a line, and can take an optional number value or 'all'. The number value will switch to a different index in the line. For example.. if you require the 2nd position of string/word/character in the line, you would simply follow with the number 2. 
+* -s | --start can be used standlone (without --pyreg) or with --pyreg for some extra filtering. This uses a starting string/word/character on a line, and can take an optional number value or 'all' (default is all if excluded). The number value will switch to a different index in the line. For example.. if you require the 2nd position of string/word/character in the line, you would simply follow with the number 2. 
 ```./pygrep.py --start string 2 -f filename ```
 * -e | --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
