@@ -23,7 +23,7 @@ Basic string searches using -s | --start and -e | --end
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
 * -of | --omitfirst is optional for deleting the first character of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. No further args required.
 * -ol | --omitlast is optional and same as --omitfirst.
-* -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5' last line
+* -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5' last line '$'
 ```
 ./pygrep.py --start string -l '$' -f filename # last line
 ./pygrep.py --start string -l '1-5' -f filename # first 5 lines
