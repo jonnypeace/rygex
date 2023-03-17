@@ -1,7 +1,7 @@
 # pygrep
 ## Python string and regex search
 
-##The Why?
+## The Why?
 
 Well, I think tools like grep, sed and awk, tail, head are amazing, but thought i’d write something that does a bit of all of them.
 
