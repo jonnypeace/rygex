@@ -91,7 +91,7 @@ def lower_search(file_list: tuple):
     if args.start[1] != 'all':
         try:
             iter_start = int(args.start[1])
-        except:
+        except ValueError:
             print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}')
             exit(1)
 
@@ -147,7 +147,7 @@ def normal_search(file_list: tuple):
     if args.start[1] != 'all':
         try:
             iter_start = int(args.start[1])
-        except:
+        except ValueError:
             print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}')
             exit(1)
 
@@ -197,7 +197,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
     if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
         try:
             pos_val = int(args.pyreg[1])
-        except:
+        except ValueError:
             print(f'{PrintColours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{PrintColours.END}')
             exit(1)
     pyreg_last_list: list= []
