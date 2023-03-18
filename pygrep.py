@@ -82,7 +82,7 @@ def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[],
         exit(1)
 
 # Lower start seach is case insensitive
-def lower_search(file_list: tuple):
+def lower_search(file_list: tuple)-> list:
     # If positional number value not set, default to all.
     if len(args.start) < 2:
         args.start.append('all')
@@ -138,7 +138,7 @@ def lower_search(file_list: tuple):
     return start_end
 
 # Normal start search, case sensitive
-def normal_search(file_list: tuple):
+def normal_search(file_list: tuple)-> list:
     # If positional number value not set, default to all.
     if len(args.start) < 2:
         args.start.append('all')
@@ -270,10 +270,10 @@ def line_func(start_end: list)-> tuple[list, bool]:
     return start_end_line, line_range
 
 # Checking whether the first or last characters will be omitted.
-def omit_check(first=None, last=None, aOmitFirst: str='', AOmitLast: str=''):
+def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='')-> tuple:
     if aOmitFirst == 'exc':
         first = 1
-    if AOmitLast == 'exc':
+    if aOmitLast == 'exc':
         last = -1
     return first, last
 
@@ -341,7 +341,7 @@ if __name__ == '__main__':
             file_list = tuple(sys.stdin.read().splitlines())
 ######## 
     # Initial case-insensitivity check
-    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst, AOmitLast=args.omitlast)
+    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst, aOmitLast=args.omitlast)
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
@@ -371,7 +371,7 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # regex search
-        second_search = pygrep_search(insense=args.insensitive, func_search=first_search)
+        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         # final line filter search
         third_search, line_range = line_func(start_end=second_search)
         if line_range == True: # multiline
@@ -388,7 +388,7 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # regex search
-        second_search = pygrep_search(insense=args.insensitive, func_search=first_search)
+        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         # final print loop
         for i in second_search:
             print(i[checkFirst:checkLast])
