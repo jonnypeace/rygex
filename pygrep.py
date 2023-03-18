@@ -239,14 +239,12 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
 # Arrange lines using args from commandline.
 def line_func(start_end: list)-> tuple[list, bool]:
     # args for args.line
-    #global start_end_line
     start_end_line = []
     line_num_split = []
     line_num = args.lines[0]
     
     # if last line range
     if '-' in line_num:
-        #global line_range
         line_range = True
         line_num_split = line_num.split('-')
         if '$' in line_num:
