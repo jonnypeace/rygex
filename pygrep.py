@@ -56,29 +56,29 @@ import argparse
 import re
 import sys
 
-class PrintColours:
-    # default values for fail and return of terminal colour
-    FAIL = '\033[91m'
-    END = '\033[0m'
+# colour dictionary for outputing error message to screen
+colours = {'fail': '\033[91m',
+           'end': '\033[0m'
+           }
 
 # sense checking commandline input.
 def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[], aTty: bool=False):
 # if not stdin or file, error
     if not aFile and aTty:
-        print(f"{PrintColours.FAIL}Requires stdin from somewhere, either from --file or pipe{PrintColours.END}", file=sys.stderr)
+        print(f'{colours["fail"]}Requires stdin from somewhere, either from --file or pipe{colours["end"]}', file=sys.stderr)
         exit(1)
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
     if not aStart and not aPyreg:
-        print(f'{PrintColours.FAIL}This programme requires the --start or --pyreg flag to work properly{PrintColours.END}', file=sys.stderr)
+        print(f'{colours["fail"]}This programme requires the --start or --pyreg flag to work properly{colours["end"]}', file=sys.stderr)
         exit(1)
 
     if aPyreg and len(aPyreg) > 2:
-        print(f'{PrintColours.FAIL}--pyreg can only have 2 args... search pattern and option{PrintColours.END}', file=sys.stderr)
+        print(f'{colours["fail"]}--pyreg can only have 2 args... search pattern and option{colours["end"]}', file=sys.stderr)
         exit(1)
 
     if aStart and len(aStart) > 2:
-        print(f'{PrintColours.FAIL}--start has too many arguments, character or word followed by occurent number{PrintColours.END}', file=sys.stderr)
+        print(f'{colours["fail"]}--start has too many arguments, character or word followed by occurent number{colours["end"]}', file=sys.stderr)
         exit(1)
 
 # Lower start seach is case insensitive
@@ -92,7 +92,7 @@ def lower_search(file_list: tuple)-> list:
         try:
             iter_start = int(args.start[1])
         except ValueError:
-            print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}', file=sys.stderr)
+            print(f'{colours["fail"]}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
             exit(1)
 
     # Sense check args.end and ensure 2nd arg is an int
@@ -102,7 +102,7 @@ def lower_search(file_list: tuple)-> list:
             if args.start[0] == args.end[0]:
                 iter_end += 1
         except ValueError:
-            print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}', file=sys.stderr)
+            print(f'{colours["fail"]}ValueError: -e / --end only accepts number values{colours["end"]}', file=sys.stderr)
             exit(1)
     start_end: list= []
     # variables from the optional argument of excluding one character
@@ -148,7 +148,7 @@ def normal_search(file_list: tuple)-> list:
         try:
             iter_start = int(args.start[1])
         except ValueError:
-            print(f'{PrintColours.FAIL}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{PrintColours.END}', file=sys.stderr)
+            print(f'{colours["fail"]}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
             exit(1)
 
     # Sense check args.end and ensure 2nd arg is an int
@@ -158,7 +158,7 @@ def normal_search(file_list: tuple)-> list:
             if args.start[0] == args.end[0]:
                 iter_end += 1
         except ValueError:
-            print(f'{PrintColours.FAIL}ValueError: -e / --end only accepts number values{PrintColours.END}', file=sys.stderr)
+            print(f'{colours["fail"]}ValueError: -e / --end only accepts number values{colours["end"]}', file=sys.stderr)
             exit(1)
     start_end: list= []
     # variables from the optional argument of excluding one character
@@ -198,7 +198,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
         try:
             pos_val = int(args.pyreg[1])
         except ValueError:
-            print(f'{PrintColours.FAIL}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{PrintColours.END}', file=sys.stderr)
+            print(f'{colours["fail"]}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
             exit(1)
     pyreg_last_list: list= []
     for line in func_search:
@@ -229,7 +229,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                         if args.pyreg[1] == 'all'  or type(pos_val) == int:
                             pass
                         else:
-                            print(f'{PrintColours.FAIL}only string allowed to be used with pyreg is "all", check args{PrintColours.END}', file=sys.stderr)
+                            print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args{colours["end"]}', file=sys.stderr)
                             exit(1)
         elif pygen_length == 1: # defaults to first reg_match in line
             if reg_match:
