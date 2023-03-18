@@ -231,7 +231,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                         else:
                             print(f'{PrintColours.FAIL}only string allowed to be used with pyreg is "all", check args{PrintColours.END}')
                             exit(1)
-        elif pygen_length: # defaults to first reg_match in line
+        elif pygen_length == 1: # defaults to first reg_match in line
             if reg_match:
                 pyreg_last_list.append(line)
     return pyreg_last_list
