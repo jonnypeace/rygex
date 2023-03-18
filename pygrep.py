@@ -253,7 +253,7 @@ def line_func(start_end: list)-> tuple[list, bool]:
                     start_end_line.append(start_end[-rev_count])
             elif line_num_split[1] == '$':
                 line_count = len(start_end) - int(line_num_split[0]) + 2
-                for rev_count in range(int(line_count), 0, -1):
+                for rev_count in range(line_count, 0, -1):
                     start_end_line.append(start_end[-rev_count])
         else:
             high_num = max(int(line_num_split[0]),int(line_num_split[1]))
@@ -354,7 +354,6 @@ if __name__ == '__main__':
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
-            my_file.close
     elif not sys.stdin.isatty(): # for using piped std input. 
             file_list = tuple(sys.stdin.read().splitlines())
 ######## 
