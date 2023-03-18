@@ -56,11 +56,6 @@ import argparse
 import re
 import sys
 
-# colour dictionary for outputing error message to screen
-colours = {'fail': '\033[91m',
-           'end': '\033[0m'
-           }
-
 # sense checking commandline input.
 def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[], aTty: bool=False):
 # if not stdin or file, error
@@ -333,6 +328,8 @@ if __name__ == '__main__':
 
     # our variables args parses the function (argparse)
     args = pk.parse_args()
+    # colour dictionary for outputing error message to screen
+    colours = {'fail': '\033[91m', 'end': '\033[0m'}
     sense_check(aStart=args.start, aEnd=args.end, aPyreg=args.pyreg, aFile=args.file, aTty=sys.stdin.isatty())
     if args.file:
         with open(args.file, 'r') as my_file:
