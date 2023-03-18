@@ -62,22 +62,22 @@ class PrintColours:
     END = '\033[0m'
 
 # sense checking commandline input.
-def sense_check():
+def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[], aTty: bool=False):
 # if not stdin or file, error
-    if not args.file and sys.stdin.isatty():
+    if not aFile and aTty:
         print(f"{PrintColours.FAIL}Requires stdin from somewhere, either from --file or pipe{PrintColours.END}")
         exit(1)
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
-    if not args.start and not args.pyreg:
+    if not aStart and not aPyreg:
         print(f'{PrintColours.FAIL}This programme requires the --start or --pyreg flag to work properly{PrintColours.END}')
         exit(1)
 
-    if args.pyreg and len(args.pyreg) > 2:
+    if aPyreg and len(aPyreg) > 2:
         print(f'{PrintColours.FAIL}--pyreg can only have 2 args... search pattern and option{PrintColours.END}')
         exit(1)
 
-    if args.start and len(args.start) > 2:
+    if aStart and len(aStart) > 2:
         print(f'{PrintColours.FAIL}--start has too many arguments, character or word followed by occurent number{PrintColours.END}')
         exit(1)
 
@@ -231,7 +231,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                         else:
                             print(f'{PrintColours.FAIL}only string allowed to be used with pyreg is "all", check args{PrintColours.END}')
                             exit(1)
-        elif pygen_length == 1: # defaults to first reg_match in line
+        elif pygen_length: # defaults to first reg_match in line
             if reg_match:
                 pyreg_last_list.append(line)
     return pyreg_last_list
@@ -350,7 +350,7 @@ if __name__ == '__main__':
 
     # our variables args parses the function (argparse)
     args = pk.parse_args()
-    sense_check()
+    sense_check(aStart=args.start, aEnd=args.end, aPyreg=args.pyreg, aFile=args.file, aTty=sys.stdin.isatty())
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
