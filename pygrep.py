@@ -232,7 +232,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
-def line_func(start_end: list)-> tuple[list, bool]:
+def line_func(start_end: list)-> tuple:
     # args for args.line
     start_end_line = []
     line_num_split = []
