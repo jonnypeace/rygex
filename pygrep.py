@@ -108,22 +108,22 @@ def lower_search(file_list: tuple)-> list:
             lower_end = args.end[0].casefold()
         if lower_str in lower_line:
             try:
-                new_str = str(line)
+                new_str = line
                 # Start Arg position and initial string creation.
                 if args.start[1] != 'all':
                     init_start = lower_line.index(lower_str)
-                    new_str = str(line)[init_start:]
+                    new_str = line[init_start:]
                     new_index = new_str.casefold().index(lower_str)
                     for occur_end in range(iter_start -1):
                         new_index = new_str.casefold().index(lower_str, new_index + 1)
-                    new_str = str(new_str)[new_index:]
+                    new_str = new_str[new_index:]
                 # End Arg positions and final string creation
                 if args.end:
                     new_index = new_str.casefold().index(lower_end)
                     length_end = len(args.end[0])
                     for occur_end in range(iter_end -1):
                         new_index = new_str.casefold().index(lower_end, new_index + 1)
-                    new_str = str(new_str)[:new_index + length_end]
+                    new_str = new_str[:new_index + length_end]
                 start_end.append(new_str)
                 '''ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
                 ValueError will probably occur also if you want an instance number from the start search, which does not exist,
@@ -160,22 +160,23 @@ def normal_search(file_list: tuple)-> list:
     for line in file_list:
         if args.start[0] in line:
             try:
-                new_str = str(line)
+                new_str = line
                 # Start Arg position and initial string creation.
                 if args.start[1] != 'all':
-                    init_start = str(line).index(args.start[0])
-                    new_str = str(line)[init_start:]
+                    init_start = line.index(args.start[0])
+                    #init_start = str(line).index(args.start[0])
+                    new_str = line[init_start:]
                     new_index = new_str.index(args.start[0])
                     for occur_end in range(iter_start -1):
                         new_index = new_str.index(args.start[0], new_index + 1)
-                    new_str = str(new_str)[new_index:]
+                    new_str = new_str[new_index:]
                 # End Arg positions and final string creation
                 if args.end:
                     new_index = new_str.index(args.end[0])
                     length_end = len(args.end[0])
                     for _ in range(iter_end -1):
                         new_index = new_str.index(args.end[0], new_index + 1)
-                    new_str = str(new_str)[:new_index + length_end]
+                    new_str = new_str[:new_index + length_end]
                 start_end.append(new_str)
                 '''
                 ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
