@@ -7,6 +7,12 @@ Well, I think tools like grep, sed and awk, tail, head are amazing, but thought 
 
 This will be under development as i think of new things to add, and optimize the code.
 
+## Info
+
+Tested on Python 3.10.6 for the most part on Ubuntu22.04, very little testing has taken place on other versions.
+
+After seeking some feedback on pygrep, the use of pygrep does not scale well when larger stacks are searched, and I believe it's mostly due to pythons regex engine. Better tools for the job would be grep or ripgrep, so I would use the right tool for the right job :)
+
 ## Basic Rules
 
 * Required args are at least --start or --pyreg otherwise the programme won't do anything
