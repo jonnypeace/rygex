@@ -326,6 +326,16 @@ if __name__ == '__main__':
             nargs=1,
             required=False)
 
+    pk.add_argument('-so', '--sort',
+            help='This is just a flag for sorting no args required, just flag',
+            action='store_true',
+            required=False)
+    
+    pk.add_argument('-un', '--unique',
+        help='This is just a flag for unique matches no args required, just flag',
+        action='store_true',
+        required=False)
+
     # our variables args parses the function (argparse)
     args = pk.parse_args()
     # colour dictionary for outputing error message to screen
@@ -347,12 +357,20 @@ if __name__ == '__main__':
             first_search = lower_search(file_list)
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
+        if args.unique:
+            first_search = list({ line for line in first_search })
+        if args.sort:
+            first_search.sort()
         for i in first_search:
             print(i[checkFirst:checkLast])
         exit(0)
 ########
     # start end omits lines
     if args.start and args.lines and not args.pyreg:
+        if args.unique:
+            first_search = list({ line for line in first_search })
+        if args.sort:
+            first_search.sort()
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True:
             for i in second_search:
@@ -369,6 +387,10 @@ if __name__ == '__main__':
             pass
         # regex search
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
+        if args.unique:
+            second_search = list({ line for line in second_search })
+        if args.sort:
+            second_search.sort()
         # final line filter search
         third_search, line_range = line_func(start_end=second_search)
         if line_range == True: # multiline
@@ -386,6 +408,10 @@ if __name__ == '__main__':
             pass
         # regex search
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
+        if args.unique:
+            second_search = list({ line for line in second_search })
+        if args.sort:
+            second_search.sort()
         # final print loop
         for i in second_search:
             print(i[checkFirst:checkLast])
@@ -399,6 +425,10 @@ if __name__ == '__main__':
             pass
         # initial regex search
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
+        if args.unique:
+            first_search = list({ line for line in first_search })
+        if args.sort:
+            first_search.sort()
         # final loop
         for i in first_search:
             print(i[checkFirst:checkLast])
@@ -413,6 +443,10 @@ if __name__ == '__main__':
         # initial regex search
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         # final search
+        if args.unique:
+            first_search = list({ line for line in first_search })
+        if args.sort:
+            first_search.sort()
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True: # multiline
             for i in second_search:
