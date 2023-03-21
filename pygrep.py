@@ -207,7 +207,6 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
         if pygen_length == 2:
             if reg_match:
                 if args.pyreg[1] == 'all':
-                    print('all')
                     pyreg_last_list.append(reg_match)
                 else:
                     try:
