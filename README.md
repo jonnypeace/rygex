@@ -31,9 +31,9 @@ Basic string searches using -s | --start and -e | --end
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
 * -of | --omitfirst is optional for deleting the first characters of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. ``` ./pygrep.py --start cron 1 -of =start -f /var/log/syslog ``` (=start will remove the characters in --start from the output, otherwise use an integar for the number of characters) 
 * -ol | --omitlast is optional and same use as --omitfirst. Special keyword instead of =start, is =end. =end will remove all chatacters in --end from output, otherwise use an integar for the number of characters.
-* -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5', last line '$', line 5 to end '5-$'
 * -un | --unique is optional, and will output unique entries only. Will be unordered output.
 * -so | --sort is optional, and will output in sorted order.. no reverse order currently available... will be planned in.
+* -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5', last line '$', line 5 to end '5-$'
 ```
 ./pygrep.py --start string -l '$' -f filename # last line
 ./pygrep.py --start string -l '1-5' -f filename # first 5 lines
