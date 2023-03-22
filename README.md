@@ -71,9 +71,9 @@ https://docs.python.org/3/library/re.html
  ./pygrep.py -s CRON 1 -e \) 2 -f /var/log/syslog                               ## Output: CRON[108490]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
  ./pygrep.py -s jonny 2 -f /etc/passwd                                          ## output: jonny:/bin/bash
 
- without -ol -of (only works with --start, not --pyreg)
+ without -ol -of (only works with --start & --end, not --pyreg)
  ./pygrep.py -s \( 1 -e \) 1 -f testfile                                        ## output: (2nd line, 1st bracket)
- with -ol -of (only works with --start, not --pyreg)
+ with -ol -of (only works with --start & --end, not --pyreg)
  ./pygrep.py -s \( 1 -e \) 1 -ol 1 -of 1 -f testfile                            ## output: 2nd line, 1st bracket
  ./pygrep.py -s 'SRC=' 1 -e 'DST=' 1 -of =start -ol =end -f /var/log/ufw.log    ## output: 123.123.123.123 (ip address from ufw.log between SRC= and DST=)
 
