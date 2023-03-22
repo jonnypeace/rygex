@@ -76,6 +76,14 @@ def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[],
         print(f'{colours["fail"]}--start has too many arguments, character or word followed by occurent number{colours["end"]}', file=sys.stderr)
         exit(1)
 
+    if args.omitfirst != 'False' and not args.start:
+        print(f'{colours["fail"]}error, --omitfirst without --start{colours["end"]}', file=sys.stderr)
+        exit(1)
+
+    if args.omitlast != 'False' and not args.end:
+        print(f'{colours["fail"]}error, --omitlast without --end{colours["end"]}', file=sys.stderr)
+        exit(1)
+
 # Lower start seach is case insensitive
 def lower_search(file_list: tuple)-> list:
     # If positional number value not set, default to all.
@@ -266,10 +274,18 @@ def line_func(start_end: list)-> tuple:
 
 # Checking whether the first or last characters will be omitted.
 def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='')-> tuple:
-    if aOmitFirst == 'exc':
-        first = 1
-    if aOmitLast == 'exc':
-        last = -1
+    if aOmitFirst:
+        try:
+            first = int(aOmitFirst)
+        except ValueError:
+            if aOmitFirst == '=start':
+                first = len(args.start[0])
+    if aOmitLast:
+        try:
+            last = - int(aOmitLast)
+        except ValueError:
+            if aOmitLast == '=end':
+                last = - len(args.end[0])
     return first, last
 
 #Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
@@ -301,15 +317,17 @@ if __name__ == '__main__':
             required=False)
 
     pk.add_argument('-of', '--omitfirst',
-            help='optional argument for exc. This will exclude 1 character at the start of string. Right now only works in start and end args',
-            action='store_const',
-            const='exc',
+            help='optional argument for --start. [int|=start] - Removes characters from --start (left) side of ouput',
+            type=str,
+            nargs=1,
+            default='False',
             required=False)
 
     pk.add_argument('-ol', '--omitlast',
-            help='optional argument for exc. This will exclude 1 character at the end of string. Right now only works in start and end args',
-            action='store_const',
-            const='exc',
+            help='optional argument for --end. [int|=end] - Removes characters from --end (right) side of ouput',
+            type=str,
+            nargs=1,
+            default='False',
             required=False)
 
     pk.add_argument('-p', '--pyreg',
@@ -348,7 +366,7 @@ if __name__ == '__main__':
             file_list = tuple(sys.stdin.read().splitlines())
 ######## 
     # Initial case-insensitivity check
-    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst, aOmitLast=args.omitlast)
+    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst[0], aOmitLast=args.omitlast[0])
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:

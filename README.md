@@ -20,6 +20,8 @@ After seeking some feedback on pygrep, the use of pygrep does not scale well whe
 * When using --start with --pyreg, the --start function runs first, and then further filtering takes place using --pyreg.
 * --start and --end takes place before --pyreg when used with --pyreg.
 * --pyreg doesn't use --end
+* --omitlast requires --end
+* --omitfirst requires --start
 
 ## String Searches
 Basic string searches using -s | --start and -e | --end
@@ -27,9 +29,11 @@ Basic string searches using -s | --start and -e | --end
 ```./pygrep.py --start string 2 -f filename ```
 * -e | --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
-* -of | --omitfirst is optional for deleting the first character of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. No further args required.
-* -ol | --omitlast is optional and same as --omitfirst.
+* -of | --omitfirst is optional for deleting the first characters of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. ``` ./pygrep.py --start cron 1 -of =start -f /var/log/syslog ``` (=start will remove the characters in --start from the output, otherwise use an integar for the number of characters) 
+* -ol | --omitlast is optional and same use as --omitfirst. Special keyword instead of =start, is =end. =end will remove all chatacters in --end from output, otherwise use an integar for the number of characters.
 * -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5', last line '$', line 5 to end '5-$'
+* -un | --unique is optional, and will output unique entries only. Will be unordered output.
+* -so | --sort is optional, and will output in sorted order.. no reverse order currently available... will be planned in.
 ```
 ./pygrep.py --start string -l '$' -f filename # last line
 ./pygrep.py --start string -l '1-5' -f filename # first 5 lines
@@ -58,19 +62,20 @@ https://docs.python.org/3/library/re.html
 
  Run script with...
  ```bash
-./pygrep.py -s [keyword/character [position]] [-p regex [position|all]] [-e keyword/character position] [-i] [-l int|$|$-int|int-int] [-of] [-ol] [-f /path/to/file]
+./pygrep.py -s [keyword/character [position]] [-p regex [position|all]] [-e keyword/character position] [-i] [-l int|$|$-int|int-int] [-of int|=start] [-ol int|=end] [--unique] [--sort] [-f /path/to/file]
 
  -s can be run with position being equal to all, to capture the start of the line, this is default if no position provided
  
- ./pygrep.py -s root all -f /etc/passwd                 ## output: root:x:0:0::/root:/bin/bash
- ./pygrep.py -s root 1 -e \: 4 -f /etc/passwd           ## output: root:x:0:0:
- ./pygrep.py -s CRON 1 -e \) 2 -f /var/log/syslog       ## Output: CRON[108490]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
- ./pygrep.py -s jonny 2 -f /etc/passwd                  ## output: jonny:/bin/bash
+ ./pygrep.py -s root all -f /etc/passwd                                         ## output: root:x:0:0::/root:/bin/bash
+ ./pygrep.py -s root 1 -e \: 4 -f /etc/passwd                                   ## output: root:x:0:0:
+ ./pygrep.py -s CRON 1 -e \) 2 -f /var/log/syslog                               ## Output: CRON[108490]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
+ ./pygrep.py -s jonny 2 -f /etc/passwd                                          ## output: jonny:/bin/bash
 
  without -ol -of (only works with --start, not --pyreg)
- ./pygrep.py -s \( 1 -e \) 1 -f testfile                ## output: (2nd line, 1st bracket)
+ ./pygrep.py -s \( 1 -e \) 1 -f testfile                                        ## output: (2nd line, 1st bracket)
  with -ol -of (only works with --start, not --pyreg)
- ./pygrep.py -s \( 1 -e \) 1 -ol -of -f testfile             ## output: 2nd line, 1st bracket
+ ./pygrep.py -s \( 1 -e \) 1 -ol 1 -of 1 -f testfile                            ## output: 2nd line, 1st bracket
+ ./pygrep.py -s 'SRC=' 1 -e 'DST=' 1 -of =start -ol =end -f /var/log/ufw.log    ## output: 123.123.123.123 (ip address from ufw.log between SRC= and DST=)
 
 -p or --pyreg | I recommend consulting the python documentation for python regex using re.
  
