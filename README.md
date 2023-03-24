@@ -96,4 +96,7 @@ with --lines (-l) Note: $ is an end of line character. Enclose in single quotes 
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -i -l '$' -f ufw.test => last line
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -i -l '1-4' -f ufw.test => lines 1-4
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -i -l 1 -f ufw.test => first line
+
+Still testing --counts with --pyreg. Once proven working, will be integrated with --start
+./pygrep.py -p 'SRC=([\d\.]+)\s+DST' 1 -c -f /var/log/ufw.log
 ```
