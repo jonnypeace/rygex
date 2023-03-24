@@ -288,6 +288,12 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='')-> t
                 last = - len(args.end[0])
     return first, last
 
+'''def counters(count_list: list()):
+    dict_count = dict()
+    for value in count_list:
+        dict_count[value] += 1
+    return dict_count'''
+
 #Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
 if __name__ == '__main__':
     # Setting arg parser args
@@ -344,12 +350,17 @@ if __name__ == '__main__':
             nargs=1,
             required=False)
 
-    pk.add_argument('-so', '--sort',
+    pk.add_argument('-S', '--sort',
             help='This is just a flag for sorting no args required, just flag',
             action='store_true',
             required=False)
     
-    pk.add_argument('-un', '--unique',
+    pk.add_argument('-u', '--unique',
+        help='This is just a flag for unique matches no args required, just flag',
+        action='store_true',
+        required=False)
+
+    pk.add_argument('-c', '--counts',
         help='This is just a flag for unique matches no args required, just flag',
         action='store_true',
         required=False)
@@ -447,6 +458,12 @@ if __name__ == '__main__':
             first_search = list({ line for line in first_search })
         if args.sort:
             first_search.sort()
+        if args.counts:
+            from collections import Counter
+            test = Counter(first_search)
+            for key in test:
+                print(f'{key}\tFound = {test[key]}')
+            exit(0)
         # final loop
         for i in first_search:
             print(i[checkFirst:checkLast])
