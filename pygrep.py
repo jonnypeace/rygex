@@ -288,12 +288,6 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='')-> t
                 last = - len(args.end[0])
     return first, last
 
-'''def counters(count_list: list()):
-    dict_count = dict()
-    for value in count_list:
-        dict_count[value] += 1
-    return dict_count'''
-
 #Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
 if __name__ == '__main__':
     # Setting arg parser args
@@ -458,11 +452,11 @@ if __name__ == '__main__':
             first_search = list({ line for line in first_search })
         if args.sort:
             first_search.sort()
-        if args.counts:
+        if args.counts: # might require some fine tuning
             from collections import Counter
-            test = Counter(first_search)
-            for key in test:
-                print(f'{key}\tFound = {test[key]}')
+            count_test = Counter(first_search)
+            for key in count_test:
+                print(f'{key}\tFound = {count_test[key]}')
             exit(0)
         # final loop
         for i in first_search:
