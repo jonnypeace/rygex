@@ -40,8 +40,8 @@ Examples
 
  without -o
  ./pygrep.py -s \( 1 -e \) 1 -f testfile                ## output: (2nd line, 1st bracket)
- with -o
- ./pygrep.py -s \( 1 -e \) 1 -o -f testfile             ## output: 2nd line, 1st bracket
+ with -of -ol
+ ./pygrep.py -s \( 1 -e \) 1 -of -ol -f testfile             ## output: 2nd line, 1st bracket
 
 -p or --pyreg | I recommend consulting the python documentation for python regex using re.
  with -s & -p
@@ -75,13 +75,17 @@ def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[],
     if aStart and len(aStart) > 2:
         print(f'{colours["fail"]}--start has too many arguments, character or word followed by occurent number{colours["end"]}', file=sys.stderr)
         exit(1)
-
-    if args.omitfirst != 'False' and not args.start:
+    
+    if args.omitfirst == None and args.start == None:
         print(f'{colours["fail"]}error, --omitfirst without --start{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if args.omitlast != 'False' and not args.end:
+    if args.omitlast == None and args.end == None:
         print(f'{colours["fail"]}error, --omitlast without --end{colours["end"]}', file=sys.stderr)
+        exit(1)
+
+    if args.omitall != 'False' and (args.omitfirst != 'False' or args.omitlast != 'False'):
+        print(f'{colours["fail"]}error, --omitfirst or --omitlast cant be used with --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
 # Lower start seach is case insensitive
@@ -273,19 +277,37 @@ def line_func(start_end: list)-> tuple:
     return start_end_line, line_range
 
 # Checking whether the first or last characters will be omitted.
-def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='')-> tuple:
-    if aOmitFirst:
+def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOmitAll: str='')-> tuple:
+    if aOmitAll is None:
+        first = len(args.start[0])
+        last = - len(args.end[0])
+        return first, last
+    if isinstance(aOmitAll, str) and aOmitAll != 'False':
+        try:
+            first = int(aOmitAll)
+            last = - int(aOmitAll)
+            return first, last
+        except (ValueError):
+            print(f'{colours["fail"]}error, Incorrect arg with --omitall{colours["end"]}', file=sys.stderr)
+            exit(1)
+
+    if aOmitFirst is None:
+        first = len(args.start[0])
+    elif isinstance(aOmitFirst, str) and aOmitFirst != 'False':
         try:
             first = int(aOmitFirst)
         except ValueError:
-            if aOmitFirst == '=start':
-                first = len(args.start[0])
-    if aOmitLast:
+            print(f'{colours["fail"]}error, Incorrect arg with --omitfirst{colours["end"]}', file=sys.stderr)
+            exit(1)
+
+    if aOmitLast is None:
+        last = - len(args.end[0])
+    elif isinstance(aOmitLast, str) and aOmitLast != 'False':
         try:
             last = - int(aOmitLast)
         except ValueError:
-            if aOmitLast == '=end':
-                last = - len(args.end[0])
+            print(f'{colours["fail"]}error, Incorrect arg with --omitlast{colours["end"]}', file=sys.stderr)
+            exit(1)
     return first, last
 
 #Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
@@ -319,14 +341,21 @@ if __name__ == '__main__':
     pk.add_argument('-of', '--omitfirst',
             help='optional argument for --start. [int|=start] - Removes characters from --start (left) side of ouput',
             type=str,
-            nargs=1,
+            nargs='?',
             default='False',
             required=False)
 
     pk.add_argument('-ol', '--omitlast',
             help='optional argument for --end. [int|=end] - Removes characters from --end (right) side of ouput',
             type=str,
-            nargs=1,
+            nargs='?',
+            default='False',
+            required=False)
+    
+    pk.add_argument('-O', '--omitall',
+            help='optional argument for --start & --end. [int|=end] - Removes characters from --start & --end of ouput',
+            type=str,
+            nargs='?',
             default='False',
             required=False)
 
@@ -371,7 +400,7 @@ if __name__ == '__main__':
             file_list = tuple(sys.stdin.read().splitlines())
 ######## 
     # Initial case-insensitivity check
-    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst[0], aOmitLast=args.omitlast[0])
+    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst, aOmitLast=args.omitlast, aOmitAll=args.omitall)
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
