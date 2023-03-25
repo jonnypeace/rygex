@@ -407,6 +407,12 @@ if __name__ == '__main__':
             first_search = normal_search(file_list)
         else:               
             first_search = lower_search(file_list)
+        if args.counts: # might require some fine tuning
+            from collections import Counter
+            count_test = Counter(first_search)
+            for key in count_test:
+                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+            exit(0)
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
         if args.unique:
