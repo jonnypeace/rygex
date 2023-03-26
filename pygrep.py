@@ -88,6 +88,10 @@ def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[],
         print(f'{colours["fail"]}error, --omitfirst or --omitlast cant be used with --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
+    if not args.start and args.pyreg and (args.omitall or args.omitfirst or args.omitlast):
+        print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
+        exit(1)
+
 # Lower start seach is case insensitive
 def lower_search(file_list: tuple)-> list:
     # If positional number value not set, default to all.
@@ -415,7 +419,8 @@ if __name__ == '__main__':
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
         if args.unique:
-            first_search = list({ line for line in first_search })
+            unique_list = []
+            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         for i in first_search:
@@ -425,7 +430,8 @@ if __name__ == '__main__':
     # start end omits lines
     if args.start and args.lines and not args.pyreg:
         if args.unique:
-            first_search = list({ line for line in first_search })
+            unique_list = []
+            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         second_search, line_range = line_func(start_end=first_search)
@@ -445,7 +451,8 @@ if __name__ == '__main__':
         # regex search
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         if args.unique:
-            second_search = list({ line for line in second_search })
+            unique_list = []
+            second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
         # final line filter search
@@ -466,7 +473,8 @@ if __name__ == '__main__':
         # regex search
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         if args.unique:
-            second_search = list({ line for line in second_search })
+            unique_list = []
+            second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
         # final print loop
@@ -483,14 +491,15 @@ if __name__ == '__main__':
         # initial regex search
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         if args.unique:
-            first_search = list({ line for line in first_search })
+            unique_list = []
+            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts: # might require some fine tuning
             from collections import Counter
             count_test = Counter(first_search)
             for key in count_test:
-                print(f'{key}\tFound = {count_test[key]}')
+                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
             exit(0)
         # final loop
         for i in first_search:
@@ -507,7 +516,8 @@ if __name__ == '__main__':
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         # final search
         if args.unique:
-            first_search = list({ line for line in first_search })
+            unique_list = []
+            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         second_search, line_range = line_func(start_end=first_search)
