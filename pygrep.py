@@ -216,8 +216,8 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
     for line in func_search:        
         pygen_length = len(args.pyreg)
         reg_match = test_re.findall(line)
-        if pygen_length == 2:
-            if reg_match:
+        if reg_match:
+            if pygen_length == 2:
                 if args.pyreg[1] == 'all':
                     pyreg_last_list.append(reg_match)
                 else:
@@ -238,8 +238,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                         else:
                             print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args{colours["end"]}', file=sys.stderr)
                             exit(1)
-        elif pygen_length == 1: # defaults to first reg_match in line
-            if reg_match:
+            elif pygen_length == 1: # defaults to first reg_match in line
                 pyreg_last_list.append(line)
     return pyreg_last_list
 
