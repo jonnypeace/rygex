@@ -23,11 +23,15 @@ OPTIONS
 =======
 -s  | --start       can be used standlone (without --pyreg) or with --pyreg. [keyword/character [position]]
 -e  | --end         is optional. Provides an end to the line you are searching for. [keyword/character position]
--of | --omitfirst   is optional for deleting the first character of your match. No further args required. Only works with --start
--ol | --omitlast    is optional and same as --omitfirst. Only works with --start
+-of | --omitfirst   is optional for deleting the first characters of your match. Only works with --start
+-ol | --omitlast    is optional and same as --omitfirst. Only works with --end
 -l  | --lines       is optional and to save piping using tail, head or sed. [int|$|$-int|int-int|int-$]
 -p  | --pyreg       can be used standlone (without --start) or with --start. [regex [position|all]]
 -i  | --insensitive When used, case insensitive search is used. No args required.
+-O  | --omitall     Optional, combination of -ol and -of
+-u  | --unique      Optional, filters out lines which are the same, no further args necessary
+-S  | --sort        Optional, currently sorts, but no reverse option supported yet, no further args necessary.
+-c  | --counts      Optional, counts the number of lines which are the same, no further args necessary. Created unique output.
 -f  | --file        /path/to/file.
 
 Examples
@@ -38,10 +42,10 @@ Examples
  ./pygrep.py -s CRON 1 -e \) 2 -f /var/log/syslog       ## Output: CRON[108490]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
  ./pygrep.py -s jonny 2 -f /etc/passwd                  ## output: jonny:/bin/bash
 
- without -o
+ without -of -ol -O
  ./pygrep.py -s \( 1 -e \) 1 -f testfile                ## output: (2nd line, 1st bracket)
  with -of -ol
- ./pygrep.py -s \( 1 -e \) 1 -of -ol -f testfile             ## output: 2nd line, 1st bracket
+ ./pygrep.py -s \( 1 -e \) 1 -of -ol -f testfile        ## output:  2nd line, 1st bracket
 
 -p or --pyreg | I recommend consulting the python documentation for python regex using re.
  with -s & -p
@@ -333,8 +337,11 @@ def line_func(start_end: list)-> tuple:
 # Checking whether the first or last characters will be omitted.
 def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOmitAll: str='')-> tuple:
     if aOmitAll is None:
-        first = len(args.start[0])
-        last = - len(args.end[0])
+        try:
+            first = len(args.start[0])
+            last = - len(args.end[0])
+        except TypeError:
+            pass
         return first, last
     if aOmitAll != 'False':
         try:
@@ -465,7 +472,7 @@ if __name__ == '__main__':
             from collections import Counter
             count_test = Counter(first_search)
             for key in count_test:
-                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+                print(f'{key[checkFirst:checkLast]}\tLine-Counts = {count_test[key]}')
             exit(0)
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
@@ -475,6 +482,7 @@ if __name__ == '__main__':
         if args.sort:
             first_search.sort()
         for i in first_search:
+            #print(i.replace(args.start[0], '')) Keeping as a possible solution to issue #2
             print(i[checkFirst:checkLast])
         exit(0)
 ########
@@ -491,10 +499,10 @@ if __name__ == '__main__':
             second_search, line_range = line_func(start_end=count_test)
             if line_range == True:
                 for key in reversed(second_search):
-                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {second_search[key]}')
             else:
                 for key in second_search:
-                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {second_search[key]}')
             exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True:
@@ -523,10 +531,10 @@ if __name__ == '__main__':
             third_search, line_range = line_func(start_end=count_test)
             if line_range == True:
                 for key in reversed(third_search):
-                    print(f'{key[checkFirst:checkLast]}\tFound = {third_search[key]}')
+                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {third_search[key]}')
             else:
                 for key in third_search:
-                    print(f'{key[checkFirst:checkLast]}\tFound = {third_search[key]}')
+                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {third_search[key]}')
             exit(0)
         # final line filter search
         third_search, line_range = line_func(start_end=second_search)
@@ -554,7 +562,7 @@ if __name__ == '__main__':
             from collections import Counter
             count_test = Counter(second_search)
             for key in count_test:
-                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+                print(f'{key[checkFirst:checkLast]}\tLine-Counts = {count_test[key]}')
             exit(0)
         # final print loop
         for i in second_search:
@@ -578,11 +586,11 @@ if __name__ == '__main__':
             from collections import Counter
             count_test = Counter(first_search)
             for key in count_test:
-                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+                print(f'{key}\tLine-Counts = {count_test[key]}')
             exit(0)
         # final loop
         for i in first_search:
-            print(i[checkFirst:checkLast])
+            print(i)
         exit(0)
 ########
     # pyreg lines
@@ -605,16 +613,16 @@ if __name__ == '__main__':
             second_search, line_range = line_func(start_end=count_test)
             if line_range == True:
                 for key in reversed(second_search):
-                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+                    print(f'{key}\tLine-Counts = {second_search[key]}')
             else:
                 for key in second_search:
-                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+                    print(f'{key}\tLine-Counts = {second_search[key]}')
             exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True: # multiline
             for i in second_search:
-                print(i[checkFirst:checkLast])
+                print(i)
         else: # one line only
-            print(second_search[checkFirst:checkLast])
+            print(second_search)
         exit(0)
 ########
