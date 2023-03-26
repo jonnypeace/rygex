@@ -252,8 +252,59 @@ def line_func(start_end: list)-> tuple:
     start_end_line = []
     line_num_split = []
     line_num = args.lines[0]
+
+    # Conditional for lines using the counts arg
+    if isinstance(start_end, dict):
+        start_end_line = dict()
+        if '-' in line_num:
+            line_range = True
+            line_num_split = line_num.split('-')
+            if '$' in line_num:
+                if line_num_split[0] == '$':
+                    for num, key in enumerate(reversed(start_end), 1):
+                        start_end_line[key] = start_end[key]
+                        if num >= int(line_num_split[1]):
+                            return start_end_line, line_range ##########################################
+                elif line_num_split[1] == '$':
+                    line_count = len(start_end) - int(line_num_split[0]) + 1
+                    for num, key in enumerate(reversed(start_end), 1):
+                        start_end_line[key] = start_end[key]
+                        if num >= line_count:
+                            return start_end_line, line_range ##########################################
+            else:
+                line_count = len(start_end) + 1
+                low_num = line_count - max(int(line_num_split[0]),int(line_num_split[1]))
+                high_num = line_count - min(int(line_num_split[0]),int(line_num_split[1]))
+                if line_count <= max(int(line_num_split[0]),int(line_num_split[1])):
+                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing file number{colours["end"]}', file=sys.stderr)
+                    exit(1)
+                
+                for num, key in enumerate(reversed(start_end), 1):
+                    if num >= low_num:
+                        start_end_line[key] = start_end[key]
+                    if num >= high_num:
+                        return start_end_line, line_range ##########################################
+        else: # no range
+            # if last line
+            line_range = False
+            if line_num == '$':
+                line_count = len(start_end)
+                for key in reversed(start_end):
+                    start_end_line[key] = start_end[key]
+                    return start_end_line, line_range
+            else: # specific line
+                line_num = int(line_num)
+                line_count = len(start_end) + 1
+                if line_count <= line_num:
+                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing file number{colours["end"]}', file=sys.stderr)
+                    exit(1)
+                for num, key in enumerate(start_end, 1):
+                    if num == line_num:
+                        start_end_line[key] = start_end[key]
+                        return start_end_line, line_range
+##########
     
-    # if last line range
+    # For everything else but not including the counts arg.
     if '-' in line_num:
         line_range = True
         line_num_split = line_num.split('-')
@@ -387,7 +438,7 @@ if __name__ == '__main__':
         required=False)
 
     pk.add_argument('-c', '--counts',
-        help='This is just a flag for unique matches no args required, just flag',
+        help='This is just a flag for counting matches no args required, just flag',
         action='store_true',
         required=False)
 
@@ -410,7 +461,7 @@ if __name__ == '__main__':
             first_search = normal_search(file_list)
         else:               
             first_search = lower_search(file_list)
-        if args.counts: # might require some fine tuning
+        if args.counts and not args.lines and not args.pyreg: # might require some fine tuning
             from collections import Counter
             count_test = Counter(first_search)
             for key in count_test:
@@ -434,6 +485,17 @@ if __name__ == '__main__':
             first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
+        if args.counts:
+            from collections import Counter
+            count_test = Counter(first_search)
+            second_search, line_range = line_func(start_end=count_test)
+            if line_range == True:
+                for key in reversed(second_search):
+                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+            else:
+                for key in second_search:
+                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+            exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True:
             for i in second_search:
@@ -455,6 +517,17 @@ if __name__ == '__main__':
             second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
+        if args.counts:
+            from collections import Counter
+            count_test = Counter(second_search)
+            third_search, line_range = line_func(start_end=count_test)
+            if line_range == True:
+                for key in reversed(third_search):
+                    print(f'{key[checkFirst:checkLast]}\tFound = {third_search[key]}')
+            else:
+                for key in third_search:
+                    print(f'{key[checkFirst:checkLast]}\tFound = {third_search[key]}')
+            exit(0)
         # final line filter search
         third_search, line_range = line_func(start_end=second_search)
         if line_range == True: # multiline
@@ -477,6 +550,12 @@ if __name__ == '__main__':
             second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
+        if args.counts:
+            from collections import Counter
+            count_test = Counter(second_search)
+            for key in count_test:
+                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+            exit(0)
         # final print loop
         for i in second_search:
             print(i[checkFirst:checkLast])
@@ -520,6 +599,12 @@ if __name__ == '__main__':
             first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
+        if args.counts:
+            from collections import Counter
+            count_test = Counter(first_search)
+            for key in count_test:
+                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+            exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True: # multiline
             for i in second_search:
