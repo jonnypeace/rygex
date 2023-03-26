@@ -209,13 +209,13 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
             print(f'{colours["fail"]}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
             exit(1)
     pyreg_last_list: list= []
-    test_re = re.compile(args.pyreg[0])
+    if insense == True:
+        test_re = re.compile(args.pyreg[0], re.IGNORECASE)
+    else:
+        test_re = re.compile(args.pyreg[0])
     for line in func_search:        
         pygen_length = len(args.pyreg)
-        if insense == True:
-            reg_match = test_re.findall(rf'(?i){test_re}', line) # (?i) is for case insensitive
-        else:
-            reg_match = test_re.findall(rf'{test_re}', line)
+        reg_match = test_re.findall(line)
         if pygen_length == 2:
             if reg_match:
                 if args.pyreg[1] == 'all':
