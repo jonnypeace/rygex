@@ -281,7 +281,7 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOm
         first = len(args.start[0])
         last = - len(args.end[0])
         return first, last
-    if isinstance(aOmitAll, str) and aOmitAll != 'False':
+    if aOmitAll != 'False':
         try:
             first = int(aOmitAll)
             last = - int(aOmitAll)
@@ -292,7 +292,7 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOm
 
     if aOmitFirst is None:
         first = len(args.start[0])
-    elif isinstance(aOmitFirst, str) and aOmitFirst != 'False':
+    elif aOmitFirst != 'False':
         try:
             first = int(aOmitFirst)
         except ValueError:
@@ -301,7 +301,7 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOm
 
     if aOmitLast is None:
         last = - len(args.end[0])
-    elif isinstance(aOmitLast, str) and aOmitLast != 'False':
+    elif aOmitLast != 'False':
         try:
             last = - int(aOmitLast)
         except ValueError:
