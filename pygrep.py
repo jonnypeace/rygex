@@ -296,7 +296,7 @@ def line_func(start_end: list)-> tuple:
                 line_num = int(line_num)
                 line_count = len(start_end) + 1
                 if line_count <= line_num:
-                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing file number{colours["end"]}', file=sys.stderr)
+                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing line numbers{colours["end"]}', file=sys.stderr)
                     exit(1)
                 for num, key in enumerate(start_end, 1):
                     if num == line_num:
@@ -602,8 +602,13 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(first_search)
-            for key in count_test:
-                print(f'{key[checkFirst:checkLast]}\tFound = {count_test[key]}')
+            second_search, line_range = line_func(start_end=count_test)
+            if line_range == True:
+                for key in reversed(second_search):
+                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
+            else:
+                for key in second_search:
+                    print(f'{key[checkFirst:checkLast]}\tFound = {second_search[key]}')
             exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True: # multiline
