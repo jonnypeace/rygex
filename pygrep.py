@@ -88,7 +88,7 @@ def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[],
         print(f'{colours["fail"]}error, --omitfirst or --omitlast cant be used with --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if not args.start and args.pyreg and (args.omitall or args.omitfirst or args.omitlast):
+    if not args.start and args.pyreg and (args.omitall != 'False' or args.omitfirst != 'False' or args.omitlast !='False'):
         print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
