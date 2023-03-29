@@ -471,8 +471,9 @@ if __name__ == '__main__':
         if args.counts and not args.lines and not args.pyreg: # might require some fine tuning
             from collections import Counter
             count_test = Counter(first_search)
+            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
             for key in count_test:
-                print(f'{key[checkFirst:checkLast]}\tLine-Counts = {count_test[key]}')
+                print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {count_test[key]}')
             exit(0)
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
@@ -496,13 +497,14 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(first_search)
+            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
             second_search, line_range = line_func(start_end=count_test)
             if line_range == True:
                 for key in reversed(second_search):
-                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {second_search[key]}')
+                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {second_search[key]}')
             else:
                 for key in second_search:
-                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {second_search[key]}')
+                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {second_search[key]}')
             exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True:
@@ -528,13 +530,14 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(second_search)
+            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
             third_search, line_range = line_func(start_end=count_test)
             if line_range == True:
                 for key in reversed(third_search):
-                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {third_search[key]}')
+                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {third_search[key]}')
             else:
                 for key in third_search:
-                    print(f'{key[checkFirst:checkLast]}\tLine-Counts = {third_search[key]}')
+                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {third_search[key]}')
             exit(0)
         # final line filter search
         third_search, line_range = line_func(start_end=second_search)
@@ -561,8 +564,9 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(second_search)
+            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
             for key in count_test:
-                print(f'{key[checkFirst:checkLast]}\tLine-Counts = {count_test[key]}')
+                print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {count_test[key]}')
             exit(0)
         # final print loop
         for i in second_search:
@@ -585,8 +589,9 @@ if __name__ == '__main__':
         if args.counts: # might require some fine tuning
             from collections import Counter
             count_test = Counter(first_search)
+            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
             for key in count_test:
-                print(f'{key}\tLine-Counts = {count_test[key]}')
+                print(f'{key:{padding}}Line-Counts = {count_test[key]}')
             exit(0)
         # final loop
         for i in first_search:
@@ -610,13 +615,14 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(first_search)
+            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
             second_search, line_range = line_func(start_end=count_test)
             if line_range == True:
                 for key in reversed(second_search):
-                    print(f'{key}\tLine-Counts = {second_search[key]}')
+                    print(f'{key:{padding}}Line-Counts = {second_search[key]}')
             else:
                 for key in second_search:
-                    print(f'{key}\tLine-Counts = {second_search[key]}')
+                    print(f'{key:{padding}}Line-Counts = {second_search[key]}')
             exit(0)
         second_search, line_range = line_func(start_end=first_search)
         if line_range == True: # multiline
