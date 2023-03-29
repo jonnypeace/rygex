@@ -11,7 +11,7 @@ This will be under development as i think of new things to add, and optimize the
 
 Tested on Python 3.10.6 for the most part on Ubuntu22.04, very little testing has taken place on other versions.
 
-After seeking some feedback on pygrep, the use of pygrep does not scale well when larger stacks are searched, and I believe it's mostly due to pythons regex engine. Better tools for the job would be grep or ripgrep, so I would use the right tool for the right job :)
+After seeking some feedback on pygrep, the use of pygrep does not scale well when larger stacks are searched, and I believe it's mostly due to pythons regex engine. Better tools for the job would be grep or ripgrep, so I would use the right tool for the right job :) 
 
 ## Basic Rules
 
@@ -29,9 +29,9 @@ Basic string searches using -s | --start and -e | --end
 ```./pygrep.py --start string 2 -f filename ```
 * -e | --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
-* -of | --omitfirst is optional for deleting the first characters of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. ``` ./pygrep.py --start cron 1 -of =start -f /var/log/syslog ``` (=start will remove the characters in --start from the output, otherwise use an integar for the number of characters) 
-* -ol | --omitlast is optional and same use as --omitfirst. Special keyword instead of =start, is =end. =end will remove all chatacters in --end from output, otherwise use an integar for the number of characters.
-* -un | --unique is optional, and will output unique entries only. Will be unordered output.
+* -of | --omitfirst is optional for deleting the first characters of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. ``` ./pygrep.py --start cron 1 -of -f /var/log/syslog ``` (default without specifying a number of characters to omit, will remove the characters in --start from the output, otherwise use an integar for the number of characters) 
+* -ol | --omitlast is optional and same use as --omitfirst. This would default to number of characters in the --end arg, unless a number value is included.
+* -un | --unique is optional, and will output unique entries only.
 * -so | --sort is optional, and will output in sorted order.. no reverse order currently available... will be planned in.
 * -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5', last line '$', line 5 to end '5-$'
 ```
@@ -39,6 +39,7 @@ Basic string searches using -s | --start and -e | --end
 ./pygrep.py --start string -l '1-5' -f filename # first 5 lines
 ```
 * -i | --insensitive is optional and whether you want case sensitive searched. No further agrs required.
+* -c / --counts is an optional arg which summarises the number of unique lines identified. Works standalone without unique.
 
 ## Python Regex
 
@@ -74,8 +75,11 @@ https://docs.python.org/3/library/re.html
  without -ol -of (only works with --start & --end, not --pyreg)
  ./pygrep.py -s \( 1 -e \) 1 -f testfile                                        ## output: (2nd line, 1st bracket)
  with -ol -of (only works with --start & --end, not --pyreg)
- ./pygrep.py -s \( 1 -e \) 1 -ol 1 -of 1 -f testfile                            ## output: 2nd line, 1st bracket
- ./pygrep.py -s 'SRC=' 1 -e 'DST=' 1 -of =start -ol =end -f /var/log/ufw.log    ## output: 123.123.123.123 (ip address from ufw.log between SRC= and DST=)
+ ./pygrep.py -s \( 1 -e \) 1 -ol -of -f testfile                            ## output: 2nd line, 1st bracket
+ ./pygrep.py -s 'SRC=' 1 -e 'DST=' 1 -of -ol -f /var/log/ufw.log    ## output: 123.123.123.123 (ip address from ufw.log between SRC= and DST=)
+
+OR -O for --omitall...
+./pygrep.py -s 'SRC=' 1 -e 'DST=' 1 -O -f /var/log/ufw.log    ## output: 123.123.123.123 (ip address from ufw.log between SRC= and DST=)
 
 -p or --pyreg | I recommend consulting the python documentation for python regex using re.
  
