@@ -134,12 +134,12 @@ real	0m18.704s
 user	0m18.747s
 sys	0m0.299s
 
-jonny@jp-vivo:~/git/pygrep$ time time sed -En 's/.*SRC=([0-9\.]+)\s+DST.*/\1/p' ufw.test1 | wc -l
+jonny@jp-vivo:~/git/pygrep$ time sed -En 's/.*SRC=([0-9\.]+)\s+DST.*/\1/p' ufw.test1 | wc -l
 11129400
 
-real	3m41.461s
-user	3m41.182s
-sys	0m0.806s
+real	3m40.930s
+user	3m40.804s
+sys	0m0.601s
 ```
 
 This is an 11 million line UFW log.
