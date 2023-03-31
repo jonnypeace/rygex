@@ -27,19 +27,30 @@ After seeking some feedback on pygrep, pygrep might not be the right tool for ev
 Basic string searches using -s | --start and -e | --end
 * -s | --start can be used standlone (without --pyreg) or with --pyreg for some extra filtering. This uses a starting string/word/character on a line, and can take an optional number value or 'all' (default is all if excluded). The number value will switch to a different index in the line. For example.. if you require the 2nd position of string/word/character in the line, you would simply follow with the number 2. 
 ```./pygrep.py --start string 2 -f filename ```
+
 * -e | --end is optional and provides an end to the line you are searching for. Say for instance you only want a string which is enclosed in brackets 
 ```./pygrep.py --start \( 1 --end \) 1 -f filename ``` This would select the 1st end character found. For now --end takes 2 arguments. The character/string/word followed by a numerical value.
+
 * -of | --omitfirst is optional for deleting the first characters of your match. For instance, using the above example, you might want something enclosed in brackets, but without the brackets. ``` ./pygrep.py --start cron 1 -of -f /var/log/syslog ``` (default without specifying a number of characters to omit, will remove the characters in --start from the output, otherwise use an integar for the number of characters) 
+
 * -ol | --omitlast is optional and same use as --omitfirst. This would default to number of characters in the --end arg, unless a number value is included.
-* -un | --unique is optional, and will output unique entries only.
-* -so | --sort is optional, and will output in sorted order.. no reverse order currently available... will be planned in.
+
+* -O / --omitall is optional and combines both -of and -ol.
+
+* -u | --unique is optional, and will output unique entries only.
+
+* -S | --sort is optional, and will output in sorted order.. no reverse order currently available... will be planned in.
+
 * -l | --lines is optional and to save piping using tail, head or sed. Examples are easier to understand and syntax easy. You can select a range of lines, i.e. '5-10' last 3 lines '$-3' a single line '5', last line '$', line 5 to end '5-$'
 ```
 ./pygrep.py --start string -l '$' -f filename # last line
 ./pygrep.py --start string -l '1-5' -f filename # first 5 lines
 ```
+
 * -i | --insensitive is optional and whether you want case sensitive searched. No further agrs required.
-* -c / --counts is an optional arg which summarises the number of unique lines identified. Works standalone without unique.
+
+* -c / --counts is an optional arg which summarises the number of unique lines identified. Works standalone without unique and with --start , --pyreg
+
 
 ## Python Regex
 
