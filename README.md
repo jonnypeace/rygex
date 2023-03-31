@@ -176,6 +176,8 @@ sys	0m0.348s
 
 So as you can see, when the regex is less favourable and there's less output pygrep would not be the best tool.
 
+Ok now for lots of output and a little harsher regex (I could be a bit more aggresive with the regex, but this slow down works)
+
 ```bash
 jonny@jp-vivo:~/git/pygrep$ time pygrep -p '\s+DST=(123.12.123.12)' 1 -f ufw.test1 | wc -l
 11129399
