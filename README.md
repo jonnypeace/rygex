@@ -329,6 +329,31 @@ sys	0m1.616s
 
 # Python regex engine seems to work well with wildcards like .* (Never knew that until i started testing, interesting!!)
 
+#Edit: The wildcard .* at either end does help python regex a lot in this scenario.
+
+jonny@uby-umc:~/git/pygrep$ time pygrep -p '.*\s+DST=([\d\.]+).*' 1 -f ufw.test1 | wc -l
+11129400
+
+real	0m28.199s
+user	0m27.135s
+sys	0m1.185s
+
+# Without
+
+jonny@uby-umc:~/git/pygrep$ time pygrep -p '\s+DST=([\d\.]+)' 1 -f ufw.test1 | wc -l
+11129400
+
+real	0m38.568s
+user	0m37.361s
+sys	0m1.295s
+
+jonny@uby-umc:~/git/pygrep$ time rg -No '\s+DST=([\d\.]+)' -r '$1' ufw.test1 | wc -l
+11129400
+
+real	0m25.892s
+user	0m25.799s
+sys	0m0.237s
+
 ```
 
 Any personal use log files of around 100,000 lines will not break much of a sweat for any of the above, but I just wanted to throw together some benchmarks so everyone see's any strengths and weaknesses in terms of performance. Each programme has it's own perks and quite different in their own right, and there's a lot more to regex than i'm showing here, plus as i say, each programme has it's own functionality
