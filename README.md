@@ -151,6 +151,15 @@ jonny@jp-vivo:~/git/pygrep$ time sed -En 's/.*SRC=([0-9\.]+)\s+DST.*/\1/p' ufw.t
 real	3m40.930s
 user	3m40.804s
 sys	0m0.601s
+
+# EDIT: Late entry from my desktop, similar spec vs my laptop
+jonny@uby-umc:~/git/pygrep$ time gawk 'match($0, /SRC=([0-9\.]+)\s+DST/, ipmatch){print ipmatch[1] }' ufw.test1 | wc -l
+11129400
+
+real	0m42.857s
+user	0m42.634s
+sys	0m0.442s
+
 ```
 
 This is an 11 million line UFW log.
