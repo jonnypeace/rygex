@@ -109,6 +109,8 @@ Still testing --counts. Still Experimental.
 ## Performance stats
 
 Ok, I felt the need to include this, so here goes. After some performance tweaking with pygrep, i've been able to find an example where pygrep is faster than grep, sed, and ripgrep, and that's when you are expecting a lot of output from a log file etc. This example uses UFW, i find UFW logs an easy example to practice some regex on.
+I am heavily focused on the capture group performance and output, so i've left grep out of this for now.
+
 
 ```bash
 jonny@jp-vivo:~/git/pygrep$ time pygrep -s 'SRC=' 1 -e ' DST' 1 -O -f ufw.test1 | wc -l
