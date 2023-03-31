@@ -203,6 +203,8 @@ user	4m1.786s
 sys	0m0.663s
 
 ```
+Some less favourable regex using a leading \s+, but requiring a lot of output makes things a little messy for all. 
+
 Ok now for no capture groups, just literals
 
 ```bash
@@ -237,7 +239,5 @@ real	0m3.867s
 user	0m2.503s
 sys	0m1.364s
 ```
-
-Some less favourable regex using a leading \s+, but requiring a lot of output makes things a little messy for all. 
 
 Any personal use log files of around 100,000 lines will not break much of a sweat for any of the above, but I just wanted to throw together some benchmarks so everyone see's any strengths and weaknesses in terms of performance. Each programme has it's own perks and quite different in their own right, and there's a lot more to regex than i'm showing here, plus as i say, each programme has it's own functionality
