@@ -209,43 +209,46 @@ def normal_search(file_list: tuple)-> list:
 
 # Py regex search, can be either case sensitive or insensitive
 def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> list:
-    # if not all, try and make the pos_val an int, if not able then incorrect value, so fail and exit.
-    if args.pyreg and len(args.pyreg) > 1 and args.pyreg[1] != 'all':
-        try:
-            pos_val = int(args.pyreg[1])
-        except ValueError:
-            print(f'{colours["fail"]}Incorrect input for pyreg - only string allowed to be used with pyreg is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
-            exit(1)
     pyreg_last_list: list= []
     if insense == True:
         test_re = re.compile(args.pyreg[0], re.IGNORECASE)
     else:
         test_re = re.compile(args.pyreg[0])
+    # Splitting the arg for capture groups into a list
+    split_str: list = args.pyreg[1].split(' ')
     for line in func_search:        
         pygen_length = len(args.pyreg)
         reg_match = test_re.findall(line)
         if reg_match:
             if pygen_length == 2:
                 if args.pyreg[1] == 'all':
-                    pyreg_last_list.append(reg_match)
-                else:
+                    all_group: str = ''
+                    for i in reg_match[0]:
+                        all_group = all_group + ' ' + i
+                    pyreg_last_list.append(all_group[1:])
+                elif len(split_str) == 1:
                     try:
-                        pos_val = int(args.pyreg[1])
-                        if reg_match:
-                            if len(reg_match[0][pos_val - 1]) != 1:
-                                pyreg_last_list.append(reg_match[0][pos_val - 1])
-                            else:
-                                pyreg_last_list.append(reg_match[pos_val - 1])
-                                
-                        '''Unboundlocal error due to line in args.pyreg[1] and unassigned pos_val (i.e. index will be a string).
-                        indexerror when list exceeds index available
-                        valueError due to pos_val being a string'''
-                    except (UnboundLocalError, IndexError, ValueError):
-                        if args.pyreg[1] == 'all'  or type(pos_val) == int:
-                            pass
+                        pos_val: int = int(split_str[0])
+                        if len(reg_match[0][pos_val - 1]) != 1:
+                            pyreg_last_list.append(reg_match[0][pos_val - 1])
                         else:
-                            print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args{colours["end"]}', file=sys.stderr)
-                            exit(1)
+                            pyreg_last_list.append(reg_match[pos_val - 1])
+                    #indexerror when list exceeds index available
+                    except (IndexError):
+                        print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
+                        exit(1)
+                    #valueError due to pos_val being a string
+                    except ValueError:
+                        print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
+                        exit(1)
+                elif len(split_str) == 2:
+                    try:
+                        building:str = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1]
+                        pyreg_last_list.append(building)
+                    # Indexerror due to incorrect index
+                    except IndexError:
+                        print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
+                        exit(1)
             elif pygen_length == 1: # defaults to first reg_match in line
                 pyreg_last_list.append(line)
     return pyreg_last_list
