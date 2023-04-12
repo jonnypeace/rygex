@@ -253,6 +253,17 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                     except IndexError:
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
                         exit(1)
+                elif len(split_str) == 3:
+                    try:
+                        building:str = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1] + ' ' + reg_match[0][int(split_str[2]) - 1]
+                        pyreg_last_list.append(building)
+                    # Indexerror due to incorrect index
+                    except IndexError:
+                        print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
+                        exit(1)
+                elif len(split_str) > 3:
+                    print(f'{colours["fail"]}Error. More than 3 capture groups chosen {split_str} - Currently not supported. Try using "all" keyword{colours["end"]}', file=sys.stderr)
+                    exit(1)
             elif pygen_length == 1: # defaults to first reg_match in line
                 pyreg_last_list.append(line)
     return pyreg_last_list
