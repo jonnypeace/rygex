@@ -215,7 +215,11 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
     else:
         test_re = re.compile(args.pyreg[0])
     # Splitting the arg for capture groups into a list
-    split_str: list = args.pyreg[1].split(' ')
+    try:
+        split_str: list = args.pyreg[1].split(' ')
+    # IndexError occurs when entire lines are required
+    except IndexError:
+        pass
     for line in func_search:        
         pygen_length = len(args.pyreg)
         reg_match = test_re.findall(line)
