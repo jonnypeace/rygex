@@ -208,7 +208,7 @@ def normal_search(file_list: tuple)-> list:
     return start_end
 
 # Py regex search, can be either case sensitive or insensitive
-def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> list:
+def pygrep_search(insense: bool=True, func_search: tuple=())-> list:
     pyreg_last_list: list= []
     if insense == True:
         test_re = re.compile(args.pyreg[0], re.IGNORECASE)
@@ -269,7 +269,7 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                 reg_match = test_re.findall(line)     
                 if reg_match:
                     try:
-                        building:str = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1] + ' ' + reg_match[0][int(split_str[2]) - 1]
+                        building = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1] + ' ' + reg_match[0][int(split_str[2]) - 1]
                         pyreg_last_list.append(building)
                     # Indexerror due to incorrect index
                     except IndexError:
@@ -281,9 +281,8 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
-def line_func(start_end: list)-> tuple:
+def line_func(start_end: list | dict)-> tuple:
     # args for args.line
-    start_end_line = []
     line_num_split = []
     line_num = args.lines[0]
 
@@ -339,30 +338,31 @@ def line_func(start_end: list)-> tuple:
 ##########
     
     # For everything else but not including the counts arg.
+    start_end_line_list: list = []
     if '-' in line_num:
         line_range = True
         line_num_split = line_num.split('-')
         if '$' in line_num:
             if line_num_split[0] == '$':
                 for rev_count in range(int(line_num_split[1]), 0, -1):
-                    start_end_line.append(start_end[-rev_count])
+                    start_end_line_list.append(start_end[-rev_count])
             elif line_num_split[1] == '$':
                 line_count = len(start_end) - int(line_num_split[0]) + 2
                 for rev_count in range(line_count, 0, -1):
-                    start_end_line.append(start_end[-rev_count])
+                    start_end_line_list.append(start_end[-rev_count])
         else:
             high_num = max(int(line_num_split[0]),int(line_num_split[1]))
             for rev_count in range(1, high_num + 1, 1):
-                start_end_line.append(start_end[rev_count - 1])
+                start_end_line_list.append(start_end[rev_count - 1])
     else: # no range
         # if last line
         line_range = False
         if line_num == '$':
-            start_end_line = start_end[-1]
+            start_end_line_list = start_end[-1]
         else:
             line_num = int(line_num)
-            start_end_line = start_end[line_num - 1]
-    return start_end_line, line_range
+            start_end_line_list = start_end[line_num - 1]
+    return start_end_line_list, line_range
 
 # Checking whether the first or last characters will be omitted.
 def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOmitAll: str='')-> tuple:
@@ -508,8 +508,9 @@ if __name__ == '__main__':
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
         if args.unique:
-            unique_list = []
-            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
+            #unique_list = []
+            first_search = list(dict.fromkeys(first_search))
+            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         for i in first_search:
@@ -520,8 +521,9 @@ if __name__ == '__main__':
     # start end omits lines
     if args.start and args.lines and not args.pyreg:
         if args.unique:
-            unique_list = []
-            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
+            first_search = list(dict.fromkeys(first_search))
+            #unique_list = []
+            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts:
@@ -553,8 +555,9 @@ if __name__ == '__main__':
         # regex search
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         if args.unique:
-            unique_list = []
-            second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
+            second_search = list(dict.fromkeys(second_search))
+            #unique_list = []
+            #second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
         if args.counts:
@@ -587,8 +590,9 @@ if __name__ == '__main__':
         # regex search
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         if args.unique:
-            unique_list = []
-            second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
+            second_search = list(dict.fromkeys(second_search))
+            #unique_list = []
+            #second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
         if args.counts:
@@ -612,8 +616,9 @@ if __name__ == '__main__':
         # initial regex search
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         if args.unique:
-            unique_list: list = []
-            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
+            first_search = list(dict.fromkeys(first_search))
+            #unique_list: list = []
+            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts: # might require some fine tuning
@@ -637,8 +642,9 @@ if __name__ == '__main__':
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         # final search
         if args.unique:
-            unique_list = []
-            first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
+            first_search = list(dict.fromkeys(first_search))
+            #unique_list = []
+            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts:
