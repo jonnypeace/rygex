@@ -220,17 +220,25 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
     # IndexError occurs when entire lines are required
     except IndexError:
         pass
-    for line in func_search:        
-        pygen_length = len(args.pyreg)
-        reg_match = test_re.findall(line)
-        if reg_match:
-            if pygen_length == 2:
-                if args.pyreg[1] == 'all':
+    pygen_length = len(args.pyreg)
+    if pygen_length == 1: # defaults to first reg_match in line
+        for line in func_search:
+            reg_match = test_re.findall(line)
+            if reg_match:
+                pyreg_last_list.append(line)
+    elif pygen_length == 2:
+        if args.pyreg[1] == 'all':
+            for line in func_search:
+                reg_match = test_re.findall(line)      
+                if reg_match:
                     all_group: str = ''
                     for i in reg_match[0]:
                         all_group = all_group + ' ' + i
                     pyreg_last_list.append(all_group[1:])
-                elif len(split_str) == 1:
+        elif len(split_str) == 1:
+            for line in func_search:
+                reg_match = test_re.findall(line)     
+                if reg_match:
                     try:
                         pos_val: int = int(split_str[0])
                         if len(reg_match[0][pos_val - 1]) != 1:
@@ -245,7 +253,10 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                     except ValueError:
                         print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
                         exit(1)
-                elif len(split_str) == 2:
+        elif len(split_str) == 2:
+            for line in func_search:
+                reg_match = test_re.findall(line)     
+                if reg_match:
                     try:
                         building:str = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1]
                         pyreg_last_list.append(building)
@@ -253,7 +264,10 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                     except IndexError:
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
                         exit(1)
-                elif len(split_str) == 3:
+        elif len(split_str) == 3:
+            for line in func_search:
+                reg_match = test_re.findall(line)     
+                if reg_match:
                     try:
                         building:str = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1] + ' ' + reg_match[0][int(split_str[2]) - 1]
                         pyreg_last_list.append(building)
@@ -261,11 +275,9 @@ def pygrep_search(pos_val: int=0, insense: bool=True, func_search: tuple=())-> l
                     except IndexError:
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
                         exit(1)
-                elif len(split_str) > 3:
-                    print(f'{colours["fail"]}Error. More than 3 capture groups chosen {split_str} - Currently not supported. Try using "all" keyword{colours["end"]}', file=sys.stderr)
-                    exit(1)
-            elif pygen_length == 1: # defaults to first reg_match in line
-                pyreg_last_list.append(line)
+        elif len(split_str) > 3:
+            print(f'{colours["fail"]}Error. More than 3 capture groups chosen {split_str} - Currently not supported. Try using "all" keyword{colours["end"]}', file=sys.stderr)
+            exit(1)
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
@@ -600,7 +612,7 @@ if __name__ == '__main__':
         # initial regex search
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         if args.unique:
-            unique_list = []
+            unique_list: list = []
             first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
@@ -612,8 +624,7 @@ if __name__ == '__main__':
                 print(f'{key:{padding}}Line-Counts = {count_test[key]}')
             exit(0)
         # final loop
-        for i in first_search:
-            print(i)
+        [print(i) for i in first_search]
         exit(0)
 ########
     # pyreg lines
