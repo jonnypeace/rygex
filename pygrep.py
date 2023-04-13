@@ -104,24 +104,27 @@ def sense_check(argStart: list=[],
         exit(1)
 
 # Lower start seach is case insensitive
-def lower_search(file_list: tuple)-> list:
+def lower_search(file_list: tuple,
+                 argStart: list=[],
+                 argEnd: list=[],
+                 )-> list:
     # If positional number value not set, default to all.
-    if len(args.start) < 2:
-        args.start.append('all')
+    if len(argStart) < 2:
+        argStart.append('all')
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
-    if args.start[1] != 'all':
+    if argStart[1] != 'all':
         try:
-            iter_start = int(args.start[1])
+            iter_start = int(argStart[1])
         except ValueError:
             print(f'{colours["fail"]}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
             exit(1)
 
     # Sense check args.end and ensure 2nd arg is an int
-    if args.end:
+    if argEnd:
         try:
-            iter_end = int(args.end[1])
-            if args.start[0] == args.end[0]:
+            iter_end = int(argEnd[1])
+            if argStart[0] == argEnd[0]:
                 iter_end += 1
         except ValueError:
             print(f'{colours["fail"]}ValueError: -e / --end only accepts number values{colours["end"]}', file=sys.stderr)
@@ -130,25 +133,25 @@ def lower_search(file_list: tuple)-> list:
     # variables from the optional argument of excluding one character
     for line in file_list:
         lower_line = line.casefold()
-        lower_str = args.start[0].casefold()
-        if args.end:
-            lower_end = args.end[0].casefold()
+        lower_str = argStart[0].casefold()
+        if argEnd:
+            lower_end = argEnd[0].casefold()
         if lower_str in lower_line:
             try:
                 new_str = line
                 # Start Arg position and initial string creation.
-                if args.start[1] != 'all':
+                if argStart[1] != 'all':
                     init_start = lower_line.index(lower_str)
                     new_str = line[init_start:]
                     new_index = new_str.casefold().index(lower_str)
-                    for occur_end in range(iter_start -1):
+                    for _ in range(iter_start -1):
                         new_index = new_str.casefold().index(lower_str, new_index + 1)
                     new_str = new_str[new_index:]
                 # End Arg positions and final string creation
-                if args.end:
+                if argEnd:
                     new_index = new_str.casefold().index(lower_end)
-                    length_end = len(args.end[0])
-                    for occur_end in range(iter_end -1):
+                    length_end = len(argEnd[0])
+                    for _ in range(iter_end -1):
                         new_index = new_str.casefold().index(lower_end, new_index + 1)
                     new_str = new_str[:new_index + length_end]
                 start_end.append(new_str)
@@ -160,24 +163,27 @@ def lower_search(file_list: tuple)-> list:
     return start_end
 
 # Normal start search, case sensitive
-def normal_search(file_list: tuple)-> list:
+def normal_search(file_list: tuple,
+                 argStart: list=[],
+                 argEnd: list=[],
+                 )-> list:
     # If positional number value not set, default to all.
-    if len(args.start) < 2:
-        args.start.append('all')
+    if len(argStart) < 2:
+        argStart.append('all')
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
-    if args.start[1] != 'all':
+    if argStart[1] != 'all':
         try:
-            iter_start = int(args.start[1])
+            iter_start = int(argStart[1])
         except ValueError:
             print(f'{colours["fail"]}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
             exit(1)
 
     # Sense check args.end and ensure 2nd arg is an int
-    if args.end:
+    if argEnd:
         try:
-            iter_end = int(args.end[1])
-            if args.start[0] == args.end[0]:
+            iter_end = int(argEnd[1])
+            if argStart[0] == argEnd[0]:
                 iter_end += 1
         except ValueError:
             print(f'{colours["fail"]}ValueError: -e / --end only accepts number values{colours["end"]}', file=sys.stderr)
@@ -185,24 +191,23 @@ def normal_search(file_list: tuple)-> list:
     start_end: list= []
     # variables from the optional argument of excluding one character
     for line in file_list:
-        if args.start[0] in line:
+        if argStart[0] in line:
             try:
                 new_str = line
                 # Start Arg position and initial string creation.
-                if args.start[1] != 'all':
-                    init_start = line.index(args.start[0])
-                    #init_start = str(line).index(args.start[0])
+                if argStart[1] != 'all':
+                    init_start = line.index(argStart[0])
                     new_str = line[init_start:]
-                    new_index = new_str.index(args.start[0])
-                    for occur_end in range(iter_start -1):
-                        new_index = new_str.index(args.start[0], new_index + 1)
+                    new_index = new_str.index(argStart[0])
+                    for _ in range(iter_start -1):
+                        new_index = new_str.index(argStart[0], new_index + 1)
                     new_str = new_str[new_index:]
                 # End Arg positions and final string creation
-                if args.end:
-                    new_index = new_str.index(args.end[0])
-                    length_end = len(args.end[0])
+                if argEnd:
+                    new_index = new_str.index(argEnd[0])
+                    length_end = len(argEnd[0])
                     for _ in range(iter_end -1):
-                        new_index = new_str.index(args.end[0], new_index + 1)
+                        new_index = new_str.index(argEnd[0], new_index + 1)
                     new_str = new_str[:new_index + length_end]
                 start_end.append(new_str)
                 '''
@@ -215,26 +220,28 @@ def normal_search(file_list: tuple)-> list:
     return start_end
 
 # Py regex search, can be either case sensitive or insensitive
-def pygrep_search(insense: bool=True, func_search: tuple=())-> list:
+def pygrep_search(insense: bool=True, func_search: tuple=(),
+                  argPyreg: list = [],
+                  )-> list:
     pyreg_last_list: list= []
     if insense == True:
-        test_re = re.compile(args.pyreg[0], re.IGNORECASE)
+        test_re = re.compile(argPyreg[0], re.IGNORECASE)
     else:
-        test_re = re.compile(args.pyreg[0])
+        test_re = re.compile(argPyreg[0])
     # Splitting the arg for capture groups into a list
     try:
-        split_str: list = args.pyreg[1].split(' ')
+        split_str: list = argPyreg[1].split(' ')
     # IndexError occurs when entire lines are required
     except IndexError:
         pass
-    pygen_length = len(args.pyreg)
+    pygen_length = len(argPyreg)
     if pygen_length == 1: # defaults to first reg_match in line
         for line in func_search:
             reg_match = test_re.findall(line)
             if reg_match:
                 pyreg_last_list.append(line)
     elif pygen_length == 2:
-        if args.pyreg[1] == 'all':
+        if argPyreg[1] == 'all':
             for line in func_search:
                 reg_match = test_re.findall(line)      
                 if reg_match:
@@ -288,10 +295,11 @@ def pygrep_search(insense: bool=True, func_search: tuple=())-> list:
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
-def line_func(start_end: list | dict)-> tuple:
+def line_func(start_end: list | dict,
+              argLine: list = [])-> tuple:
     # args for args.line
     line_num_split = []
-    line_num = args.lines[0]
+    line_num = argLine[0]
 
     # Conditional for lines using the counts arg
     if isinstance(start_end, dict):
@@ -372,11 +380,16 @@ def line_func(start_end: list | dict)-> tuple:
     return start_end_line_list, line_range
 
 # Checking whether the first or last characters will be omitted.
-def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOmitAll: str='')-> tuple:
+def omit_check(first=None, last=None,
+               aOmitFirst: str='',
+               aOmitLast: str='',
+               aOmitAll: str='',
+               argStart: list = [],
+               argEnd: list = [])-> tuple:
     if aOmitAll is None:
         try:
-            first = len(args.start[0])
-            last = - len(args.end[0])
+            first = len(argStart[0])
+            last = - len(argEnd[0])
         except TypeError:
             pass
         return first, last
@@ -390,7 +403,7 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOm
             exit(1)
 
     if aOmitFirst is None:
-        first = len(args.start[0])
+        first = len(argStart[0])
     elif aOmitFirst != 'False':
         try:
             first = int(aOmitFirst)
@@ -399,7 +412,7 @@ def omit_check(first=None, last=None, aOmitFirst: str='', aOmitLast: str='', aOm
             exit(1)
 
     if aOmitLast is None:
-        last = - len(args.end[0])
+        last = - len(argEnd[0])
     elif aOmitLast != 'False':
         try:
             last = - int(aOmitLast)
@@ -505,14 +518,22 @@ if __name__ == '__main__':
             file_list = tuple(sys.stdin.read().splitlines())
 ######## 
     # Initial case-insensitivity check
-    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst, aOmitLast=args.omitlast, aOmitAll=args.omitall)
+    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst,
+                                       aOmitLast=args.omitlast,
+                                       aOmitAll=args.omitall,
+                                       argStart=args.start,
+                                       argEnd=args.end)
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
-            first_search = normal_search(file_list)
+            first_search = normal_search(file_list=file_list,
+                                        argStart=args.start,
+                                        argEnd=args.end)
         else:               
-            first_search = lower_search(file_list)
-        if args.counts and not args.lines and not args.pyreg: # might require some fine tuning
+            first_search = lower_search(file_list=file_list,
+                                        argStart=args.start,
+                                        argEnd=args.end)
+        if args.counts and not args.lines and not args.pyreg:
             from collections import Counter
             count_test = Counter(first_search)
             padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
@@ -525,9 +546,7 @@ if __name__ == '__main__':
             first_search = list(dict.fromkeys(first_search))
         if args.sort:
             first_search.sort()
-        for i in first_search:
-            #print(i.replace(args.start[0], '')) Keeping as a possible solution to issue #2
-            print(i[checkFirst:checkLast])
+        [print(i[checkFirst:checkLast]) for i in first_search]
         exit(0)
 ########
     # start end omits lines
@@ -540,7 +559,8 @@ if __name__ == '__main__':
             from collections import Counter
             count_test = Counter(first_search)
             padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
-            second_search, line_range = line_func(start_end=count_test)
+            second_search, line_range = line_func(start_end=count_test,
+                                                  argLine=args.lines)
             if line_range == True:
                 for key in reversed(second_search):
                     print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {second_search[key]}')
@@ -548,7 +568,8 @@ if __name__ == '__main__':
                 for key in second_search:
                     print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {second_search[key]}')
             exit(0)
-        second_search, line_range = line_func(start_end=first_search)
+        second_search, line_range = line_func(start_end=first_search,
+                                                  argLine=args.lines)
         if line_range == True:
             for i in second_search:
                 print(i[checkFirst:checkLast])
@@ -563,7 +584,8 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # regex search
-        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
+        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search),
+                                      argPyreg=args.pyreg)
         if args.unique:
             second_search = list(dict.fromkeys(second_search))
         if args.sort:
@@ -572,7 +594,8 @@ if __name__ == '__main__':
             from collections import Counter
             count_test = Counter(second_search)
             padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
-            third_search, line_range = line_func(start_end=count_test)
+            third_search, line_range = line_func(start_end=count_test,
+                                                  argLine=args.lines)
             if line_range == True:
                 for key in reversed(third_search):
                     print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {third_search[key]}')
@@ -581,7 +604,8 @@ if __name__ == '__main__':
                     print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {third_search[key]}')
             exit(0)
         # final line filter search
-        third_search, line_range = line_func(start_end=second_search)
+        third_search, line_range = line_func(start_end=second_search,
+                                                  argLine=args.lines)
         if line_range == True: # multiline
             for i in third_search:
                 print(i[checkFirst:checkLast])
@@ -596,7 +620,8 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # regex search
-        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
+        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search),
+                                      argPyreg=args.pyreg)
         if args.unique:
             second_search = list(dict.fromkeys(second_search))
         if args.sort:
@@ -620,7 +645,8 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # initial regex search
-        first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
+        first_search = pygrep_search(insense=args.insensitive, func_search=file_list,
+                                      argPyreg=args.pyreg)
         if args.unique:
             first_search = list(dict.fromkeys(first_search))
         if args.sort:
@@ -643,7 +669,8 @@ if __name__ == '__main__':
         except IndexError: # only if no group arg is added on commandline 
             pass
         # initial regex search
-        first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
+        first_search = pygrep_search(insense=args.insensitive, func_search=file_list,
+                                      argPyreg=args.pyreg)
         # final search
         if args.unique:
             first_search = list(dict.fromkeys(first_search))
@@ -653,7 +680,8 @@ if __name__ == '__main__':
             from collections import Counter
             count_test = Counter(first_search)
             padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
-            second_search, line_range = line_func(start_end=count_test)
+            second_search, line_range = line_func(start_end=count_test,
+                                                  argLine=args.lines)
             if line_range == True:
                 for key in reversed(second_search):
                     print(f'{key:{padding}}Line-Counts = {second_search[key]}')
@@ -661,7 +689,8 @@ if __name__ == '__main__':
                 for key in second_search:
                     print(f'{key:{padding}}Line-Counts = {second_search[key]}')
             exit(0)
-        second_search, line_range = line_func(start_end=first_search)
+        second_search, line_range = line_func(start_end=first_search,
+                                                  argLine=args.lines)
         if line_range == True: # multiline
             for i in second_search:
                 print(i)
