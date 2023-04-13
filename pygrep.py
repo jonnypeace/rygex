@@ -61,38 +61,45 @@ import re
 import sys
 
 # sense checking commandline input.
-def sense_check(aStart: list=[], aEnd: list=[], aPyreg: list=[], aFile: list=[], aTty: bool=False):
+def sense_check(argStart: list=[],
+                argEnd: list=[],
+                argPyreg: list=[],
+                argFile: list=[],
+                argOmitfirst: list = [],
+                argOmitlast: list = [],
+                argOmitall: list = [],
+                argTty: bool=False):
 # if not stdin or file, error
-    if not aFile and aTty:
+    if not argFile and argTty:
         print(f'{colours["fail"]}Requires stdin from somewhere, either from --file or pipe{colours["end"]}', file=sys.stderr)
         exit(1)
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
-    if not aStart and not aPyreg:
+    if not argStart and not argPyreg:
         print(f'{colours["fail"]}This programme requires the --start or --pyreg flag to work properly{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if aPyreg and len(aPyreg) > 2:
+    if argPyreg and len(argPyreg) > 2:
         print(f'{colours["fail"]}--pyreg can only have 2 args... search pattern and option{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if aStart and len(aStart) > 2:
+    if argStart and len(argStart) > 2:
         print(f'{colours["fail"]}--start has too many arguments, character or word followed by occurent number{colours["end"]}', file=sys.stderr)
         exit(1)
     
-    if args.omitfirst == None and args.start == None:
+    if argOmitfirst == None and argStart == None:
         print(f'{colours["fail"]}error, --omitfirst without --start{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if args.omitlast == None and args.end == None:
+    if argOmitlast == None and argEnd == None:
         print(f'{colours["fail"]}error, --omitlast without --end{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if args.omitall != 'False' and (args.omitfirst != 'False' or args.omitlast != 'False'):
+    if argOmitall != 'False' and (argOmitfirst != 'False' or argOmitlast != 'False'):
         print(f'{colours["fail"]}error, --omitfirst or --omitlast cant be used with --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
-    if not args.start and args.pyreg and (args.omitall != 'False' or args.omitfirst != 'False' or args.omitlast !='False'):
+    if not argStart and argPyreg and (argOmitall != 'False' or argOmitfirst != 'False' or argOmitlast !='False'):
         print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
@@ -483,7 +490,14 @@ if __name__ == '__main__':
     args = pk.parse_args()
     # colour dictionary for outputing error message to screen
     colours = {'fail': '\033[91m', 'end': '\033[0m'}
-    sense_check(aStart=args.start, aEnd=args.end, aPyreg=args.pyreg, aFile=args.file, aTty=sys.stdin.isatty())
+    sense_check(argStart=args.start,
+                argEnd=args.end,
+                argPyreg=args.pyreg,
+                argFile=args.file,
+                argOmitfirst=args.omitfirst,
+                argOmitlast=args.omitlast,
+                argOmitall=args.omitall,
+                argTty=sys.stdin.isatty())
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
@@ -508,9 +522,7 @@ if __name__ == '__main__':
     # start end omits 
     if args.start and not args.pyreg and not args.lines:
         if args.unique:
-            #unique_list = []
             first_search = list(dict.fromkeys(first_search))
-            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         for i in first_search:
@@ -522,8 +534,6 @@ if __name__ == '__main__':
     if args.start and args.lines and not args.pyreg:
         if args.unique:
             first_search = list(dict.fromkeys(first_search))
-            #unique_list = []
-            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts:
@@ -556,8 +566,6 @@ if __name__ == '__main__':
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         if args.unique:
             second_search = list(dict.fromkeys(second_search))
-            #unique_list = []
-            #second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
         if args.counts:
@@ -591,8 +599,6 @@ if __name__ == '__main__':
         second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search))
         if args.unique:
             second_search = list(dict.fromkeys(second_search))
-            #unique_list = []
-            #second_search = [line for line in second_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             second_search.sort()
         if args.counts:
@@ -617,8 +623,6 @@ if __name__ == '__main__':
         first_search = pygrep_search(insense=args.insensitive, func_search=file_list)
         if args.unique:
             first_search = list(dict.fromkeys(first_search))
-            #unique_list: list = []
-            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts: # might require some fine tuning
@@ -643,8 +647,6 @@ if __name__ == '__main__':
         # final search
         if args.unique:
             first_search = list(dict.fromkeys(first_search))
-            #unique_list = []
-            #first_search = [line for line in first_search if not (line in unique_list or unique_list.append(line))] # used to keep ordered output
         if args.sort:
             first_search.sort()
         if args.counts:
