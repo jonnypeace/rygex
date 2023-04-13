@@ -593,24 +593,24 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(second_search)
-            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
+            padding = max([len(z) for z in count_test]) + 4
             third_search, line_range = line_func(start_end=count_test,
                                                   argLine=args.lines)
             if line_range == True:
                 for key in reversed(third_search):
-                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {third_search[key]}')
+                    print(f'{key:{padding}}Line-Counts = {third_search[key]}')
             else:
                 for key in third_search:
-                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {third_search[key]}')
+                    print(f'{key:{padding}}Line-Counts = {third_search[key]}')
             exit(0)
         # final line filter search
         third_search, line_range = line_func(start_end=second_search,
                                                   argLine=args.lines)
         if line_range == True: # multiline
             for i in third_search:
-                print(i[checkFirst:checkLast])
+                print(i)
         else: # one line only
-            print(third_search[checkFirst:checkLast])
+            print(third_search)
         exit(0)
 ########
     # start end omits pyreg 
@@ -629,13 +629,13 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(second_search)
-            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
+            padding = max([len(z) for z in count_test]) + 4
             for key in count_test:
-                print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {count_test[key]}')
+                print(f'{key:{padding}}Line-Counts = {count_test[key]}')
             exit(0)
         # final print loop
         for i in second_search:
-            print(i[checkFirst:checkLast])
+            print(i)
         exit(0)
 ########
     # pyreg only
@@ -654,7 +654,7 @@ if __name__ == '__main__':
         if args.counts: # might require some fine tuning
             from collections import Counter
             count_test = Counter(first_search)
-            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
+            padding = max([len(z) for z in count_test]) + 4
             for key in count_test:
                 print(f'{key:{padding}}Line-Counts = {count_test[key]}')
             exit(0)
@@ -679,7 +679,7 @@ if __name__ == '__main__':
         if args.counts:
             from collections import Counter
             count_test = Counter(first_search)
-            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
+            padding = max([len(z) for z in count_test]) + 4
             second_search, line_range = line_func(start_end=count_test,
                                                   argLine=args.lines)
             if line_range == True:
