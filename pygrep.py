@@ -65,9 +65,9 @@ def sense_check(argStart: list=[],
                 argEnd: list=[],
                 argPyreg: list=[],
                 argFile: list=[],
-                argOmitfirst: list = [],
-                argOmitlast: list = [],
-                argOmitall: list = [],
+                argOmitfirst: list=[],
+                argOmitlast: list=[],
+                argOmitall: list=[],
                 argTty: bool=False):
 # if not stdin or file, error
     if not argFile and argTty:
@@ -221,7 +221,7 @@ def normal_search(file_list: tuple,
 
 # Py regex search, can be either case sensitive or insensitive
 def pygrep_search(insense: bool=True, func_search: tuple=(),
-                  argPyreg: list = [],
+                  argPyreg: list=[],
                   )-> list:
     pyreg_last_list: list= []
     if insense == True:
@@ -296,7 +296,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
 
 # Arrange lines using args from commandline.
 def line_func(start_end: list | dict,
-              argLine: list = [])-> tuple:
+              argLine: list=[])-> tuple:
     # args for args.line
     line_num_split = []
     line_num = argLine[0]
@@ -381,41 +381,41 @@ def line_func(start_end: list | dict,
 
 # Checking whether the first or last characters will be omitted.
 def omit_check(first=None, last=None,
-               aOmitFirst: str='',
-               aOmitLast: str='',
-               aOmitAll: str='',
-               argStart: list = [],
-               argEnd: list = [])-> tuple:
-    if aOmitAll is None:
+               argOmitfirst: str='',
+               argOmitlast: str='',
+               argOmitall: str='',
+               argStart: list=[],
+               argEnd: list=[])-> tuple:
+    if argOmitall is None:
         try:
             first = len(argStart[0])
             last = - len(argEnd[0])
         except TypeError:
             pass
         return first, last
-    if aOmitAll != 'False':
+    if argOmitall != 'False':
         try:
-            first = int(aOmitAll)
-            last = - int(aOmitAll)
+            first = int(argOmitall)
+            last = - int(argOmitall)
             return first, last
         except (ValueError):
             print(f'{colours["fail"]}error, Incorrect arg with --omitall{colours["end"]}', file=sys.stderr)
             exit(1)
 
-    if aOmitFirst is None:
+    if argOmitfirst is None:
         first = len(argStart[0])
-    elif aOmitFirst != 'False':
+    elif argOmitfirst != 'False':
         try:
-            first = int(aOmitFirst)
+            first = int(argOmitfirst)
         except ValueError:
             print(f'{colours["fail"]}error, Incorrect arg with --omitfirst{colours["end"]}', file=sys.stderr)
             exit(1)
 
-    if aOmitLast is None:
+    if argOmitlast is None:
         last = - len(argEnd[0])
-    elif aOmitLast != 'False':
+    elif argOmitlast != 'False':
         try:
-            last = - int(aOmitLast)
+            last = - int(argOmitlast)
         except ValueError:
             print(f'{colours["fail"]}error, Incorrect arg with --omitlast{colours["end"]}', file=sys.stderr)
             exit(1)
@@ -518,9 +518,9 @@ if __name__ == '__main__':
             file_list = tuple(sys.stdin.read().splitlines())
 ######## 
     # Initial case-insensitivity check
-    checkFirst, checkLast = omit_check(aOmitFirst=args.omitfirst,
-                                       aOmitLast=args.omitlast,
-                                       aOmitAll=args.omitall,
+    checkFirst, checkLast = omit_check(argOmitfirst=args.omitfirst,
+                                       argOmitlast=args.omitlast,
+                                       argOmitall=args.omitall,
                                        argStart=args.start,
                                        argEnd=args.end)
     if args.start:
