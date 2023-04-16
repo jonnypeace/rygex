@@ -235,7 +235,6 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
     except IndexError:
         pass
     pygen_length = len(argPyreg)
-    print(test_re.groups) ########################################################################
     if pygen_length == 1: # defaults to first reg_match in line
         for line in func_search:
             reg_match = test_re.findall(line)
@@ -274,31 +273,19 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                     except ValueError:
                         print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
                         exit(1)
-        elif len(split_str) == 2:
+        elif len(split_str) > 1:
             for line in func_search:
                 reg_match = test_re.findall(line)     
                 if reg_match:
+                    all_group: str = ''
                     try:
-                        building:str = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1]
-                        pyreg_last_list.append(building)
+                        for i in split_str:
+                            all_group = all_group + ' ' + reg_match[0][int(i) - 1]
+                        pyreg_last_list.append(all_group[1:])
                     # Indexerror due to incorrect index
                     except IndexError:
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
                         exit(1)
-        elif len(split_str) == 3:
-            for line in func_search:
-                reg_match = test_re.findall(line)     
-                if reg_match:
-                    try:
-                        building = reg_match[0][int(split_str[0]) - 1] + ' ' + reg_match[0][int(split_str[1]) - 1] + ' ' + reg_match[0][int(split_str[2]) - 1]
-                        pyreg_last_list.append(building)
-                    # Indexerror due to incorrect index
-                    except IndexError:
-                        print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
-                        exit(1)
-        elif len(split_str) > 3:
-            print(f'{colours["fail"]}Error. More than 3 capture groups chosen {split_str} - Currently not supported. Try using "all" keyword{colours["end"]}', file=sys.stderr)
-            exit(1)
     return pyreg_last_list
 
 # Arrange lines using args from commandline.
