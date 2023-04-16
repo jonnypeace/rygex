@@ -235,6 +235,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
     except IndexError:
         pass
     pygen_length = len(argPyreg)
+    print(test_re.groups) ########################################################################
     if pygen_length == 1: # defaults to first reg_match in line
         for line in func_search:
             reg_match = test_re.findall(line)
@@ -242,13 +243,19 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                 pyreg_last_list.append(line)
     elif pygen_length == 2:
         if argPyreg[1] == 'all':
-            for line in func_search:
-                reg_match = test_re.findall(line)      
-                if reg_match:
-                    all_group: str = ''
-                    for i in reg_match[0]:
-                        all_group = all_group + ' ' + i
-                    pyreg_last_list.append(all_group[1:])
+            if test_re.groups > 1:
+                for line in func_search:
+                    reg_match = test_re.findall(line)
+                    if reg_match:
+                        all_group: str = ''
+                        for i in reg_match[0]:
+                            all_group = all_group + ' ' + i
+                        pyreg_last_list.append(all_group[1:])
+            if test_re.groups == 1:
+                for line in func_search:
+                    reg_match = test_re.findall(line)
+                    if reg_match:
+                        pyreg_last_list.append(reg_match[0])
         elif len(split_str) == 1:
             for line in func_search:
                 reg_match = test_re.findall(line)     
