@@ -287,7 +287,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
                         exit(1)
                     except ValueError:
-                        print(f'{colours["fail"]}Error. Index chosen {split_str} is incorrect. Options are "all" or number value, i.e. "1 2 3" {colours["end"]}', file=sys.stderr)
+                        print(f'{colours["fail"]}Error. Index chosen {split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" {colours["end"]}', file=sys.stderr)
                         exit(1)
     return pyreg_last_list
 
