@@ -112,7 +112,7 @@ with --lines (-l) Note: $ is an end of line character. Enclose in single quotes 
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -i -l '1-4' -f ufw.test => lines 1-4
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -i -l 1 -f ufw.test => first line
 
-Still testing --counts. Still Experimental.
+With --counts.
 ./pygrep.py -p 'SRC=([\d\.]+)\s+DST' 1 -c -f /var/log/ufw.log
 ./pygrep.py -s 'SRC=' 1 -e ' DST' 1 -O -c -f ufw.test
 ```
@@ -341,9 +341,9 @@ sys	0m0.373s
 jonny@jp-vivo:~/git/pygrep$ time pygrep -p '.*DST=(123.12.123.12).*' 1 -f ufw.test1 | wc -l
 11129399
 
-real	0m13.348s
-user	0m11.908s
-sys	0m1.616s
+real	0m11.793s
+user	0m10.381s
+sys	0m1.559s
 
 # Python regex engine seems to work well with wildcards like .* (Never knew that until i started testing, interesting!!)
 
@@ -382,3 +382,9 @@ sys	0m0.237s
 ```
 
 Any personal use log files of around 100,000 lines will not break much of a sweat for any of the above, but I just wanted to throw together some benchmarks so everyone see's any strengths and weaknesses in terms of performance. Each programme has it's own perks and quite different in their own right, and there's a lot more to regex than i'm showing here, plus as i say, each programme has it's own functionality
+
+## Features I'd like to add
+
+* sort by --count number
+* sort overhaul for reverse sort
+* implement function for --counts
