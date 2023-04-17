@@ -283,7 +283,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
             for line in func_search:
                 reg_match = test_re.findall(line)     
                 if reg_match:
-                    all_group: str = ''
+                    all_group = ''
                     try:
                         for i in int_list:
                             all_group = all_group + ' ' + reg_match[0][i - 1]
