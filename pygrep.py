@@ -235,6 +235,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
     except IndexError:
         pass
     pygen_length = len(argPyreg)
+    group_num: int = test_re.groups
     if pygen_length == 1: # defaults to first reg_match in line
         for line in func_search:
             reg_match = test_re.findall(line)
@@ -242,7 +243,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                 pyreg_last_list.append(line)
     elif pygen_length == 2:
         if argPyreg[1] == 'all':
-            if test_re.groups > 1:
+            if group_num > 1:
                 for line in func_search:
                     reg_match = test_re.findall(line)
                     if reg_match:
@@ -250,7 +251,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                         for i in reg_match[0]:
                             all_group = all_group + ' ' + i
                         pyreg_last_list.append(all_group[1:])
-            if test_re.groups == 1:
+            if group_num == 1:
                 for line in func_search:
                     reg_match = test_re.findall(line)
                     if reg_match:
@@ -261,18 +262,26 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
             except ValueError: #valueError due to pos_val being a string
                 print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
                 exit(1)
-            for line in func_search:
-                reg_match = test_re.findall(line)     
-                if reg_match:
-                    try:
-                        if len(reg_match[0][pos_val - 1]) != 1:
+            if group_num > 1:
+                for line in func_search:
+                    reg_match = test_re.findall(line)
+                    if reg_match:
+                        try:
                             pyreg_last_list.append(reg_match[0][pos_val - 1])
-                        else:
+                        #indexerror when list exceeds index available
+                        except (IndexError):
+                            print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
+                            exit(1)
+            else:
+                for line in func_search:
+                    reg_match = test_re.findall(line)
+                    if reg_match:
+                        try:
                             pyreg_last_list.append(reg_match[pos_val - 1])
-                    #indexerror when list exceeds index available
-                    except (IndexError):
-                        print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
-                        exit(1)
+                        #indexerror when list exceeds index available
+                        except (IndexError):
+                            print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
+                            exit(1)
         elif len(split_str) > 1:
             try:
                 # Create an int list for regex match iteration.
@@ -309,9 +318,10 @@ def line_func(start_end: list | dict,
             line_num_split = line_num.split('-')
             if '$' in line_num:
                 if line_num_split[0] == '$':
+                    max_num = int(line_num_split[1])
                     for num, key in enumerate(reversed(start_end), 1):
                         start_end_line[key] = start_end[key]
-                        if num >= int(line_num_split[1]):
+                        if num >= max_num:
                             return start_end_line, line_range ##########################################
                 elif line_num_split[1] == '$':
                     line_count = len(start_end) - int(line_num_split[0]) + 1
