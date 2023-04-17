@@ -256,11 +256,15 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                     if reg_match:
                         pyreg_last_list.append(reg_match[0])
         elif len(split_str) == 1:
+            try:
+                pos_val: int = int(split_str[0])
+            except ValueError: #valueError due to pos_val being a string
+                print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
+                exit(1)
             for line in func_search:
                 reg_match = test_re.findall(line)     
                 if reg_match:
                     try:
-                        pos_val: int = int(split_str[0])
                         if len(reg_match[0][pos_val - 1]) != 1:
                             pyreg_last_list.append(reg_match[0][pos_val - 1])
                         else:
@@ -269,25 +273,24 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                     except (IndexError):
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
                         exit(1)
-                    #valueError due to pos_val being a string
-                    except ValueError:
-                        print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
-                        exit(1)
         elif len(split_str) > 1:
+            try:
+                # Create an int list for regex match iteration.
+                int_list: list[int] = [int(i) for i in split_str]
+            except ValueError: # Value error when incorrect values for args.
+                print(f'{colours["fail"]}Error. Index chosen {split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" {colours["end"]}', file=sys.stderr)
+                exit(1)
             for line in func_search:
                 reg_match = test_re.findall(line)     
                 if reg_match:
                     all_group: str = ''
                     try:
-                        for i in split_str:
-                            all_group = all_group + ' ' + reg_match[0][int(i) - 1]
+                        for i in int_list:
+                            all_group = all_group + ' ' + reg_match[0][i - 1]
                         pyreg_last_list.append(all_group[1:])
                     # Indexerror due to incorrect index
                     except IndexError:
                         print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
-                        exit(1)
-                    except ValueError:
-                        print(f'{colours["fail"]}Error. Index chosen {split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" {colours["end"]}', file=sys.stderr)
                         exit(1)
     return pyreg_last_list
 
