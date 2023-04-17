@@ -142,9 +142,9 @@ sys	0m1.120s
 jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p 'SRC=([\d\.]+)\s+DST' 1 -f ufw.test1 | wc -l
 11129400
 
-real	0m10.152s
-user	0m9.071s
-sys	0m1.197s
+real	0m8.796s
+user	0m7.421s
+sys	0m1.541s
 
 
 jonny@jp-vivo:~/git/pygrep$ time rg -No 'SRC=([\d\.]+)\s+DST' ufw.test1 -r '$1' | wc -l
@@ -175,7 +175,7 @@ This is an 11 million line UFW log.
 Ok, now for less output with the same log file and a leading \s+.
 
 ```bash
-jonny@jp-vivo:~/git/pygrep$ time pygrep -p 'DST=(124.14.124.14)' 1 -f ufw.test1 #(ok, this is a literal, but to show it depends on the regex)
+jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p 'DST=(124.14.124.14)' 1 -f ufw.test1 #(ok, this is a literal, but to show it depends on the regex)
 124.14.124.14
 
 real	0m4.120s
@@ -218,7 +218,7 @@ real	0m31.644s
 user	0m30.622s
 sys	0m1.136s
 
-jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p '\s+DST=(123.12.123.12)' all -f ufw.test1 | wc -l # using all in this instance doesn't have too big an impact.
+jonny@jp-vivo:~/git/pygrep$ time pygrep -p '\s+DST=(123.12.123.12)' all -f ufw.test1 | wc -l # using all in this instance doesn't have too big an impact.
 11129399
 
 real	0m30.355s
@@ -378,6 +378,29 @@ jonny@uby-umc:~/git/pygrep$ time rg -No '\s+DST=([\d\.]+)' -r '$1' ufw.test1 | w
 real	0m25.892s
 user	0m25.799s
 sys	0m0.237s
+
+# A not too unrealistic regex search looking for source IP and Source Port.
+
+jonny@jp-vivo:~/git/pygrep$ time rg -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' -r '$1 $2' ufw.test1 | wc -l
+11129400
+
+real	1m14.487s
+user	1m14.529s
+sys	0m0.288s
+
+jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -f ufw.test1 | wc -l
+11129400
+
+real	0m12.688s
+user	0m11.225s
+sys	0m1.592s
+
+jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' 'all' -f ufw.test1 | wc -l # small improvement with all.
+11129400
+
+real	0m11.667s
+user	0m10.236s
+sys	0m1.568s
 
 ```
 
