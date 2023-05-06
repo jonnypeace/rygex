@@ -68,6 +68,7 @@ def sense_check(argStart: list=[],
                 argOmitfirst: list=[],
                 argOmitlast: list=[],
                 argOmitall: list=[],
+                colours: dict={},
                 argTty: bool=False):
 # if not stdin or file, error
     if not argFile and argTty:
@@ -103,11 +104,12 @@ def sense_check(argStart: list=[],
         print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
-# Lower start seach is case insensitive
 def lower_search(file_list: tuple,
                  argStart: list=[],
                  argEnd: list=[],
+                 colours: dict={},
                  )-> list:
+    '''Lower start seach is case insensitive'''
     # If positional number value not set, default to all.
     if len(argStart) < 2:
         argStart.append('all')
@@ -162,11 +164,12 @@ def lower_search(file_list: tuple,
                 pass
     return start_end
 
-# Normal start search, case sensitive
 def normal_search(file_list: tuple,
                  argStart: list=[],
                  argEnd: list=[],
+                 colours: dict={},
                  )-> list:
+    '''Normal start search, case sensitive'''
     # If positional number value not set, default to all.
     if len(argStart) < 2:
         argStart.append('all')
@@ -219,10 +222,12 @@ def normal_search(file_list: tuple,
                 pass
     return start_end
 
-# Py regex search, can be either case sensitive or insensitive
 def pygrep_search(insense: bool=True, func_search: tuple=(),
                   argPyreg: list=[],
+                  pos_val: int=0,
+                  colours: dict={},
                   )-> list:
+    '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
     pyreg_last_list: list= []
     if insense == True:
         test_re = re.compile(argPyreg[0], re.IGNORECASE)
@@ -258,7 +263,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                         pyreg_last_list.append(reg_match[0])
         elif len(split_str) == 1:
             try:
-                pos_val: int = int(split_str[0])
+                pos_val = int(split_str[0])
             except ValueError: #valueError due to pos_val being a string
                 print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
                 exit(1)
@@ -303,9 +308,11 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
                         exit(1)
     return pyreg_last_list
 
-# Arrange lines using args from commandline.
 def line_func(start_end: list | dict,
+              colours: dict={},
               argLine: list=[])-> tuple:
+    ''''Similar idea from using head and tail, requires --line'''
+
     # args for args.line
     line_num_split = []
     line_num = argLine[0]
@@ -322,13 +329,13 @@ def line_func(start_end: list | dict,
                     for num, key in enumerate(reversed(start_end), 1):
                         start_end_line[key] = start_end[key]
                         if num >= max_num:
-                            return start_end_line, line_range ##########################################
+                            return start_end_line, line_range
                 elif line_num_split[1] == '$':
                     line_count = len(start_end) - int(line_num_split[0]) + 1
                     for num, key in enumerate(reversed(start_end), 1):
                         start_end_line[key] = start_end[key]
                         if num >= line_count:
-                            return start_end_line, line_range ##########################################
+                            return start_end_line, line_range
             else:
                 line_count = len(start_end) + 1
                 low_num = line_count - max(int(line_num_split[0]),int(line_num_split[1]))
@@ -341,7 +348,7 @@ def line_func(start_end: list | dict,
                     if num >= low_num:
                         start_end_line[key] = start_end[key]
                     if num >= high_num:
-                        return start_end_line, line_range ##########################################
+                        return start_end_line, line_range
         else: # no range
             # if last line
             line_range = False
@@ -360,8 +367,6 @@ def line_func(start_end: list | dict,
                     if num == line_num:
                         start_end_line[key] = start_end[key]
                         return start_end_line, line_range
-##########
-    
     # For everything else but not including the counts arg.
     start_end_line_list: list = []
     if '-' in line_num:
@@ -389,13 +394,14 @@ def line_func(start_end: list | dict,
             start_end_line_list = start_end[line_num - 1]
     return start_end_line_list, line_range
 
-# Checking whether the first or last characters will be omitted.
 def omit_check(first=None, last=None,
                argOmitfirst: str='',
                argOmitlast: str='',
                argOmitall: str='',
                argStart: list=[],
+               colours: dict={},
                argEnd: list=[])-> tuple:
+    '''Omit characters for --start and --end args'''
     if argOmitall is None:
         try:
             first = len(argStart[0])
@@ -431,9 +437,23 @@ def omit_check(first=None, last=None,
             exit(1)
     return first, last
 
-#Currently, opens a file into a tuple, or takes input from a pipe into a tuple.
-if __name__ == '__main__':
-    # Setting arg parser args
+def counts(count_search: list, checkFirst: int=0, checkLast: int=0, argLine: list=[]):
+    '''Counts the number of times a line is present and outputs a count, uses the --counts arg'''
+    from collections import Counter
+    pattern_search = Counter(count_search)
+    padding = max([len(z[checkFirst:checkLast]) for z in pattern_search]) + 4
+    if argLine:
+        pattern_search, _ = line_func(start_end=pattern_search,
+                                            argLine=argLine)
+        for key in reversed(pattern_search):
+            print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+    else:
+        for key in pattern_search:
+            print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+    exit(0)
+
+def get_args():
+    '''Setting arg parser args'''
     pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
 
     pk.add_argument('-s', '--start',
@@ -492,6 +512,7 @@ if __name__ == '__main__':
             help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
             type=str,
             nargs=1,
+            default=None,
             required=False)
 
     pk.add_argument('-S', '--sort',
@@ -511,6 +532,12 @@ if __name__ == '__main__':
 
     # our variables args parses the function (argparse)
     args = pk.parse_args()
+
+    return args
+
+def main_seq():
+    '''main sequence for arguments to run'''
+    args = get_args()
     # colour dictionary for outputing error message to screen
     colours = {'fail': '\033[91m', 'end': '\033[0m'}
     sense_check(argStart=args.start,
@@ -520,191 +547,73 @@ if __name__ == '__main__':
                 argOmitfirst=args.omitfirst,
                 argOmitlast=args.omitlast,
                 argOmitall=args.omitall,
+                colours=colours,
                 argTty=sys.stdin.isatty())
+    # Getting input from file or piped input
     if args.file:
         with open(args.file, 'r') as my_file:
             file_list = tuple(file.strip() for file in my_file)
     elif not sys.stdin.isatty(): # for using piped std input. 
             file_list = tuple(sys.stdin.read().splitlines())
-######## 
     # Initial case-insensitivity check
     checkFirst, checkLast = omit_check(argOmitfirst=args.omitfirst,
                                        argOmitlast=args.omitlast,
                                        argOmitall=args.omitall,
                                        argStart=args.start,
-                                       argEnd=args.end)
+                                       argEnd=args.end,
+                                       colours=colours)
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
-            first_search = normal_search(file_list=file_list,
+            pattern_search = normal_search(file_list=file_list,
                                         argStart=args.start,
-                                        argEnd=args.end)
+                                        argEnd=args.end,
+                                        colours=colours)
         else:               
-            first_search = lower_search(file_list=file_list,
+            pattern_search = lower_search(file_list=file_list,
                                         argStart=args.start,
-                                        argEnd=args.end)
-        if args.counts and not args.lines and not args.pyreg:
-            from collections import Counter
-            count_test = Counter(first_search)
-            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
-            for key in count_test:
-                print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {count_test[key]}')
-            exit(0)
-    # start end omits 
-    if args.start and not args.pyreg and not args.lines:
-        if args.unique:
-            first_search = list(dict.fromkeys(first_search))
-        if args.sort:
-            first_search.sort()
-        [print(i[checkFirst:checkLast]) for i in first_search]
-        exit(0)
-########
-    # start end omits lines
-    if args.start and args.lines and not args.pyreg:
-        if args.unique:
-            first_search = list(dict.fromkeys(first_search))
-        if args.sort:
-            first_search.sort()
-        if args.counts:
-            from collections import Counter
-            count_test = Counter(first_search)
-            padding = max([len(z[checkFirst:checkLast]) for z in count_test]) + 4
-            second_search, line_range = line_func(start_end=count_test,
-                                                  argLine=args.lines)
-            if line_range == True:
-                for key in reversed(second_search):
-                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {second_search[key]}')
+                                        argEnd=args.end,
+                                        colours=colours)
+    # python regex search
+    if args.pyreg:
+        try:
+            pos_val = args.pyreg[1]
+        except IndexError: # only if no group arg is added on commandline
+            pos_val = 0
+        # regex search
+        pattern_search = pygrep_search(insense=args.insensitive, func_search=tuple(file_list),
+                                      argPyreg=args.pyreg, pos_val=pos_val, colours=colours)
+    # unique search
+    if args.unique:
+        pattern_search = list(dict.fromkeys(pattern_search))
+    # sort search
+    if args.sort:
+        pattern_search.sort()
+    # counts search
+    if args.counts:
+        counts(count_search = pattern_search, checkFirst = checkFirst,
+               checkLast = checkLast, argLine = args.lines)
+    # lines search
+    if args.lines:
+        pattern_search, line_range = line_func(start_end=pattern_search,
+                                                argLine=args.lines, colours=colours)
+        if line_range == True: # multiline
+            if args.pyreg:
+                [print(i) for i in pattern_search]
             else:
-                for key in second_search:
-                    print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {second_search[key]}')
-            exit(0)
-        second_search, line_range = line_func(start_end=first_search,
-                                                  argLine=args.lines)
-        if line_range == True:
-            for i in second_search:
-                print(i[checkFirst:checkLast])
+                [print(i[checkFirst:checkLast]) for i in pattern_search]
+        else: # This prevents a single string from being separated into lines.
+            if args.pyreg:
+                print(pattern_search)
+            else:
+                print(pattern_search[checkFirst:checkLast])
+    else:
+        if args.pyreg:
+            [print(i) for i in pattern_search]
         else:
-            print(second_search[checkFirst:checkLast])
-        exit(0)
-########
-    # start end lines omits pyreg 
-    if args.start and args.lines and args.pyreg:
-        try:
-            pos_val = args.pyreg[1]
-        except IndexError: # only if no group arg is added on commandline 
-            pass
-        # regex search
-        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search),
-                                      argPyreg=args.pyreg)
-        if args.unique:
-            second_search = list(dict.fromkeys(second_search))
-        if args.sort:
-            second_search.sort()
-        if args.counts:
-            from collections import Counter
-            count_test = Counter(second_search)
-            padding = max([len(z) for z in count_test]) + 4
-            third_search, line_range = line_func(start_end=count_test,
-                                                  argLine=args.lines)
-            if line_range == True:
-                for key in reversed(third_search):
-                    print(f'{key:{padding}}Line-Counts = {third_search[key]}')
-            else:
-                for key in third_search:
-                    print(f'{key:{padding}}Line-Counts = {third_search[key]}')
-            exit(0)
-        # final line filter search
-        third_search, line_range = line_func(start_end=second_search,
-                                                  argLine=args.lines)
-        if line_range == True: # multiline
-            for i in third_search:
-                print(i)
-        else: # one line only
-            print(third_search)
-        exit(0)
-########
-    # start end omits pyreg 
-    if args.start and not args.lines and args.pyreg:
-        try:
-            pos_val = args.pyreg[1]
-        except IndexError: # only if no group arg is added on commandline 
-            pass
-        # regex search
-        second_search = pygrep_search(insense=args.insensitive, func_search=tuple(first_search),
-                                      argPyreg=args.pyreg)
-        if args.unique:
-            second_search = list(dict.fromkeys(second_search))
-        if args.sort:
-            second_search.sort()
-        if args.counts:
-            from collections import Counter
-            count_test = Counter(second_search)
-            padding = max([len(z) for z in count_test]) + 4
-            for key in count_test:
-                print(f'{key:{padding}}Line-Counts = {count_test[key]}')
-            exit(0)
-        # final print loop
-        for i in second_search:
-            print(i)
-        exit(0)
-########
-    # pyreg only
-    if args.pyreg and not args.start and not args.lines:
-        try:
-            pos_val = args.pyreg[1]
-        except IndexError: # only if no group arg is added on commandline 
-            pass
-        # initial regex search
-        first_search = pygrep_search(insense=args.insensitive, func_search=file_list,
-                                      argPyreg=args.pyreg)
-        if args.unique:
-            first_search = list(dict.fromkeys(first_search))
-        if args.sort:
-            first_search.sort()
-        if args.counts: # might require some fine tuning
-            from collections import Counter
-            count_test = Counter(first_search)
-            padding = max([len(z) for z in count_test]) + 4
-            for key in count_test:
-                print(f'{key:{padding}}Line-Counts = {count_test[key]}')
-            exit(0)
-        # final loop
-        [print(i) for i in first_search]
-        exit(0)
-########
-    # pyreg lines
-    if args.pyreg and not args.start and args.lines:
-        try:
-            pos_val = args.pyreg[1]
-        except IndexError: # only if no group arg is added on commandline 
-            pass
-        # initial regex search
-        first_search = pygrep_search(insense=args.insensitive, func_search=file_list,
-                                      argPyreg=args.pyreg)
-        # final search
-        if args.unique:
-            first_search = list(dict.fromkeys(first_search))
-        if args.sort:
-            first_search.sort()
-        if args.counts:
-            from collections import Counter
-            count_test = Counter(first_search)
-            padding = max([len(z) for z in count_test]) + 4
-            second_search, line_range = line_func(start_end=count_test,
-                                                  argLine=args.lines)
-            if line_range == True:
-                for key in reversed(second_search):
-                    print(f'{key:{padding}}Line-Counts = {second_search[key]}')
-            else:
-                for key in second_search:
-                    print(f'{key:{padding}}Line-Counts = {second_search[key]}')
-            exit(0)
-        second_search, line_range = line_func(start_end=first_search,
-                                                  argLine=args.lines)
-        if line_range == True: # multiline
-            for i in second_search:
-                print(i)
-        else: # one line only
-            print(second_search)
-        exit(0)
-########
+            [print(i[checkFirst:checkLast]) for i in pattern_search]
+    
+# Run main sequence if name == main.
+if __name__ == '__main__':
+    main_seq()
+
