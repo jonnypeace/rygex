@@ -104,7 +104,7 @@ def sense_check(argStart: list=[],
         print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
     
-    if not len(argStart) > 1 and ( argOmitall or argOmitfirst or argOmitlast ):
+    if argStart and not len(argStart) > 1 and ( argOmitall or argOmitfirst or argOmitlast ):
         print(f'{colours["fail"]}error, --start requires numerical index with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
 
