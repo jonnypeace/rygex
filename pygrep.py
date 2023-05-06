@@ -598,20 +598,11 @@ def main_seq():
         pattern_search, line_range = line_func(start_end=pattern_search,
                                                 argLine=args.lines, colours=colours)
         if line_range == True: # multiline
-            if args.pyreg:
-                [print(i) for i in pattern_search]
-            else:
-                [print(i[checkFirst:checkLast]) for i in pattern_search]
-        else: # This prevents a single string from being separated into lines.
-            if args.pyreg:
-                print(pattern_search)
-            else:
-                print(pattern_search[checkFirst:checkLast])
-    else:
-        if args.pyreg:
-            [print(i) for i in pattern_search]
-        else:
             [print(i[checkFirst:checkLast]) for i in pattern_search]
+        else: # This prevents a single string from being separated into lines.
+           print(pattern_search[checkFirst:checkLast])
+    else:
+        [print(i[checkFirst:checkLast]) for i in pattern_search]
     
 # Run main sequence if name == main.
 if __name__ == '__main__':
