@@ -104,9 +104,10 @@ def sense_check(argStart: list=[],
         print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
         exit(1)
     
-    if argStart and not len(argStart) > 1 and ( argOmitall or argOmitfirst or argOmitlast ):
-        print(f'{colours["fail"]}error, --start requires numerical index with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
-        exit(1)
+    if argStart:
+        if not len(argStart) > 1 and ( argOmitall or argOmitfirst or argOmitlast ):
+            print(f'{colours["fail"]}error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
+            exit(1)
 
 def lower_search(file_list: tuple,
                  argStart: list=[],
