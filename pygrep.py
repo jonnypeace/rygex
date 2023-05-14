@@ -113,6 +113,8 @@ def lower_search(file_list: tuple,
                  argStart: list=[],
                  argEnd: list=[],
                  colours: dict={},
+                 checkFirst: int=0,
+                 checkLast: int=0,
                  )-> list:
     '''Lower start seach is case insensitive'''
     # If positional number value not set, default to all.
@@ -161,7 +163,7 @@ def lower_search(file_list: tuple,
                     for _ in range(iter_end -1):
                         new_index = new_str.casefold().index(lower_end, new_index + 1)
                     new_str = new_str[:new_index + length_end]
-                start_end.append(new_str)
+                start_end.append(new_str[checkFirst:checkLast])
                 '''ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
                 ValueError will probably occur also if you want an instance number from the start search, which does not exist,
                 so we would want to pass those as well.'''
@@ -173,6 +175,8 @@ def normal_search(file_list: tuple,
                  argStart: list=[],
                  argEnd: list=[],
                  colours: dict={},
+                 checkFirst: int=0,
+                 checkLast: int=0,
                  )-> list:
     '''Normal start search, case sensitive'''
     # If positional number value not set, default to all.
@@ -217,7 +221,7 @@ def normal_search(file_list: tuple,
                     for _ in range(iter_end -1):
                         new_index = new_str.index(argEnd[0], new_index + 1)
                     new_str = new_str[:new_index + length_end]
-                start_end.append(new_str)
+                start_end.append(new_str[checkFirst:checkLast])
                 '''
                 ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
                 ValueError will probably occur also if you want an instance number from the start search, which does not exist,
@@ -594,11 +598,15 @@ def main_seq():
             pattern_search = normal_search(file_list=file_list,
                                         argStart=args.start,
                                         argEnd=args.end,
+                                        checkFirst=checkFirst,
+                                        checkLast=checkLast,
                                         colours=colours)
         else:               
             pattern_search = lower_search(file_list=file_list,
                                         argStart=args.start,
                                         argEnd=args.end,
+                                        checkFirst=checkFirst,
+                                        checkLast=checkLast,
                                         colours=colours)
     # python regex search
     if args.pyreg:
@@ -643,11 +651,11 @@ def main_seq():
         pattern_search, line_range = line_func(start_end=pattern_search,
                                                 argLine=args.lines, colours=colours)
         if line_range == True: # multiline
-            [print(i[checkFirst:checkLast]) for i in pattern_search]
+            [print(i) for i in pattern_search]
         else: # This prevents a single string from being separated into lines.
-           print(pattern_search[checkFirst:checkLast])
+           print(pattern_search)
     else:
-        [print(i[checkFirst:checkLast]) for i in pattern_search]
+        [print(i) for i in pattern_search]
     
 # Run main sequence if name == main.
 if __name__ == '__main__':
