@@ -456,11 +456,11 @@ def omit_check(first=None, last=None,
             exit(1)
     return first, last
 
-def counts(count_search: list, checkFirst: int=0, checkLast: int=0, argLine: list=[], argSort: str='False', colours: dict={}):
+def counts(count_search: list, argLine: list=[], argSort: str='False', colours: dict={}):
     '''Counts the number of times a line is present and outputs a count, uses the --counts arg'''
     from collections import Counter
     pattern_search = Counter(count_search)
-    padding = max([len(z[checkFirst:checkLast]) for z in pattern_search]) + 4
+    padding = max([len(z) for z in pattern_search]) + 4
     if argSort != 'False':
         pattern_search = dict(pattern_search.most_common())
         match argSort:
@@ -470,24 +470,21 @@ def counts(count_search: list, checkFirst: int=0, checkLast: int=0, argLine: lis
                 print(f'{colours["fail"]}--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S{colours["end"]}', file=sys.stderr)
                 exit(1)
             
-    def rev_print(pattern_search: dict(), checkFirst: int(),
-                  checkLast: int(), padding: int()):
+    def rev_print(pattern_search: dict(), padding: int()):
         '''Reverse print based on counts'''
         for key in reversed(pattern_search):
-            print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+            print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
 
     if argLine:
         pattern_search, _ = line_func(start_end=pattern_search,
                                             argLine=argLine)
-        rev_print(pattern_search = pattern_search, checkFirst = checkFirst,
-                  checkLast = checkLast, padding = padding)
+        rev_print(pattern_search = pattern_search, padding = padding)
     else:
         if argSort != 'r':
             for key in pattern_search:
-                print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+                print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
         else:
-            rev_print(pattern_search = pattern_search, checkFirst = checkFirst,
-            checkLast = checkLast, padding = padding)
+            rev_print(pattern_search = pattern_search, padding = padding)
     exit(0)
 
 def get_args():
@@ -495,14 +492,14 @@ def get_args():
     pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
 
     pk.add_argument('-s', '--start',
-            help='This is the starting string search [keyword|character [position]]',
+            help='This is the starting string search -s [keyword|character [position]]',
             type=str,
             required=False,
             nargs='+',
             )
 
     pk.add_argument('-e', '--end',
-            help='end of string search [keyword|character position]',
+            help='end of string search -e [keyword|character [position]]',
             type=str,
             nargs='+',
             required=False)
@@ -518,29 +515,29 @@ def get_args():
             required=False)
 
     pk.add_argument('-of', '--omitfirst',
-            help='optional argument for --start. [int|=start] - Removes characters from --start (left) side of ouput',
+            help='optional argument for --start. -of [int] - Removes characters from --start (left) side of ouput',
             type=str,
             nargs='?',
             default='False',
             required=False)
 
     pk.add_argument('-ol', '--omitlast',
-            help='optional argument for --end. [int|=end] - Removes characters from --end (right) side of ouput',
+            help='optional argument for --end. -ol [int] - Removes characters from --end (right) side of ouput',
             type=str,
             nargs='?',
             default='False',
             required=False)
     
     pk.add_argument('-O', '--omitall',
-            help='optional argument for --start & --end. [int|=end] - Removes characters from --start & --end of ouput',
+            help='optional argument for --start & --end. -O [int] - Removes characters from --start & --end of ouput',
             type=str,
             nargs='?',
             default='False',
             required=False)
 
     pk.add_argument('-p', '--pyreg',
-            metavar="[regex [position|all]]",
-            help='optional argument, internal pyreg to regex filter output. For instance, a tcpdump SRC ip may be search but DEST ip required',
+            metavar="[regex [numerical value|all]]",
+            help='python regular expression, use with -p "regex" or follow up with a numerical value for a capture group',
             type=str,
             nargs='+',
             required=False)
@@ -657,8 +654,7 @@ def main_seq():
                 exit(1)
     # counts search
     if args.counts:
-        counts(count_search = pattern_search, checkFirst = checkFirst,
-               checkLast = checkLast, argLine = args.lines, argSort=args.sort,colours=colours)
+        counts(count_search = pattern_search, argLine = args.lines, argSort=args.sort,colours=colours)
     # lines search
     if args.lines:
         pattern_search, line_range = line_func(start_end=pattern_search,
