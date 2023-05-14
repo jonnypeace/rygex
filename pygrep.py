@@ -458,7 +458,7 @@ def counts(count_search: list, checkFirst: int=0, checkLast: int=0, argLine: lis
             
     def rev_print(pattern_search: dict(), checkFirst: int(),
                   checkLast: int(), padding: int()):
-        '''Reverse print based on values'''
+        '''Reverse print based on counts'''
         for key in reversed(pattern_search):
             print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
 
@@ -540,7 +540,7 @@ def get_args():
             required=False)
 
     pk.add_argument('-S', '--sort',
-            help='This is just a flag for sorting no args required, just flag',
+            help='Can be used standalone for normal sort, or combined with "r" for reverse: -Sr',
             nargs='?',
             type=str,
             default='False',
