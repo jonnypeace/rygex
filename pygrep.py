@@ -442,19 +442,38 @@ def omit_check(first=None, last=None,
             exit(1)
     return first, last
 
-def counts(count_search: list, checkFirst: int=0, checkLast: int=0, argLine: list=[]):
+def counts(count_search: list, checkFirst: int=0, checkLast: int=0, argLine: list=[], argSort: str='False', colours: dict={}):
     '''Counts the number of times a line is present and outputs a count, uses the --counts arg'''
     from collections import Counter
     pattern_search = Counter(count_search)
     padding = max([len(z[checkFirst:checkLast]) for z in pattern_search]) + 4
+    if argSort != 'False':
+        pattern_search = dict(pattern_search.most_common())
+        match argSort:
+            case ( None | 'r' ):
+                pass # None and 'r' are allowed
+            case _:
+                print(f'{colours["fail"]}--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S{colours["end"]}', file=sys.stderr)
+                exit(1)
+            
+    def rev_print(pattern_search: dict(), checkFirst: int(),
+                  checkLast: int(), padding: int()):
+        '''Reverse print based on values'''
+        for key in reversed(pattern_search):
+            print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+
     if argLine:
         pattern_search, _ = line_func(start_end=pattern_search,
                                             argLine=argLine)
-        for key in reversed(pattern_search):
-            print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+        rev_print(pattern_search = pattern_search, checkFirst = checkFirst,
+                  checkLast = checkLast, padding = padding)
     else:
-        for key in pattern_search:
-            print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+        if argSort != 'r':
+            for key in pattern_search:
+                print(f'{key[checkFirst:checkLast]:{padding}}Line-Counts = {pattern_search[key]}')
+        else:
+            rev_print(pattern_search = pattern_search, checkFirst = checkFirst,
+            checkLast = checkLast, padding = padding)
     exit(0)
 
 def get_args():
@@ -522,7 +541,9 @@ def get_args():
 
     pk.add_argument('-S', '--sort',
             help='This is just a flag for sorting no args required, just flag',
-            action='store_true',
+            nargs='?',
+            type=str,
+            default='False',
             required=False)
     
     pk.add_argument('-u', '--unique',
@@ -594,12 +615,29 @@ def main_seq():
     if args.unique:
         pattern_search = list(dict.fromkeys(pattern_search))
     # sort search
-    if args.sort:
-        pattern_search.sort()
+    if args.counts != True and args.sort != 'False':
+        test_re = re.compile('^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
+        test_ip = test_re.findall(pattern_search[0])
+        match args.sort:
+            case None:
+                if test_ip:
+                    import ipaddress
+                    pattern_search.sort(key=ipaddress.IPv4Address)
+                else:
+                    pattern_search.sort()
+            case 'r':
+                if test_ip:
+                    import ipaddress
+                    pattern_search.sort(key=ipaddress.IPv4Address, reverse=True)
+                else:
+                    pattern_search.sort(reverse=True)
+            case _:
+                print(f'{colours["fail"]}--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S{colours["end"]}', file=sys.stderr)
+                exit(1)
     # counts search
     if args.counts:
         counts(count_search = pattern_search, checkFirst = checkFirst,
-               checkLast = checkLast, argLine = args.lines)
+               checkLast = checkLast, argLine = args.lines, argSort=args.sort,colours=colours)
     # lines search
     if args.lines:
         pattern_search, line_range = line_func(start_end=pattern_search,
