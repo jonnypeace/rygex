@@ -586,6 +586,8 @@ def main_seq():
         except IndexError: # only if no group arg is added on commandline
             pos_val = 0
         # regex search
+        if args.start:
+            file_list = pattern_search
         pattern_search = pygrep_search(insense=args.insensitive, func_search=tuple(file_list),
                                       argPyreg=args.pyreg, pos_val=pos_val, colours=colours)
     # unique search
