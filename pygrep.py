@@ -120,6 +120,11 @@ def lower_search(file_list: tuple,
     # If positional number value not set, default to all.
     if len(argStart) < 2:
         argStart.append('all')
+    try:
+        if len(argEnd) < 2:
+            argEnd.append('all')
+    except TypeError:
+        pass # argEnd is not mandatory, returns None when not called, so just pass.
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
     if argStart[1] != 'all':
@@ -130,7 +135,7 @@ def lower_search(file_list: tuple,
             exit(1)
 
     # Sense check args.end and ensure 2nd arg is an int
-    if argEnd:
+    if argEnd and argEnd[1] != 'all':
         try:
             iter_end = int(argEnd[1])
             if argStart[0] == argEnd[0]:
@@ -157,7 +162,7 @@ def lower_search(file_list: tuple,
                         new_index = new_str.casefold().index(lower_str, new_index + 1)
                     new_str = new_str[new_index:]
                 # End Arg positions and final string creation
-                if argEnd:
+                if argEnd and argEnd[1] != 'all':
                     new_index = new_str.casefold().index(lower_end)
                     length_end = len(argEnd[0])
                     for _ in range(iter_end -1):
@@ -182,6 +187,11 @@ def normal_search(file_list: tuple,
     # If positional number value not set, default to all.
     if len(argStart) < 2:
         argStart.append('all')
+    try:
+        if len(argEnd) < 2:
+            argEnd.append('all')
+    except TypeError:
+        pass # argEnd is not mandatory, returns None when not called, so just pass.
     '''If arg.start[1] does not equal 'all'...
     Change arg.start[1] to int, since it will be a string.'''
     if argStart[1] != 'all':
@@ -192,13 +202,13 @@ def normal_search(file_list: tuple,
             exit(1)
 
     # Sense check args.end and ensure 2nd arg is an int
-    if argEnd:
+    if argEnd and argEnd[1] != 'all':
         try:
             iter_end = int(argEnd[1])
             if argStart[0] == argEnd[0]:
                 iter_end += 1
         except ValueError:
-            print(f'{colours["fail"]}ValueError: -e / --end only accepts number values{colours["end"]}', file=sys.stderr)
+            print(f'{colours["fail"]}ValueError: -e / --end only accepts number values or "all"{colours["end"]}', file=sys.stderr)
             exit(1)
     start_end: list= []
     # variables from the optional argument of excluding one character
@@ -215,7 +225,7 @@ def normal_search(file_list: tuple,
                         new_index = new_str.index(argStart[0], new_index + 1)
                     new_str = new_str[new_index:]
                 # End Arg positions and final string creation
-                if argEnd:
+                if argEnd and argEnd[1] != 'all':
                     new_index = new_str.index(argEnd[0])
                     length_end = len(argEnd[0])
                     for _ in range(iter_end -1):
@@ -494,7 +504,7 @@ def get_args():
     pk.add_argument('-e', '--end',
             help='end of string search [keyword|character position]',
             type=str,
-            nargs=2,
+            nargs='+',
             required=False)
 
     pk.add_argument('-f', '--file',
@@ -619,6 +629,9 @@ def main_seq():
         # regex search
         pattern_search = pygrep_search(insense=args.insensitive, func_search=tuple(file_list),
                                       argPyreg=args.pyreg, pos_val=pos_val, colours=colours)
+    if not pattern_search:
+        print('No Pattern Found, check search/syntax used')
+        exit(0)
     # unique search
     if args.unique:
         pattern_search = list(dict.fromkeys(pattern_search))
