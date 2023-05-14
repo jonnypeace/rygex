@@ -105,7 +105,7 @@ def sense_check(argStart: list=[],
         exit(1)
     
     if argStart:
-        if not len(argStart) > 1 and ( argOmitall or argOmitfirst or argOmitlast ):
+        if not len(argStart) > 1 and ( argOmitall != 'False' or argOmitfirst != 'False' or argOmitlast != 'False' ):
             print(f'{colours["fail"]}error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
             exit(1)
 
@@ -585,9 +585,9 @@ def main_seq():
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline
             pos_val = 0
-        # regex search
         if args.start:
             file_list = pattern_search
+        # regex search
         pattern_search = pygrep_search(insense=args.insensitive, func_search=tuple(file_list),
                                       argPyreg=args.pyreg, pos_val=pos_val, colours=colours)
     # unique search
