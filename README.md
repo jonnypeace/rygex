@@ -180,27 +180,45 @@ This is an 11 million line UFW log.
 Ok, now for less output with the same log file and a leading \s+.
 
 ```bash
-jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p 'DST=(124.14.124.14)' 1 -f ufw.test1 #(ok, this is a literal, but to show it depends on the regex)
+#(ok, this is a literal, but to show it depends on the regex)
+jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -p ' DST=(124\.14\.124\.14)' 1 -f ufw.test1
 124.14.124.14
 
 real	0m4.120s
 user	0m3.248s
 sys	0m0.872s
 
-
-jonny@jp-vivo:~/git/pygrep$ time pygrep -p '\s+DST=(124.14.124.14)' 1 -f ufw.test1 #(\s+ for regex)
+#(\s+ for adding in a left hand side opened ended regex)
+jonny@jp-vivo:~/git/pygrep$ time pygrep -p '\s+DST=(124.14.124.14)' 1 -f ufw.test1 
 124.14.124.14
 
 real	0m27.946s
 user	0m26.973s
 sys	0m0.972s
 
+# Using --start, --end and -of we get a speedup, since it's mostly literals we're searching for.
+jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -s ' DST=' 1 -e '124.14.124.14' 1 -of -f ufw.test1
+124.14.124.14
+
+real	0m10.249s
+user	0m9.321s
+sys	0m0.928s
+
 jonny@jp-vivo:~/git/pygrep$ time rg -No '\s+DST=(124.14.124.14)' -r '$1' ufw.test1
 124.14.124.14
 
-real	0m4.610s
-user	0m4.525s
-sys	0m0.084s
+real	0m5.629s
+user	0m5.557s
+sys	0m0.072s
+
+# I know ripgrep has a -F strings only, but this removes capture groups,
+# but fear not, simple escaping the period gives us....
+jonny@jp-vivo:~/git/pygrep$ time rg -No ' DST=(124\.14\.124\.14)' -r '$1' ufw.test1
+124.14.124.14
+
+real	0m0.233s
+user	0m0.169s
+sys	0m0.065s
 
 jonny@jp-vivo:~/git/pygrep$ time sed -En 's/.*\s+DST=(124.14.124.14).*/\1/p' ufw.test1
 124.14.124.14
@@ -208,6 +226,14 @@ jonny@jp-vivo:~/git/pygrep$ time sed -En 's/.*\s+DST=(124.14.124.14).*/\1/p' ufw
 real	0m4.514s
 user	0m4.166s
 sys	0m0.348s
+
+# sed with escaped periods doesn't make any difference.
+jonny@jp-vivo:~/git/pygrep$ time sed -En 's/.*\s+DST=(124\.14\.124\.14).*/\1/p' ufw.test1
+124.14.124.14
+
+real	0m4.629s
+user	0m4.301s
+sys	0m0.328s
 
 ```
 
@@ -223,12 +249,30 @@ real	0m31.644s
 user	0m30.622s
 sys	0m1.136s
 
-jonny@jp-vivo:~/git/pygrep$ time pygrep -p '\s+DST=(123.12.123.12)' all -f ufw.test1 | wc -l # using all in this instance doesn't have too big an impact.
+# using 'all' in this instance doesn't have too big an impact.
+jonny@jp-vivo:~/git/pygrep$ time pygrep -p '\s+DST=(123.12.123.12)' all -f ufw.test1 | wc -l 
 11129399
 
 real	0m30.355s
 user	0m29.272s
 sys	0m1.197s
+
+# escaping the periods and removing the \s+ better performance.
+jonny@uby-umc:~/git/pygrep$ time ./pygrep.py -p ' DST=(123\.12\.123\.12)' all -f ufw.test1 | wc -l
+11129399
+
+real	0m8.159s
+user	0m7.140s
+sys	0m1.142s
+
+# another option for literals using --start and --end and -of, helps with a speedup
+jonny@jp-vivo:~/git/pygrep$ time ./pygrep.py -s ' DST=' 1 -e '123.12.123.12' -1 -of -f ufw.test1 | wc -l
+11129399
+
+real	0m12.304s
+user	0m11.282s
+sys	0m1.138s
+
 
 jonny@jp-vivo:~/git/pygrep$ time rg -No '\s+DST=(123.12.123.12)' -r '$1' ufw.test1 | wc -l
 11129399
@@ -236,6 +280,22 @@ jonny@jp-vivo:~/git/pygrep$ time rg -No '\s+DST=(123.12.123.12)' -r '$1' ufw.tes
 real	0m24.041s
 user	0m24.043s
 sys	0m0.174s
+
+# small performance boost escaping the periods.
+jonny@jp-vivo:~/git/pygrep$ time rg -No '\s+DST=(123\.12\.123\.12)' -r '$1' ufw.test1 | wc -l
+11129399
+
+real	0m18.421s
+user	0m18.415s
+sys	0m0.147s
+
+# further improvement removing the \s+ and adding the space character.
+jonny@jp-vivo:~/git/pygrep$ time rg -No ' DST=(123\.12\.123\.12)' -r '$1' ufw.test1 | wc -l
+11129399
+
+real	0m13.141s
+user	0m13.086s
+sys	0m0.188s
 
 jonny@jp-vivo:~/git/pygrep$ time sed -En 's/.*\s+DST=(123.12.123.12).*/\1/p' ufw.test1 | wc -l
 11129399
