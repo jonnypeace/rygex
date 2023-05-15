@@ -59,6 +59,7 @@ Examples
 import argparse
 import re
 import sys
+from pathlib import Path
 
 # sense checking commandline input.
 def sense_check(argStart: list=[],
@@ -107,6 +108,10 @@ def sense_check(argStart: list=[],
     if argStart:
         if not len(argStart) > 1 and ( argOmitall != 'False' or argOmitfirst != 'False' or argOmitlast != 'False' ):
             print(f'{colours["fail"]}error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
+            exit(1)
+
+    if argFile and ( not argFile.exists() or not argFile.is_file() ):
+            print(f'{colours["fail"]}error, --file {argFile} does not exist{colours["end"]}', file=sys.stderr)
             exit(1)
 
 def lower_search(file_list: tuple,
@@ -508,7 +513,7 @@ def get_args():
 
     pk.add_argument('-f', '--file',
             help='filename to string search through',
-            type=str,
+            type=Path,
             required=False)
 
     pk.add_argument('-i', '--insensitive',
