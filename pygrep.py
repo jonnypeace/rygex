@@ -347,32 +347,36 @@ def line_func(start_end: list | dict,
         if '-' in line_num:
             line_range = True
             line_num_split = line_num.split('-')
-            if '$' in line_num:
-                if line_num_split[0] == '$':
-                    max_num = int(line_num_split[1])
-                    for num, key in enumerate(reversed(start_end), 1):
-                        start_end_line[key] = start_end[key]
-                        if num >= max_num:
-                            return start_end_line, line_range
-                elif line_num_split[1] == '$':
-                    line_count = len(start_end) - int(line_num_split[0]) + 1
-                    for num, key in enumerate(reversed(start_end), 1):
-                        start_end_line[key] = start_end[key]
-                        if num >= line_count:
-                            return start_end_line, line_range
+            # If there is only one string in the list, there will be no range, so just output the line
+            if len(start_end) == 1:
+                start_end_line_list = start_end
             else:
-                line_count = len(start_end) + 1
-                low_num = line_count - max(int(line_num_split[0]),int(line_num_split[1]))
-                high_num = line_count - min(int(line_num_split[0]),int(line_num_split[1]))
-                if line_count <= max(int(line_num_split[0]),int(line_num_split[1])):
-                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing file number{colours["end"]}', file=sys.stderr)
-                    exit(1)
-                
-                for num, key in enumerate(reversed(start_end), 1):
-                    if num >= low_num:
-                        start_end_line[key] = start_end[key]
-                    if num >= high_num:
-                        return start_end_line, line_range
+                if '$' in line_num:
+                    if line_num_split[0] == '$':
+                        max_num = int(line_num_split[1])
+                        for num, key in enumerate(reversed(start_end), 1):
+                            start_end_line[key] = start_end[key]
+                            if num >= max_num:
+                                return start_end_line, line_range
+                    elif line_num_split[1] == '$':
+                        line_count = len(start_end) - int(line_num_split[0]) + 1
+                        for num, key in enumerate(reversed(start_end), 1):
+                            start_end_line[key] = start_end[key]
+                            if num >= line_count:
+                                return start_end_line, line_range
+                else:
+                    line_count = len(start_end) + 1
+                    low_num = line_count - max(int(line_num_split[0]),int(line_num_split[1]))
+                    high_num = line_count - min(int(line_num_split[0]),int(line_num_split[1]))
+                    if line_count <= max(int(line_num_split[0]),int(line_num_split[1])):
+                        print(f'{colours["fail"]}error, not enough lines in file. Try reducing file number{colours["end"]}', file=sys.stderr)
+                        exit(1)
+                    
+                    for num, key in enumerate(reversed(start_end), 1):
+                        if num >= low_num:
+                            start_end_line[key] = start_end[key]
+                        if num >= high_num:
+                            return start_end_line, line_range
         else: # no range
             # if last line
             line_range = False
@@ -396,18 +400,22 @@ def line_func(start_end: list | dict,
     if '-' in line_num:
         line_range = True
         line_num_split = line_num.split('-')
-        if '$' in line_num:
-            if line_num_split[0] == '$':
-                for rev_count in range(int(line_num_split[1]), 0, -1):
-                    start_end_line_list.append(start_end[-rev_count])
-            elif line_num_split[1] == '$':
-                line_count = len(start_end) - int(line_num_split[0]) + 2
-                for rev_count in range(line_count, 0, -1):
-                    start_end_line_list.append(start_end[-rev_count])
+        # If there is only one string in the list, there will be no range, so just output the line
+        if len(start_end) == 1:
+            start_end_line_list = start_end
         else:
-            high_num = max(int(line_num_split[0]),int(line_num_split[1]))
-            for rev_count in range(1, high_num + 1, 1):
-                start_end_line_list.append(start_end[rev_count - 1])
+            if '$' in line_num:
+                if line_num_split[0] == '$':
+                    for rev_count in range(int(line_num_split[1]), 0, -1):
+                        start_end_line_list.append(start_end[-rev_count])
+                elif line_num_split[1] == '$':
+                    line_count = len(start_end) - int(line_num_split[0]) + 2
+                    for rev_count in range(line_count, 0, -1):
+                        start_end_line_list.append(start_end[-rev_count])
+            else:
+                high_num = max(int(line_num_split[0]),int(line_num_split[1]))
+                for rev_count in range(1, high_num + 1, 1):
+                    start_end_line_list.append(start_end[rev_count - 1])
     else: # no range
         # if last line
         line_range = False
