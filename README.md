@@ -410,8 +410,3 @@ sys	0m1.568s
 ```
 
 Any personal use log files of around 100,000 lines will not break much of a sweat for any of the above, but I just wanted to throw together some benchmarks so everyone see's any strengths and weaknesses in terms of performance. Each programme has it's own perks and quite different in their own right, and there's a lot more to regex than i'm showing here, plus as i say, each programme has it's own functionality
-
-## Features I'd like to add
-
-* sort by --count number
-* sort overhaul for reverse sort
