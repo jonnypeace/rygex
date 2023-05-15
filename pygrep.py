@@ -476,6 +476,8 @@ def counts(count_search: list, argLine: list=[], argSort: str='False', colours: 
             print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
 
     if argLine:
+        if argSort == 'r':
+            pattern_search = dict(reversed(list(pattern_search.items())))
         pattern_search, _ = line_func(start_end=pattern_search,
                                             argLine=argLine)
         rev_print(pattern_search = pattern_search, padding = padding)
