@@ -13,6 +13,11 @@ Tested on Python 3.10.6 for the most part on Ubuntu22.04, very little testing ha
 
 After seeking some feedback on pygrep, pygrep might not be the right tool for every job, but what is? Anyway, I have some performance stats at the bottom of the page.
 
+## Features I'd like to add or improve
+
+* improve docstrings
+* debug to the point where I feel I can create a stable branch
+
 ## Basic Rules
 
 * Required args are at least --start or --pyreg otherwise the programme won't do anything
