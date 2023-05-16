@@ -340,20 +340,48 @@ def line_func(start_end: list | dict,
     # args for args.line
     line_num_split = []
     line_num = argLine[0]
+    # Run some tests, set some variables..
+    if '-' in line_num:
+        line_range = True
+        line_num_split = line_num.split('-')
+        # If there is only one string in the list, there will be no range, so just output the line, we need get_int to get the int first
+        try:
+            if not '$' in line_num_split[0]:
+                get_int = int(line_num_split[0])
+            if not '$' in line_num_split[1]:
+                get_int = int(line_num_split[1])
+        except ValueError: # Value error if '$' in index
+            print(f'{colours["fail"]}error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"{colours["end"]}', file=sys.stderr)
+            exit(1)        
+        # after passing previous try test, extract two number values if they exist
+        try:
+            num1, num2 = int(line_num_split[0]),int(line_num_split[1])
+        except ValueError:
+            pass # if this fails, it'll be because one of the indexes is '$'
+        if '$' in line_num:
+            # Check if range is too high, and return if it is.
+            if len(start_end) <= get_int:
+                return start_end, line_range
+        else:
+            # First calculate whether enough lines have been found, and return what we have if not.
+            num_diff = max(num1,num2) - min(num1,num2)
+            if len(start_end) <= num_diff:
+                return start_end, line_range
+    else:
+        try:
+            get_int = int(line_num)
+            if len(start_end) < get_int:
+                print(f'{colours["fail"]}error, not enough lines in file. Try reducing line numbers{colours["end"]}', file=sys.stderr)
+                exit(1)
+        except ValueError:
+            if line_num != '$':
+                print(f'{colours["fail"]}error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"{colours["end"]}', file=sys.stderr)
+                exit(1)
 
     # Conditional for lines using the counts arg
     if isinstance(start_end, dict):
         start_end_line = dict()
         if '-' in line_num:
-            line_range = True
-            line_num_split = line_num.split('-')
-            try:
-                get_int = int(line_num_split[0])
-            except ValueError:
-                get_int = int(line_num_split[1])
-            # If there is only one string in the list, there will be no range, so just output the line
-            if len(start_end) <= get_int:
-                return start_end, line_range
             if '$' in line_num:
                 if line_num_split[0] == '$':
                     max_num = int(line_num_split[1])
@@ -370,11 +398,7 @@ def line_func(start_end: list | dict,
             else:
                 line_count = len(start_end) + 1
                 low_num = line_count - max(int(line_num_split[0]),int(line_num_split[1]))
-                high_num = line_count - min(int(line_num_split[0]),int(line_num_split[1]))
-                if line_count <= max(int(line_num_split[0]),int(line_num_split[1])):
-                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing file number{colours["end"]}', file=sys.stderr)
-                    exit(1)
-                
+                high_num = line_count - min(int(line_num_split[0]),int(line_num_split[1]))                
                 for num, key in enumerate(reversed(start_end), 1):
                     if num >= low_num:
                         start_end_line[key] = start_end[key]
@@ -390,10 +414,6 @@ def line_func(start_end: list | dict,
                     return start_end_line, line_range
             else: # specific line
                 line_num = int(line_num)
-                line_count = len(start_end) + 1
-                if line_count <= line_num:
-                    print(f'{colours["fail"]}error, not enough lines in file. Try reducing line numbers{colours["end"]}', file=sys.stderr)
-                    exit(1)
                 for num, key in enumerate(start_end, 1):
                     if num == line_num:
                         start_end_line[key] = start_end[key]
@@ -401,15 +421,6 @@ def line_func(start_end: list | dict,
     # For everything else but not including the counts arg.
     start_end_line_list: list = []
     if '-' in line_num:
-        line_range = True
-        line_num_split = line_num.split('-')
-        try:
-            get_int = int(line_num_split[0])
-        except ValueError:
-            get_int = int(line_num_split[1])
-        # If there is only one string in the list, there will be no range, so just output the line
-        if len(start_end) <= get_int:
-            return start_end, line_range
         if '$' in line_num:
             if line_num_split[0] == '$':
                 for rev_count in range(int(line_num_split[1]), 0, -1):
@@ -419,9 +430,10 @@ def line_func(start_end: list | dict,
                 for rev_count in range(line_count, 0, -1):
                     start_end_line_list.append(start_end[-rev_count])
         else:
-            high_num = max(int(line_num_split[0]),int(line_num_split[1]))
+            low_num, high_num = min(num1,num2), max(num1,num2)
             for rev_count in range(1, high_num + 1, 1):
-                start_end_line_list.append(start_end[rev_count - 1])
+                if rev_count >= low_num:
+                    start_end_line_list.append(start_end[rev_count - 1])
     else: # no range
         # if last line
         line_range = False
