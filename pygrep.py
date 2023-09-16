@@ -667,7 +667,7 @@ if __name__ == '__main__':
     args = python_args(#pyreg=['SRC=([\d\.]+).*SPT=([\d\.]+)', 'all'],
                         start=['62', 1],
                         end=['245', 1],
-                        file=Path('ufw.test'),
+                        file='ufw.test',
                         counts=True,
                         sort=None,
                         omitall=None)
