@@ -61,6 +61,14 @@ import re
 import sys
 from pathlib import Path
 
+def print_err(msg):
+    '''
+    Print error messages, to std error and exit with exit code 1.
+    '''
+    colours = {'fail': '\033[91m', 'end': '\033[0m'}
+    print(f'{colours["fail"]}{msg}{colours["end"]}', file=sys.stderr)
+    exit(1)
+
 # sense checking commandline input.
 def sense_check(argStart: list=[],
                 argEnd: list=[],
@@ -69,58 +77,49 @@ def sense_check(argStart: list=[],
                 argOmitfirst: list=[],
                 argOmitlast: list=[],
                 argOmitall: list=[],
-                colours: dict={},
                 argTty: bool=False):
-# if not stdin or file, error
+    '''
+    Check args are sufficient for processing.
+    '''
+
+    # if not stdin or file, error
     if not argFile and argTty:
-        print(f'{colours["fail"]}Requires stdin from somewhere, either from --file or pipe{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('Requires stdin from somewhere, either from --file or pipe')
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
     if not argStart and not argPyreg:
-        print(f'{colours["fail"]}This programme requires the --start or --pyreg flag to work properly{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('This programme requires the --start or --pyreg flag to work properly')
 
     if argPyreg and len(argPyreg) > 2:
-        print(f'{colours["fail"]}--pyreg can only have 2 args... search pattern and option{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('--pyreg can only have 2 args... search pattern and option')
 
     if argStart and len(argStart) > 2:
-        print(f'{colours["fail"]}--start has too many arguments, character or word followed by occurent number{colours["end"]}', file=sys.stderr)
-        exit(1)
-    
+        print_err('--start has too many arguments, character or word followed by occurent number')
+
     if argOmitfirst == None and argStart == None:
-        print(f'{colours["fail"]}error, --omitfirst without --start{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('error, --omitfirst without --start')
 
     if argOmitlast == None and argEnd == None:
-        print(f'{colours["fail"]}error, --omitlast without --end{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('error, --omitlast without --end')
 
     if argOmitall != 'False' and (argOmitfirst != 'False' or argOmitlast != 'False'):
-        print(f'{colours["fail"]}error, --omitfirst or --omitlast cant be used with --omitall{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('error, --omitfirst or --omitlast cant be used with --omitall')
 
     if not argStart and argPyreg and (argOmitall != 'False' or argOmitfirst != 'False' or argOmitlast !='False'):
-        print(f'{colours["fail"]}error, --pyreg not supported with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
-        exit(1)
+        print_err('error, --pyreg not supported with --omitfirst or --omitlast or --omitall')
     
     if argStart:
         if not len(argStart) > 1 and ( argOmitall != 'False' or argOmitfirst != 'False' or argOmitlast != 'False' ):
-            print(f'{colours["fail"]}error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall')
 
     if not argFile.is_file():
-            print(f'{colours["fail"]}error, --file {argFile} does not exist{colours["end"]}', file=sys.stderr)
-            exit(1)
+        print_err(f'error, --file {argFile} does not exist')
 
 def lower_search(file_list: list,
                  argStart: list=[],
                  argEnd: list=[],
-                 colours: dict={},
                  checkFirst: int=0,
-                 checkLast: int=0,
-                 )-> list:
+                 checkLast: int=0)-> list:
     '''Lower start seach is case insensitive'''
     # If positional number value not set, default to all.
     if len(argStart) < 2:
@@ -136,8 +135,7 @@ def lower_search(file_list: list,
         try:
             iter_start = int(argStart[1])
         except ValueError:
-            print(f'{colours["fail"]}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args')
 
     # Sense check args.end and ensure 2nd arg is an int
     if argEnd and argEnd[1] != 'all':
@@ -146,8 +144,7 @@ def lower_search(file_list: list,
             if argStart[0] == argEnd[0]:
                 iter_end += 1
         except ValueError:
-            print(f'{colours["fail"]}ValueError: -e / --end only accepts number values{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('ValueError: -e / --end only accepts number values')
     start_end: list= []
     # variables from the optional argument of excluding one character
     for line in file_list:
@@ -184,10 +181,8 @@ def lower_search(file_list: list,
 def normal_search(file_list: list,
                  argStart: list=[],
                  argEnd: list=[],
-                 colours: dict={},
                  checkFirst: int=0,
-                 checkLast: int=0,
-                 )-> list:
+                 checkLast: int=0)-> list:
     '''Normal start search, case sensitive'''
     # If positional number value not set, default to all.
     if len(argStart) < 2:
@@ -203,8 +198,7 @@ def normal_search(file_list: list,
         try:
             iter_start = int(argStart[1])
         except ValueError:
-            print(f'{colours["fail"]}Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('Incorrect input for -s | --start - only string allowed to be used with start is "all", or integars. Check args')
 
     # Sense check args.end and ensure 2nd arg is an int
     if argEnd and argEnd[1] != 'all':
@@ -213,8 +207,7 @@ def normal_search(file_list: list,
             if argStart[0] == argEnd[0]:
                 iter_end += 1
         except ValueError:
-            print(f'{colours["fail"]}ValueError: -e / --end only accepts number values or "all"{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('ValueError: -e / --end only accepts number values or "all"')
     start_end: list= []
     # variables from the optional argument of excluding one character
     for line in file_list:
@@ -248,9 +241,7 @@ def normal_search(file_list: list,
 
 def pygrep_search(insense: bool=True, func_search: list=[],
                   argPyreg: list=[],
-                  pos_val: int=0,
-                  colours: dict={},
-                  )-> list:
+                  pos_val: int=0)-> list:
     '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
     pyreg_last_list: list= []
     if insense == True:
@@ -289,8 +280,7 @@ def pygrep_search(insense: bool=True, func_search: list=[],
             try:
                 pos_val = int(split_str[0])
             except ValueError: #valueError due to pos_val being a string
-                print(f'{colours["fail"]}only string allowed to be used with pyreg is "all", check args {split_str}{colours["end"]}', file=sys.stderr)
-                exit(1)
+                print_err(f'only string allowed to be used with pyreg is "all", check args {split_str}')
             if group_num > 1:
                 for line in func_search:
                     reg_match = test_re.findall(line)
@@ -299,8 +289,7 @@ def pygrep_search(insense: bool=True, func_search: list=[],
                             pyreg_last_list.append(reg_match[0][pos_val - 1])
                         #indexerror when list exceeds index available
                         except (IndexError):
-                            print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
-                            exit(1)
+                            print_err(f'Error. Index chosen {split_str} is out of range. Check capture groups')
             else:
                 for line in func_search:
                     reg_match = test_re.findall(line)
@@ -309,15 +298,13 @@ def pygrep_search(insense: bool=True, func_search: list=[],
                             pyreg_last_list.append(reg_match[pos_val - 1])
                         #indexerror when list exceeds index available
                         except (IndexError):
-                            print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
-                            exit(1)
+                            print_err(f'Error. Index chosen {split_str} is out of range. Check capture groups')
         elif len(split_str) > 1:
             try:
                 # Create an int list for regex match iteration.
                 int_list: list[int] = [int(i) for i in split_str]
             except ValueError: # Value error when incorrect values for args.
-                print(f'{colours["fail"]}Error. Index chosen {split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" {colours["end"]}', file=sys.stderr)
-                exit(1)
+                print_err(f'Error. Index chosen {split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" ')
             for line in func_search:
                 reg_match = test_re.findall(line)     
                 if reg_match:
@@ -328,12 +315,10 @@ def pygrep_search(insense: bool=True, func_search: list=[],
                         pyreg_last_list.append(all_group[1:])
                     # Indexerror due to incorrect index
                     except IndexError:
-                        print(f'{colours["fail"]}Error. Index chosen {split_str} is out of range. Check capture groups{colours["end"]}', file=sys.stderr)
-                        exit(1)
+                        print_err(f'Error. Index chosen {split_str} is out of range. Check capture groups')
     return pyreg_last_list
 
 def line_func(start_end: list | dict,
-              colours: dict={},
               argLine: list=[])-> tuple:
     ''''Similar idea from using head and tail, requires --line'''
 
@@ -351,8 +336,7 @@ def line_func(start_end: list | dict,
             if not '$' in line_num_split[1]:
                 get_int = int(line_num_split[1])
         except ValueError: # Value error if '$' in index
-            print(f'{colours["fail"]}error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"{colours["end"]}', file=sys.stderr)
-            exit(1)        
+            print_err('error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"')    
         # after passing previous try test, extract two number values if they exist
         try:
             num1, num2 = int(line_num_split[0]),int(line_num_split[1])
@@ -371,12 +355,10 @@ def line_func(start_end: list | dict,
         try:
             get_int = int(line_num)
             if len(start_end) < get_int:
-                print(f'{colours["fail"]}error, not enough lines in file. Try reducing line numbers{colours["end"]}', file=sys.stderr)
-                exit(1)
+                print_err('error, not enough lines in file. Try reducing line numbers')
         except ValueError:
             if line_num != '$':
-                print(f'{colours["fail"]}error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"{colours["end"]}', file=sys.stderr)
-                exit(1)
+                print_err('error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"')
 
     # Conditional for lines using the counts arg
     if isinstance(start_end, dict):
@@ -449,7 +431,6 @@ def omit_check(first=None, last=None,
                argOmitlast: str='',
                argOmitall: str='',
                argStart: list=[],
-               colours: dict={},
                argEnd: list=[])-> tuple:
     '''Omit characters for --start and --end args'''
     if argOmitall is None:
@@ -464,9 +445,8 @@ def omit_check(first=None, last=None,
             first = int(argOmitall)
             last = - int(argOmitall)
             return first, last
-        except (ValueError):
-            print(f'{colours["fail"]}error, Incorrect arg with --omitall{colours["end"]}', file=sys.stderr)
-            exit(1)
+        except ValueError:
+            print_err('error, Incorrect arg with --omitall')
 
     if argOmitfirst is None:
         first = len(argStart[0])
@@ -474,8 +454,7 @@ def omit_check(first=None, last=None,
         try:
             first = int(argOmitfirst)
         except ValueError:
-            print(f'{colours["fail"]}error, Incorrect arg with --omitfirst{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('error, Incorrect arg with --omitfirst')
 
     if argOmitlast is None:
         last = - len(argEnd[0])
@@ -483,11 +462,10 @@ def omit_check(first=None, last=None,
         try:
             last = - int(argOmitlast)
         except ValueError:
-            print(f'{colours["fail"]}error, Incorrect arg with --omitlast{colours["end"]}', file=sys.stderr)
-            exit(1)
+            print_err('error, Incorrect arg with --omitlast')
     return first, last
 
-def counts(count_search: list, argLine: list=[], argSort: str='False', colours: dict={}):
+def counts(count_search: list, argLine: list=[], argSort: str='False'):
     '''Counts the number of times a line is present and outputs a count, uses the --counts arg'''
     from collections import Counter
     pattern_search = Counter(count_search)
@@ -495,11 +473,10 @@ def counts(count_search: list, argLine: list=[], argSort: str='False', colours: 
     if argSort != 'False':
         pattern_search = dict(pattern_search.most_common()) # type: ignore
         match argSort:
-            case ( None | 'r' ):
+            case None | 'r' :
                 pass # None and 'r' are allowed
             case _:
-                print(f'{colours["fail"]}--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S{colours["end"]}', file=sys.stderr)
-                exit(1)
+                print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
             
     def rev_print(pattern_search: dict, padding: int):
         '''Reverse print based on counts'''
@@ -605,11 +582,28 @@ def get_args():
 
     return args
 
-def main_seq():
+def main_seq(**kwargs):
     '''main sequence for arguments to run'''
     args = get_args()
+    if kwargs:
+        class args:
+            '''
+            Class purely for parsing using python and portability.
+            '''
+            start: str | list = kwargs.get('start', 0)
+            end: str | list = kwargs.get('end', 0)
+            insensitive: bool = kwargs.get('insensitive', 0)
+            omitfirst: str | list = kwargs.get('omitfirst', 'False')
+            omitlast: str | list = kwargs.get('omitlast', 'False')
+            omitall: str | list = kwargs.get('omitall', 'False')
+            lines: str = kwargs.get('lines', None)
+            sort: str = kwargs.get('sort', 'False')
+            unique: bool = kwargs.get('unique', 0)
+            counts: bool = kwargs.get('counts', 0)
+            pyreg: str | list = kwargs.get('pyreg', None)
+            file: Path = Path(kwargs.get('file'))
+
     # colour dictionary for outputing error message to screen
-    colours = {'fail': '\033[91m', 'end': '\033[0m'}
     sense_check(argStart=args.start,
                 argEnd=args.end,
                 argPyreg=args.pyreg,
@@ -617,7 +611,6 @@ def main_seq():
                 argOmitfirst=args.omitfirst,
                 argOmitlast=args.omitlast,
                 argOmitall=args.omitall,
-                colours=colours,
                 argTty=sys.stdin.isatty())
     # Getting input from file or piped input
     if args.file:
@@ -630,8 +623,7 @@ def main_seq():
                                        argOmitlast=args.omitlast,
                                        argOmitall=args.omitall,
                                        argStart=args.start,
-                                       argEnd=args.end,
-                                       colours=colours)
+                                       argEnd=args.end)
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
@@ -639,15 +631,13 @@ def main_seq():
                                         argStart=args.start,
                                         argEnd=args.end,
                                         checkFirst=checkFirst,
-                                        checkLast=checkLast,
-                                        colours=colours)
+                                        checkLast=checkLast)
         else:               
             pattern_search = lower_search(file_list=file_list,
                                         argStart=args.start,
                                         argEnd=args.end,
                                         checkFirst=checkFirst,
-                                        checkLast=checkLast,
-                                        colours=colours)
+                                        checkLast=checkLast)
     # python regex search
     if args.pyreg:
         try:
@@ -658,9 +648,9 @@ def main_seq():
             file_list = pattern_search
         # regex search
         pattern_search = pygrep_search(insense=args.insensitive, func_search=file_list,
-                                      argPyreg=args.pyreg, pos_val=pos_val, colours=colours)
+                                      argPyreg=args.pyreg, pos_val=pos_val)
     if not pattern_search:
-        print('No Pattern Found, check search/syntax used')
+        print('No Pattern Found')
         exit(0)
     # unique search
     if args.unique:
@@ -683,15 +673,14 @@ def main_seq():
                 else:
                     pattern_search.sort(reverse=True)
             case _:
-                print(f'{colours["fail"]}--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S{colours["end"]}', file=sys.stderr)
-                exit(1)
+                print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
     # counts search
     if args.counts:
-        counts(count_search = pattern_search, argLine = args.lines, argSort=args.sort,colours=colours)
+        counts(count_search = pattern_search, argLine = args.lines, argSort=args.sort)
     # lines search
     if args.lines:
         pattern_search, line_range = line_func(start_end=pattern_search,
-                                                argLine=args.lines, colours=colours)
+                                                argLine=args.lines)
         if line_range == True: # multiline
             [print(i) for i in pattern_search]
         else: # This prevents a single string from being separated into lines.
@@ -701,5 +690,14 @@ def main_seq():
     
 # Run main sequence if name == main.
 if __name__ == '__main__':
+
+    # Experimental for using with Python rather than commandline.
+    # main_seq(#pyreg=['SRC=([\d\.]+).*SPT=([\d\.]+)', 'all'],
+    #          start=['62', 1],
+    #          end=['245', 1],
+    #          file=Path('ufw.test'),
+    #         #  counts=True,
+    #         #  sort=None,
+    #          omitall='False')
     main_seq()
 
