@@ -65,7 +65,7 @@ from pathlib import Path
 def sense_check(argStart: list=[],
                 argEnd: list=[],
                 argPyreg: list=[],
-                argFile: list=[],
+                argFile: Path=Path(''),
                 argOmitfirst: list=[],
                 argOmitlast: list=[],
                 argOmitall: list=[],
@@ -110,11 +110,11 @@ def sense_check(argStart: list=[],
             print(f'{colours["fail"]}error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall{colours["end"]}', file=sys.stderr)
             exit(1)
 
-    if argFile and ( not argFile.exists() or not argFile.is_file() ):
+    if not argFile.is_file():
             print(f'{colours["fail"]}error, --file {argFile} does not exist{colours["end"]}', file=sys.stderr)
             exit(1)
 
-def lower_search(file_list: tuple,
+def lower_search(file_list: list,
                  argStart: list=[],
                  argEnd: list=[],
                  colours: dict={},
@@ -181,7 +181,7 @@ def lower_search(file_list: tuple,
                 pass
     return start_end
 
-def normal_search(file_list: tuple,
+def normal_search(file_list: list,
                  argStart: list=[],
                  argEnd: list=[],
                  colours: dict={},
@@ -246,7 +246,7 @@ def normal_search(file_list: tuple,
                 pass
     return start_end
 
-def pygrep_search(insense: bool=True, func_search: tuple=(),
+def pygrep_search(insense: bool=True, func_search: list=[],
                   argPyreg: list=[],
                   pos_val: int=0,
                   colours: dict={},
@@ -493,7 +493,7 @@ def counts(count_search: list, argLine: list=[], argSort: str='False', colours: 
     pattern_search = Counter(count_search)
     padding = max([len(z) for z in pattern_search]) + 4
     if argSort != 'False':
-        pattern_search = dict(pattern_search.most_common())
+        pattern_search = dict(pattern_search.most_common()) # type: ignore
         match argSort:
             case ( None | 'r' ):
                 pass # None and 'r' are allowed
@@ -501,14 +501,14 @@ def counts(count_search: list, argLine: list=[], argSort: str='False', colours: 
                 print(f'{colours["fail"]}--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S{colours["end"]}', file=sys.stderr)
                 exit(1)
             
-    def rev_print(pattern_search: dict(), padding: int()):
+    def rev_print(pattern_search: dict, padding: int):
         '''Reverse print based on counts'''
         for key in reversed(pattern_search):
             print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
 
     if argLine:
         if argSort == 'r':
-            pattern_search = dict(reversed(list(pattern_search.items())))
+            pattern_search = dict(reversed(list(pattern_search.items()))) # type: ignore
         pattern_search, _ = line_func(start_end=pattern_search,
                                             argLine=argLine)
         rev_print(pattern_search = pattern_search, padding = padding)
@@ -622,9 +622,9 @@ def main_seq():
     # Getting input from file or piped input
     if args.file:
         with open(args.file, 'r') as my_file:
-            file_list = tuple(file.strip() for file in my_file)
+            file_list = [ file.strip() for file in my_file ]
     elif not sys.stdin.isatty(): # for using piped std input. 
-            file_list = tuple(sys.stdin.read().splitlines())
+            file_list = [ sys.stdin.read().splitlines() ]
     # Initial case-insensitivity check
     checkFirst, checkLast = omit_check(argOmitfirst=args.omitfirst,
                                        argOmitlast=args.omitlast,
@@ -657,7 +657,7 @@ def main_seq():
         if args.start:
             file_list = pattern_search
         # regex search
-        pattern_search = pygrep_search(insense=args.insensitive, func_search=tuple(file_list),
+        pattern_search = pygrep_search(insense=args.insensitive, func_search=file_list,
                                       argPyreg=args.pyreg, pos_val=pos_val, colours=colours)
     if not pattern_search:
         print('No Pattern Found, check search/syntax used')
