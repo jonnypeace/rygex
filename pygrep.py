@@ -265,7 +265,7 @@ def pygrep_search(insense: bool=True, func_search: tuple=(),
         pass
     pygen_length = len(argPyreg)
     group_num: int = test_re.groups
-    if pygen_length == 1: # defaults to first reg_match in line
+    if pygen_length == 1: # defaults to printing full line if regular expression matches
         for line in func_search:
             reg_match = test_re.findall(line)
             if reg_match:
