@@ -569,19 +569,31 @@ class python_args():
     '''
     Class purely for parsing using python and portability.
     '''
+    
     def __init__(self, **kwargs) -> None:
-        self.start: str | list = kwargs.get('start', 0)
-        self.end: str | list = kwargs.get('end', 0)
-        self.insensitive: bool = kwargs.get('insensitive', 0)
-        self.omitfirst: str | list = kwargs.get('omitfirst', 'False')
-        self.omitlast: str | list = kwargs.get('omitlast', 'False')
-        self.omitall: str | list = kwargs.get('omitall', 'False')
-        self.lines: str = kwargs.get('lines', None)
-        self.sort: str = kwargs.get('sort', 'False')
-        self.unique: bool = kwargs.get('unique', 0)
-        self.counts: bool = kwargs.get('counts', 0)
-        self.pyreg: str | list = kwargs.get('pyreg', None)
-        self.file: Path = Path(kwargs.get('file'))
+        for key in ('start', 'end', 'insensitive', 'unique', 'counts'):
+            setattr(self, key, kwargs.get(key, 0))
+        
+        for key in ('omitfirst', 'omitlast', 'omitall', 'sort'):
+            setattr(self, key, kwargs.get(key, 'False'))
+        
+        for key in ('lines', 'pyreg'):
+            setattr(self, key, kwargs.get(key))
+
+        self.file: Path = Path(kwargs.get('file')) # type: ignore
+
+        # self.start: str | list = kwargs.get('start', 0)
+        # self.end: str | list = kwargs.get('end', 0)
+        # self.insensitive: bool = kwargs.get('insensitive', 0)
+        # self.omitfirst: str | list = kwargs.get('omitfirst', 'False')
+        # self.omitlast: str | list = kwargs.get('omitlast', 'False')
+        # self.omitall: str | list = kwargs.get('omitall', 'False')
+        # self.lines: str = kwargs.get('lines', None)
+        # self.sort: str = kwargs.get('sort', 'False')
+        # self.unique: bool = kwargs.get('unique', 0)
+        # self.counts: bool = kwargs.get('counts', 0)
+        # self.pyreg: str | list = kwargs.get('pyreg', None)
+        # self.file: Path = Path(kwargs.get('file'))
 
 
 def main_seq(python_args_bool=False, args=None):
