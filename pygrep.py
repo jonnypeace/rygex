@@ -122,8 +122,8 @@ def lower_search(file_list: list,
             args.end.append('all')
     except TypeError:
         pass # args.end is not mandatory, returns None when not called, so just pass.
-    '''If arg.start[1] does not equal 'all'...
-    Change arg.start[1] to int, since it will be a string.'''
+    # If arg.start[1] does not equal 'all'...
+    # Change arg.start[1] to int, since it will be a string.
     if args.start[1] != 'all':
         try:
             iter_start = int(args.start[1])
@@ -164,9 +164,9 @@ def lower_search(file_list: list,
                         new_index = new_str.casefold().index(lower_end, new_index + 1)
                     new_str = new_str[:new_index + length_end]
                 start_end.append(new_str[checkFirst:checkLast])
-                '''ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
-                ValueError will probably occur also if you want an instance number from the start search, which does not exist,
-                so we would want to pass those as well.'''
+                # ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
+                # ValueError will probably occur also if you want an instance number from the start search, which does not exist,
+                # so we would want to pass those as well.
             except ValueError:
                 pass
     return start_end
@@ -184,8 +184,8 @@ def normal_search(file_list: list,
             args.end.append('all')
     except TypeError:
         pass # args.end is not mandatory, returns None when not called, so just pass.
-    '''If arg.start[1] does not equal 'all'...
-    Change arg.start[1] to int, since it will be a string.'''
+    # If arg.start[1] does not equal 'all'...
+    # Change arg.start[1] to int, since it will be a string.
     if args.start[1] != 'all':
         try:
             iter_start = int(args.start[1])
@@ -222,11 +222,9 @@ def normal_search(file_list: list,
                         new_index = new_str.index(args.end[0], new_index + 1)
                     new_str = new_str[:new_index + length_end]
                 start_end.append(new_str[checkFirst:checkLast])
-                '''
-                ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
-                ValueError will probably occur also if you want an instance number from the start search, which does not exist,
-                so we would want to pass those as well.
-                '''
+                # ValueError occurs when the end string does not match, so we want to ignore those lines, hence pass.
+                # ValueError will probably occur also if you want an instance number from the start search, which does not exist,
+                # so we would want to pass those as well.
             except ValueError:
                 pass
     return start_end
