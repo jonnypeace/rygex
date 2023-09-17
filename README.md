@@ -17,6 +17,7 @@ After seeking some feedback on pygrep, pygrep might not be the right tool for ev
 
 * improve docstrings
 * debug to the point where I feel I can create a stable branch
+* modular for other python packages
 
 ## Basic Rules
 
