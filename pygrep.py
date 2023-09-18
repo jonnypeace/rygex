@@ -106,7 +106,7 @@ def sense_check(args,
         if not len(args.start) > 1 and ( args.omitall != 'False' or args.omitfirst != 'False' or args.omitlast != 'False' ):
             print_err('error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall')
 
-    if not args.file.is_file():
+    if args.file and not args.file.is_file():
         print_err(f'error, --file {args.file} does not exist')
 
 def lower_search(file_list: list,
@@ -609,7 +609,7 @@ def main_seq(python_args_bool=False, args=None):
         with open(args.file, 'r') as my_file:
             file_list = [ file.strip() for file in my_file ]
     elif not sys.stdin.isatty(): # for using piped std input. 
-            file_list = [ sys.stdin.read().splitlines() ]
+            file_list = [ file.strip() for file in sys.stdin.read().splitlines() ]
     # Initial case-insensitivity check
     checkFirst, checkLast = omit_check(args=args)
     if args.start:
@@ -681,5 +681,5 @@ if __name__ == '__main__':
                         counts=True,
                         sort=None,
                         omitall=None)
-    main_seq(python_args_bool=True, args=args)
-    # main_seq()
+    #main_seq(python_args_bool=True, args=args)
+    main_seq()
