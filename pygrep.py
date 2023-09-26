@@ -565,7 +565,7 @@ def get_args():
 
     return args
 
-class python_args():
+class PythonArgs:
     '''
     Class purely for parsing using python and portability.
     '''
@@ -674,7 +674,7 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    args = python_args(#pyreg=['SRC=([\d\.]+).*SPT=([\d\.]+)', 'all'],
+    args = PythonArgs(#pyreg=['SRC=([\d\.]+).*SPT=([\d\.]+)', 'all'],
                         start=['62', 1],
                         end=['245', 1],
                         file='ufw.test',
