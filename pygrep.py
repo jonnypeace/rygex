@@ -681,5 +681,5 @@ if __name__ == '__main__':
                         counts=True,
                         sort=None,
                         omitall=None)
-    #main_seq(python_args_bool=True, args=args)
-    main_seq()
+    main_seq(python_args_bool=True, args=args)
+    #main_seq()
