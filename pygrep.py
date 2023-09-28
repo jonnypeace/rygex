@@ -623,7 +623,7 @@ def main_seq(python_args_bool=False, args=None):
             # file_list = file_list[core_split*3:]
             # global worker
             # def worker(banana):
-            pattern_search = normal_search(file_list=banana,args=args,
+            pattern_search = normal_search(file_list=file_list,args=args,
                                                     checkFirst=checkFirst,
                                                     checkLast=checkLast)
             #     return pattern_search
@@ -651,6 +651,7 @@ def main_seq(python_args_bool=False, args=None):
         # Experimental multiprocessing
         from multiprocessing import Pool, cpu_count
         n_cores = cpu_count()
+        # n_cores = 8
         split_file = 30
         core_split = len(file_list) // split_file
         small_ls = []
@@ -714,7 +715,7 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    args = python_args(pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
+    args = PythonArgs(pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
                         # start=['62', 1],
                         # end=['245', 1],
                         file='ufw.test1')
