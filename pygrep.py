@@ -565,7 +565,7 @@ def get_args():
 
     return args
 
-class python_args():
+class PythonArgs:
     '''
     Class purely for parsing using python and portability.
     '''
