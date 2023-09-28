@@ -647,6 +647,8 @@ def main_seq(python_args_bool=False, args=None):
         if args.start:
             file_list = pattern_search
         # regex search
+        
+        # Experimental multiprocessing
         from multiprocessing import Pool, cpu_count
         n_cores = cpu_count()
         split_file = 30
