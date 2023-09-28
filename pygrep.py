@@ -615,9 +615,25 @@ def main_seq(python_args_bool=False, args=None):
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
-            pattern_search = normal_search(file_list=file_list,args=args,
-                                           checkFirst=checkFirst,
-                                           checkLast=checkLast)
+            # from multiprocessing import Pool
+            # core_split = len(file_list) // 4
+            # list1 = file_list[0:core_split]
+            # list2 = file_list[core_split:core_split*2]
+            # list3 = file_list[core_split*2:core_split*3]
+            # file_list = file_list[core_split*3:]
+            # global worker
+            # def worker(banana):
+            pattern_search = normal_search(file_list=banana,args=args,
+                                                    checkFirst=checkFirst,
+                                                    checkLast=checkLast)
+            #     return pattern_search
+            
+            # with Pool(4) as fast_work:
+            #     quick = fast_work.map(worker, [list1, list2, list3, file_list])
+            
+            # for i in quick[0]:
+            #     print(i)
+            # return
         else:               
             pattern_search = lower_search(file_list=file_list,args=args,
                                           checkFirst=checkFirst,
@@ -631,7 +647,29 @@ def main_seq(python_args_bool=False, args=None):
         if args.start:
             file_list = pattern_search
         # regex search
-        pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
+        from multiprocessing import Pool, cpu_count
+        n_cores = cpu_count()
+        split_file = 30
+        core_split = len(file_list) // split_file
+        small_ls = []
+        big_ls = []
+        for i in range(0,split_file):
+            small_ls = file_list[core_split*i:core_split*(i+1)]
+            big_ls.append(small_ls)
+        del file_list
+        global worker
+        def worker(banana):
+            pattern_search = pygrep_search(args=args, func_search=banana, pos_val=pos_val)
+            return pattern_search
+        
+        with Pool(n_cores) as fast_work:
+            quick = fast_work.map(worker,[ i for i in big_ls ])
+        
+        for i in quick:
+            for z in i:
+                print(z)
+        return
+        # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:
         print('No Pattern Found')
         exit(0)
@@ -674,12 +712,15 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    args = python_args(#pyreg=['SRC=([\d\.]+).*SPT=([\d\.]+)', 'all'],
-                        start=['62', 1],
-                        end=['245', 1],
-                        file='ufw.test',
-                        counts=True,
-                        sort=None,
-                        omitall=None)
-    #main_seq(python_args_bool=True, args=args)
+    args = python_args(pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
+                        # start=['62', 1],
+                        # end=['245', 1],
+                        file='ufw.test1')
+                        #counts=True,
+                        #sort=None,
+                        # omitall=None)
+    # import time
+    # starting = time.perf_counter()
+    # main_seq(python_args_bool=True, args=args)
+    # print(f'Time taken: {time.perf_counter() - starting}')
     main_seq()
