@@ -60,6 +60,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from multiprocessing import Pool, cpu_count
 
 def print_err(msg):
     '''
@@ -485,70 +486,70 @@ def get_args():
     pk = argparse.ArgumentParser(prog='pygrep',description='Search files with keywords, characters or python regex')
 
     pk.add_argument('-s', '--start',
-            help='This is the starting string search -s [keyword|character [position]]',
-            type=str,
-            required=False,
-            nargs='+',
-            )
+        help='This is the starting string search -s [keyword|character [position]]',
+        type=str,
+        required=False,
+        nargs='+',
+        )
 
     pk.add_argument('-e', '--end',
-            help='end of string search -e [keyword|character [position]]',
-            type=str,
-            nargs='+',
-            required=False)
+        help='end of string search -e [keyword|character [position]]',
+        type=str,
+        nargs='+',
+        required=False)
 
     pk.add_argument('-f', '--file',
-            help='filename to string search through',
-            type=Path,
-            required=False)
+        help='filename to string search through',
+        type=Path,
+        required=False)
 
     pk.add_argument('-i', '--insensitive',
-            help='This is just a flag for case insensitive for the start flag, no args required, just flag',
-            action='store_true',
-            required=False)
+        help='This is just a flag for case insensitive for the start flag, no args required, just flag',
+        action='store_true',
+        required=False)
 
     pk.add_argument('-of', '--omitfirst',
-            help='optional argument for --start. -of [int] - Removes characters from --start (left) side of ouput',
-            type=str,
-            nargs='?',
-            default='False',
-            required=False)
+        help='optional argument for --start. -of [int] - Removes characters from --start (left) side of ouput',
+        type=str,
+        nargs='?',
+        default='False',
+        required=False)
 
     pk.add_argument('-ol', '--omitlast',
-            help='optional argument for --end. -ol [int] - Removes characters from --end (right) side of ouput',
-            type=str,
-            nargs='?',
-            default='False',
-            required=False)
+        help='optional argument for --end. -ol [int] - Removes characters from --end (right) side of ouput',
+        type=str,
+        nargs='?',
+        default='False',
+        required=False)
     
     pk.add_argument('-O', '--omitall',
-            help='optional argument for --start & --end. -O [int] - Removes characters from --start & --end of ouput',
-            type=str,
-            nargs='?',
-            default='False',
-            required=False)
+        help='optional argument for --start & --end. -O [int] - Removes characters from --start & --end of ouput',
+        type=str,
+        nargs='?',
+        default='False',
+        required=False)
 
     pk.add_argument('-p', '--pyreg',
-            metavar="[regex [numerical value|all]]",
-            help='python regular expression, use with -p "regex" or follow up with a numerical value for a capture group',
-            type=str,
-            nargs='+',
-            required=False)
+        metavar="[regex [numerical value|all]]",
+        help='python regular expression, use with -p "regex" or follow up with a numerical value for a capture group',
+        type=str,
+        nargs='+',
+        required=False)
 
     pk.add_argument('-l', '--lines',
-            metavar="'1-10' | '1' | '$-3'",
-            help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
-            type=str,
-            nargs=1,
-            default=None,
-            required=False)
+        metavar="'1-10' | '1' | '$-3'",
+        help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
+        type=str,
+        nargs=1,
+        default=None,
+        required=False)
 
     pk.add_argument('-S', '--sort',
-            help='Can be used standalone for normal sort, or combined with "r" for reverse: -Sr',
-            nargs='?',
-            type=str,
-            default='False',
-            required=False)
+        help='Can be used standalone for normal sort, or combined with "r" for reverse: -Sr',
+        nargs='?',
+        type=str,
+        default='False',
+        required=False)
     
     pk.add_argument('-u', '--unique',
         help='This is just a flag for unique matches no args required, just flag',
@@ -560,6 +561,13 @@ def get_args():
         action='store_true',
         required=False)
 
+    pk.add_argument('-m', '--multi',
+        help="optional argument to for multi processing example= ./pygrep.py -s search -m 4 -f file for 4 threads",
+        nargs=1,
+        type=str,
+        required=False
+        )
+    
     # our variables args parses the function (argparse)
     args = pk.parse_args()
 
@@ -595,6 +603,28 @@ class PythonArgs:
         # self.pyreg: str | list = kwargs.get('pyreg', None)
         # self.file: Path = Path(kwargs.get('file'))
 
+def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2):
+    '''
+    Accepts file, and n_cores (default is system max cores)
+    '''
+    # Experimental multiprocessing
+    
+    core_split = len(file_list) // split_file
+    small_ls = []
+    big_ls = []
+    for i in range(0,split_file+1):
+        small_ls = file_list[core_split*i:core_split*(i+1)]
+        big_ls.append(small_ls)
+    del file_list
+    global worker
+    def worker(filesss):
+        pattern_search = pygrep_search(args=args, func_search=filesss, pos_val=pos_val)
+        return pattern_search
+    
+    with Pool(n_cores) as fast_work:
+        quick = fast_work.map(worker,[ i for i in big_ls ])
+    
+    return quick
 
 def main_seq(python_args_bool=False, args=None):
     '''main sequence for arguments to run'''
@@ -646,32 +676,16 @@ def main_seq(python_args_bool=False, args=None):
             pos_val = 0
         if args.start:
             file_list = pattern_search
-        # regex search
+        if args.multi:
+            quick = multi_cpu(args=args, file_list=file_list,pos_val=pos_val, n_cores=int(args.multi[0]), split_file=int(args.multi[0])*10)
+
+            for i in quick:
+                for z in i:
+                    print(z)
+            return
         
-        # Experimental multiprocessing
-        from multiprocessing import Pool, cpu_count
-        n_cores = cpu_count()
-        # n_cores = 8
-        split_file = 30
-        core_split = len(file_list) // split_file
-        small_ls = []
-        big_ls = []
-        for i in range(0,split_file):
-            small_ls = file_list[core_split*i:core_split*(i+1)]
-            big_ls.append(small_ls)
-        del file_list
-        global worker
-        def worker(banana):
-            pattern_search = pygrep_search(args=args, func_search=banana, pos_val=pos_val)
-            return pattern_search
+        pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
         
-        with Pool(n_cores) as fast_work:
-            quick = fast_work.map(worker,[ i for i in big_ls ])
-        
-        for i in quick:
-            for z in i:
-                print(z)
-        return
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:
         print('No Pattern Found')
@@ -715,10 +729,10 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    args = PythonArgs(pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
+    #args = PythonArgs(pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
                         # start=['62', 1],
                         # end=['245', 1],
-                        file='ufw.test1')
+    #                    file='ufw.test1')
                         #counts=True,
                         #sort=None,
                         # omitall=None)
