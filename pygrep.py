@@ -678,13 +678,14 @@ def main_seq(python_args_bool=False, args=None):
             file_list = pattern_search
         if args.multi:
             quick = multi_cpu(args=args, file_list=file_list,pos_val=pos_val, n_cores=int(args.multi[0]), split_file=int(args.multi[0])*10)
-
-            for i in quick:
-                for z in i:
-                    print(z)
-            return
-        
-        pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
+            pattern_search = [ z for i in quick for z in i ]
+            del quick
+            # for i in quick:
+            #     for z in i:
+            #         print(z)
+            # return
+        else:
+            pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
         
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:

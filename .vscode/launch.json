@@ -28,6 +28,31 @@
                 "-f", "ufw.test"
             ],
             "cwd": "${workspaceFolder}"
-        }
+        },
+        {
+            "name": "003: -p -m small file",
+            "type": "python",
+            "request": "launch",
+            "module": "pygrep",
+            "args": [
+                "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
+                "-m", "16",
+                "-f", "ufw.test"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "004: -p -m BIG file",
+            "type": "python",
+            "request": "launch",
+            "module": "pygrep",
+            "args": [
+                "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
+                "-m", "16",
+                "-c",
+                "-f", "ufw.test1"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }
