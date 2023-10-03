@@ -36,7 +36,7 @@
             "module": "pygrep",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
-                "-m", "16",
+                "-m", "12",
                 "-f", "ufw.test"
             ],
             "cwd": "${workspaceFolder}"
@@ -48,11 +48,17 @@
             "module": "pygrep",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
-                "-m", "16",
+                "-m", "12",
                 "-c",
                 "-f", "ufw.test1"
             ],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "005 time test",
+            "command": "time ./pygrep.py -p '\\w+\\s+DST=(123.12.123.12)\\s+\\w+' all -m 12 -f ufw.test1 | wc -l",
+            "request": "launch",
+            "type": "node-terminal"
         },
     ]
 }
