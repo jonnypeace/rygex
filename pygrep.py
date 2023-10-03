@@ -61,6 +61,7 @@ import re
 import sys
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
+from typing import Iterable
 
 def print_err(msg):
     '''
@@ -603,7 +604,7 @@ class PythonArgs:
         # self.pyreg: str | list = kwargs.get('pyreg', None)
         # self.file: Path = Path(kwargs.get('file'))
 
-def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2):
+def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
     '''
     Accepts file, and n_cores (default is system max cores)
     '''
@@ -645,25 +646,9 @@ def main_seq(python_args_bool=False, args=None):
     if args.start:
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
-            # from multiprocessing import Pool
-            # core_split = len(file_list) // 4
-            # list1 = file_list[0:core_split]
-            # list2 = file_list[core_split:core_split*2]
-            # list3 = file_list[core_split*2:core_split*3]
-            # file_list = file_list[core_split*3:]
-            # global worker
-            # def worker(banana):
             pattern_search = normal_search(file_list=file_list,args=args,
                                                     checkFirst=checkFirst,
                                                     checkLast=checkLast)
-            #     return pattern_search
-            
-            # with Pool(4) as fast_work:
-            #     quick = fast_work.map(worker, [list1, list2, list3, file_list])
-            
-            # for i in quick[0]:
-            #     print(i)
-            # return
         else:               
             pattern_search = lower_search(file_list=file_list,args=args,
                                           checkFirst=checkFirst,
@@ -680,10 +665,6 @@ def main_seq(python_args_bool=False, args=None):
             quick = multi_cpu(args=args, file_list=file_list,pos_val=pos_val, n_cores=int(args.multi[0]), split_file=int(args.multi[0])*10)
             pattern_search = [ z for i in quick for z in i ]
             del quick
-            # for i in quick:
-            #     for z in i:
-            #         print(z)
-            # return
         else:
             pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
         
