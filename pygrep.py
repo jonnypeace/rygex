@@ -455,13 +455,14 @@ def counts(count_search: list, args):
     from collections import Counter
     pattern_search = Counter(count_search)
     padding = max([len(z) for z in pattern_search]) + 4
-    if args.sort != 'False':
+    if args.sort:
         pattern_search = dict(pattern_search.most_common()) # type: ignore
-        match args.sort:
-            case None | 'r' :
-                pass # None and 'r' are allowed
-            case _:
-                print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
+        # if args.sort:
+        # match args.sort:
+        #     case None | 'r' :
+        #         pass # None and 'r' are allowed
+        #     case _:
+        #         print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
             
     def rev_print(pattern_search: dict, padding: int):
         '''Reverse print based on counts'''
@@ -469,17 +470,17 @@ def counts(count_search: list, args):
             print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
 
     if args.lines:
-        if args.sort == 'r':
+        if args.rev:
             pattern_search = dict(reversed(list(pattern_search.items()))) # type: ignore
         pattern_search, _ = line_func(start_end=pattern_search,
                                             args=args)
         rev_print(pattern_search = pattern_search, padding = padding)
     else:
-        if args.sort != 'r':
+        if args.rev:
+            rev_print(pattern_search = pattern_search, padding = padding)
+        else:
             for key in pattern_search:
                 print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
-        else:
-            rev_print(pattern_search = pattern_search, padding = padding)
     exit(0)
 
 def get_args():
@@ -546,10 +547,13 @@ def get_args():
         required=False)
 
     pk.add_argument('-S', '--sort',
-        help='Can be used standalone for normal sort, or combined with "r" for reverse: -Sr',
-        nargs='?',
-        type=str,
-        default='False',
+        help='Can be used standalone for normal sort, or combined with --rev for reverse',
+        action='store_true',
+        required=False)
+    
+    pk.add_argument('-r', '--rev',
+        help='Can be used standalone or with --sort',
+        action='store_true',
         required=False)
     
     pk.add_argument('-u', '--unique',
@@ -563,9 +567,9 @@ def get_args():
         required=False)
 
     pk.add_argument('-m', '--multi',
-        help="optional argument to for multi processing example= ./pygrep.py -s search -m 4 -f file for 4 threads",
+        help="optional argument to for multi processing example= ./pygrep.py -p search -m 4 -f file for 4 threads",
         nargs=1,
-        type=str,
+        type=int,
         required=False
         )
     
@@ -580,29 +584,31 @@ class PythonArgs:
     '''
     
     def __init__(self, **kwargs) -> None:
-        for key in ('start', 'end', 'insensitive', 'unique', 'counts'):
-            setattr(self, key, kwargs.get(key, 0))
+        # for key in ('start', 'end', 'insensitive', 'unique', 'counts'):
+        #     setattr(self, key, kwargs.get(key, False))
         
-        for key in ('omitfirst', 'omitlast', 'omitall', 'sort'):
-            setattr(self, key, kwargs.get(key, 'False'))
+        # for key in ('omitfirst', 'omitlast', 'omitall', 'sort'):
+        #     setattr(self, key, kwargs.get(key, 'False'))
         
-        for key in ('lines', 'pyreg'):
-            setattr(self, key, kwargs.get(key))
+        # for key in ('lines', 'pyreg', 'multi'):
+        #     setattr(self, key, kwargs.get(key))
 
-        self.file: Path = Path(kwargs.get('file')) # type: ignore
-
-        # self.start: str | list = kwargs.get('start', 0)
-        # self.end: str | list = kwargs.get('end', 0)
-        # self.insensitive: bool = kwargs.get('insensitive', 0)
-        # self.omitfirst: str | list = kwargs.get('omitfirst', 'False')
-        # self.omitlast: str | list = kwargs.get('omitlast', 'False')
-        # self.omitall: str | list = kwargs.get('omitall', 'False')
-        # self.lines: str = kwargs.get('lines', None)
-        # self.sort: str = kwargs.get('sort', 'False')
-        # self.unique: bool = kwargs.get('unique', 0)
-        # self.counts: bool = kwargs.get('counts', 0)
-        # self.pyreg: str | list = kwargs.get('pyreg', None)
         # self.file: Path = Path(kwargs.get('file'))
+
+        self.start: str | list = kwargs.get('start', 0)
+        self.end: str | list = kwargs.get('end', 0)
+        self.insensitive: bool = kwargs.get('insensitive', 0)
+        self.omitfirst: str | list = kwargs.get('omitfirst', 'False')
+        self.omitlast: str | list = kwargs.get('omitlast', 'False')
+        self.omitall: str | list = kwargs.get('omitall', 'False')
+        self.lines: str = kwargs.get('lines', None)
+        self.sort: str = kwargs.get('sort', False)
+        self.rev: str = kwargs.get('rev', False)
+        self.unique: bool = kwargs.get('unique', 0)
+        self.counts: bool = kwargs.get('counts', 0)
+        self.pyreg: str | list = kwargs.get('pyreg', None)
+        self.file: Path = Path(kwargs.get('file'))
+        self.multi: int = kwargs.get('multi')
 
 def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
     '''
@@ -679,21 +685,24 @@ def main_seq(python_args_bool=False, args=None):
     if args.counts != True and args.sort != 'False':
         test_re = re.compile('^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
         test_ip = test_re.findall(pattern_search[0])
-        match args.sort:
-            case None:
-                if test_ip:
-                    import ipaddress
-                    pattern_search.sort(key=ipaddress.IPv4Address)
-                else:
-                    pattern_search.sort()
-            case 'r':
-                if test_ip:
-                    import ipaddress
-                    pattern_search.sort(key=ipaddress.IPv4Address, reverse=True)
-                else:
-                    pattern_search.sort(reverse=True)
-            case _:
-                print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
+        if args.sort:
+
+        #match args.sort:
+        #    case None:
+            if test_ip:
+                import ipaddress
+                pattern_search.sort(key=ipaddress.IPv4Address)
+            else:
+                pattern_search.sort()
+        #    case 'r':
+        if args.rev:
+            if test_ip:
+                import ipaddress
+                pattern_search.sort(key=ipaddress.IPv4Address, reverse=True)
+            else:
+                pattern_search.sort(reverse=True)
+            # case _:
+            #     print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
     # counts search
     if args.counts:
         counts(count_search = pattern_search, args=args)
@@ -711,15 +720,13 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    #args = PythonArgs(pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
-                        # start=['62', 1],
-                        # end=['245', 1],
-    #                    file='ufw.test1')
-                        #counts=True,
-                        #sort=None,
-                        # omitall=None)
-    # import time
-    # starting = time.perf_counter()
+    # args = PythonArgs(#pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
+    #                     start=['SRC=', 1],
+    #                     end=[' DST', 1],
+    #                     file='ufw.test',
+    #                     counts=True,
+    #                     sort=True,
+    #                     rev=True,
+    #                     omitall=None)
     # main_seq(python_args_bool=True, args=args)
-    # print(f'Time taken: {time.perf_counter() - starting}')
     main_seq()
