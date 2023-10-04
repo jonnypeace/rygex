@@ -92,20 +92,20 @@ def sense_check(args,
     if args.start and len(args.start) > 2:
         print_err('--start has too many arguments, character or word followed by occurent number')
 
-    if args.omitfirst == None and args.start == None:
+    if not args.start and args.pyreg and (args.omitall or args.omitfirst or args.omitlast):
+        print_err('error, --pyreg not supported with --omitfirst or --omitlast or --omitall')
+
+    if args.omitfirst and args.start == None:
         print_err('error, --omitfirst without --start')
 
-    if args.omitlast == None and args.end == None:
+    if args.omitlast and args.end == None:
         print_err('error, --omitlast without --end')
 
-    if args.omitall != 'False' and (args.omitfirst != 'False' or args.omitlast != 'False'):
+    if args.omitall and (args.omitfirst or args.omitlast):
         print_err('error, --omitfirst or --omitlast cant be used with --omitall')
-
-    if not args.start and args.pyreg and (args.omitall != 'False' or args.omitfirst != 'False' or args.omitlast !='False'):
-        print_err('error, --pyreg not supported with --omitfirst or --omitlast or --omitall')
     
     if args.start:
-        if not len(args.start) > 1 and ( args.omitall != 'False' or args.omitfirst != 'False' or args.omitlast != 'False' ):
+        if not len(args.start) > 1 and ( args.omitall or args.omitfirst or args.omitlast):
             print_err('error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall')
 
     if args.file and not args.file.is_file():
@@ -418,36 +418,19 @@ def line_func(start_end: list | dict, args)-> tuple:
 
 def omit_check(first=None, last=None, args=None)-> tuple:
     '''Omit characters for --start and --end args'''
-    if args.omitall is None:
+    if args.omitall:
         try:
             first = len(args.start[0])
             last = - len(args.end[0])
         except TypeError:
-            pass
+            print_err('--start and --end required for omitall, and will automatically reduce by length of word')
         return first, last
-    if args.omitall != 'False':
-        try:
-            first = int(args.omitall)
-            last = - int(args.omitall)
-            return first, last
-        except ValueError:
-            print_err('error, Incorrect arg with --omitall')
 
-    if args.omitfirst is None:
-        first = len(args.start[0])
-    elif args.omitfirst != 'False':
-        try:
-            first = int(args.omitfirst)
-        except ValueError:
-            print_err('error, Incorrect arg with --omitfirst')
+    if args.omitfirst and isinstance(args.omitfirst[0], int):
+        first = int(args.omitfirst[0])
 
-    if args.omitlast is None:
-        last = - len(args.end[0])
-    elif args.omitlast != 'False':
-        try:
-            last = - int(args.omitlast)
-        except ValueError:
-            print_err('error, Incorrect arg with --omitlast')
+    if args.omitlast and isinstance(args.omitlast[0], int):
+        last = - int(args.omitlast[0])
     return first, last
 
 def counts(count_search: list, args):
@@ -457,12 +440,6 @@ def counts(count_search: list, args):
     padding = max([len(z) for z in pattern_search]) + 4
     if args.sort:
         pattern_search = dict(pattern_search.most_common()) # type: ignore
-        # if args.sort:
-        # match args.sort:
-        #     case None | 'r' :
-        #         pass # None and 'r' are allowed
-        #     case _:
-        #         print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
             
     def rev_print(pattern_search: dict, padding: int):
         '''Reverse print based on counts'''
@@ -512,23 +489,19 @@ def get_args():
 
     pk.add_argument('-of', '--omitfirst',
         help='optional argument for --start. -of [int] - Removes characters from --start (left) side of ouput',
-        type=str,
-        nargs='?',
-        default='False',
+        type=int,
+        nargs=1,
         required=False)
 
     pk.add_argument('-ol', '--omitlast',
         help='optional argument for --end. -ol [int] - Removes characters from --end (right) side of ouput',
-        type=str,
-        nargs='?',
-        default='False',
+        type=int,
+        nargs=1,
         required=False)
     
     pk.add_argument('-O', '--omitall',
         help='optional argument for --start & --end. -O [int] - Removes characters from --start & --end of ouput',
-        type=str,
-        nargs='?',
-        default='False',
+        action='store_true',
         required=False)
 
     pk.add_argument('-p', '--pyreg',
@@ -727,6 +700,6 @@ if __name__ == '__main__':
     #                     counts=True,
     #                     sort=True,
     #                     rev=True,
-    #                     omitall=None)
+    #                     omitall='default')
     # main_seq(python_args_bool=True, args=args)
     main_seq()
