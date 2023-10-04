@@ -557,16 +557,6 @@ class PythonArgs:
     '''
     
     def __init__(self, **kwargs) -> None:
-        # for key in ('start', 'end', 'insensitive', 'unique', 'counts'):
-        #     setattr(self, key, kwargs.get(key, False))
-        
-        # for key in ('omitfirst', 'omitlast', 'omitall', 'sort'):
-        #     setattr(self, key, kwargs.get(key, False))
-        
-        # for key in ('lines', 'pyreg', 'multi'):
-        #     setattr(self, key, kwargs.get(key))
-
-        # self.file: Path = Path(kwargs.get('file'))
 
         self.start: str | list = kwargs.get('start')
         self.end: str | list = kwargs.get('end')
@@ -575,6 +565,7 @@ class PythonArgs:
         # Omitfirst and Omitlast need list conditions for compatibility with the commandline syntax.
         # And I would rather not pass a omitfirst=list[int] for PythonArgs
         # And I would rather not enclose the False syntax in a list.
+        # The reason for bool, is to make sure comparisons are made in sense check, instead of a list of None.
         self.omitfirst: list[int] | bool = [ kwargs.get('omitfirst', False) ] if kwargs.get('omitfirst', False) != False else False
         self.omitlast: list[int] | bool = [ kwargs.get('omitlast', False) ] if kwargs.get('omitlast', False) != False else False
         
