@@ -101,7 +101,7 @@ def sense_check(args,
     if args.omitlast and args.end == None:
         print_err('error, --omitlast without --end')
 
-    if args.omitall and (args.omitfirst or args.omitlast):
+    if (args.omitall and args.omitfirst) or (args.omitall and args.omitlast):
         print_err('error, --omitfirst or --omitlast cant be used with --omitall')
     
     if args.start:
@@ -561,27 +561,33 @@ class PythonArgs:
         #     setattr(self, key, kwargs.get(key, False))
         
         # for key in ('omitfirst', 'omitlast', 'omitall', 'sort'):
-        #     setattr(self, key, kwargs.get(key, 'False'))
+        #     setattr(self, key, kwargs.get(key, False))
         
         # for key in ('lines', 'pyreg', 'multi'):
         #     setattr(self, key, kwargs.get(key))
 
         # self.file: Path = Path(kwargs.get('file'))
 
-        self.start: str | list = kwargs.get('start', 0)
-        self.end: str | list = kwargs.get('end', 0)
-        self.insensitive: bool = kwargs.get('insensitive', 0)
-        self.omitfirst: str | list = kwargs.get('omitfirst', 'False')
-        self.omitlast: str | list = kwargs.get('omitlast', 'False')
-        self.omitall: str | list = kwargs.get('omitall', 'False')
+        self.start: str | list = kwargs.get('start', False)
+        self.end: str | list = kwargs.get('end', False)
+        self.insensitive: bool = kwargs.get('insensitive', False)
+
+        # Omitfirst and Omitlast need list conditions for compatibility with the commandline syntax.
+        # And I would rather not pass a omitfirst=list[int] for PythonArgs
+        # And I would rather not enclose the False syntax in a list.
+        self.omitfirst: list[int] | bool = [ kwargs.get('omitfirst', False) ] if kwargs.get('omitfirst', False) != False else False
+        self.omitlast: list[int] | bool = [ kwargs.get('omitlast', False) ] if kwargs.get('omitlast', False) != False else False
+        
+        self.omitall: bool = kwargs.get('omitall', False)
         self.lines: str = kwargs.get('lines', None)
         self.sort: bool = kwargs.get('sort', False)
         self.rev: bool = kwargs.get('rev', False)
-        self.unique: bool = kwargs.get('unique', 0)
-        self.counts: bool = kwargs.get('counts', 0)
+        self.unique: bool = kwargs.get('unique', False)
+        self.counts: bool = kwargs.get('counts', False)
         self.pyreg: str | list = kwargs.get('pyreg', None)
-        self.file: Path = Path(kwargs.get('file'))
-        self.multi: int = kwargs.get('multi')
+        self.file: Path = Path(kwargs.get('file')) # type: ignore
+        self.multi: int = kwargs.get('multi', 1)
+        
 
 def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
     '''
@@ -602,7 +608,7 @@ def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_coun
         return pattern_search
     
     with Pool(n_cores) as fast_work:
-        quick = fast_work.map(worker,[ i for i in big_ls ])
+        quick = fast_work.map(worker,[ i for i in big_ls ]) # type: ignore
     
     return quick
 
@@ -693,13 +699,16 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    # args = PythonArgs(#pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
-    #                     start=['SRC=', 1],
-    #                     end=[' DST', 1],
-    #                     file='ufw.test',
-    #                     counts=True,
-    #                     sort=True,
-    #                     rev=True,
-    #                     omitall='default')
-    # main_seq(python_args_bool=True, args=args)
-    main_seq()
+    args = PythonArgs(#pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
+                        start=['SRC=', 1],
+                        end=[' DST', 1],
+                        file='ufw.test',
+                        counts=True,
+                        sort=True,
+                        rev=True,
+                        #omitfirst=2,
+                        #omitlast=5,
+                        omitall=True
+                        )
+    main_seq(python_args_bool=True, args=args)
+    # main_seq()first1
