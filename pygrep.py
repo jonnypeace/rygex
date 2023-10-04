@@ -584,7 +584,7 @@ class PythonArgs:
         self.rev: bool = kwargs.get('rev', False)
         self.unique: bool = kwargs.get('unique', False)
         self.counts: bool = kwargs.get('counts', False)
-        self.pyreg: str | list = kwargs.get('pyreg', None)
+        self.pyreg: str | list = kwargs.get('pyreg', False)
         self.file: Path = Path(kwargs.get('file')) # type: ignore
         self.multi: int = kwargs.get('multi', 1)
         
@@ -592,6 +592,8 @@ class PythonArgs:
 def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
     '''
     Accepts file, and n_cores (default is system max cores)
+    
+    Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
     '''
     # Experimental multiprocessing
     
