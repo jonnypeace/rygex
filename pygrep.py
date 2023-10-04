@@ -568,8 +568,8 @@ class PythonArgs:
 
         # self.file: Path = Path(kwargs.get('file'))
 
-        self.start: str | list = kwargs.get('start', False)
-        self.end: str | list = kwargs.get('end', False)
+        self.start: str | list = kwargs.get('start')
+        self.end: str | list = kwargs.get('end')
         self.insensitive: bool = kwargs.get('insensitive', False)
 
         # Omitfirst and Omitlast need list conditions for compatibility with the commandline syntax.
@@ -579,14 +579,14 @@ class PythonArgs:
         self.omitlast: list[int] | bool = [ kwargs.get('omitlast', False) ] if kwargs.get('omitlast', False) != False else False
         
         self.omitall: bool = kwargs.get('omitall', False)
-        self.lines: str = kwargs.get('lines', None)
+        self.lines: list[str] =  [ kwargs.get('lines') ]
         self.sort: bool = kwargs.get('sort', False)
         self.rev: bool = kwargs.get('rev', False)
         self.unique: bool = kwargs.get('unique', False)
         self.counts: bool = kwargs.get('counts', False)
-        self.pyreg: str | list = kwargs.get('pyreg', False)
+        self.pyreg: str | list = kwargs.get('pyreg')
         self.file: Path = Path(kwargs.get('file')) # type: ignore
-        self.multi: int = kwargs.get('multi', 1)
+        self.multi: int = kwargs.get('multi' )
         
 
 def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
@@ -705,11 +705,12 @@ if __name__ == '__main__':
                         start=['SRC=', 1],
                         end=[' DST', 1],
                         file='ufw.test',
-                        counts=True,
-                        sort=True,
-                        rev=True,
-                        #omitfirst=2,
-                        #omitlast=5,
+                        lines='1-10',
+                        # counts=True,
+                        # sort=True,
+                        # rev=True,
+                        # omitfirst=2,
+                        # omitlast=5,
                         omitall=True
                         )
     main_seq(python_args_bool=True, args=args)
