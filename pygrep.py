@@ -701,17 +701,17 @@ def main_seq(python_args_bool=False, args=None):
 if __name__ == '__main__':
 
     # Experimental
-    args = PythonArgs(#pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
-                        start=['SRC=', 1],
-                        end=[' DST', 1],
-                        file='ufw.test',
-                        lines='1-10',
-                        # counts=True,
-                        # sort=True,
-                        # rev=True,
-                        # omitfirst=2,
-                        # omitlast=5,
-                        omitall=True
-                        )
-    main_seq(python_args_bool=True, args=args)
-    # main_seq()first1
+    # args = PythonArgs(#pyreg=['\w+\s+DST=(123.12.123.12)\s+\w+', '1'],
+    #                     start=['SRC=', 1],
+    #                     end=[' DST', 1],
+    #                     file='ufw.test',
+    #                     lines='1-10',
+    #                     # counts=True,
+    #                     # sort=True,
+    #                     # rev=True,
+    #                     # omitfirst=2,
+    #                     # omitlast=5,
+    #                     omitall=True
+    #                     )
+    # main_seq(python_args_bool=True, args=args)
+    main_seq()
