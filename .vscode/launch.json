@@ -1,0 +1,64 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "001: -p small file",
+            "type": "python",
+            "request": "launch",
+            "module": "pygrep",
+            "args": [
+                "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
+                "-f", "ufw.test"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "002: start end omitall small file",
+            "type": "python",
+            "request": "launch",
+            "module": "pygrep",
+            "args": [
+                "-s", "SRC=", "1",
+                "-e", " DST=", "1",
+                "-O",
+                "-f", "ufw.test"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "003: -p -m small file",
+            "type": "python",
+            "request": "launch",
+            "module": "pygrep",
+            "args": [
+                "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
+                "-m", "12",
+                "-f", "ufw.test"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "004: -p -m BIG file",
+            "type": "python",
+            "request": "launch",
+            "module": "pygrep",
+            "args": [
+                "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
+                "-m", "12",
+                "-c",
+                "-f", "ufw.test1"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "005 time test",
+            "command": "time ./pygrep.py -p '\\w+\\s+DST=(123.12.123.12)\\s+\\w+' all -m 12 -f ufw.test1 | wc -l",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+    ]
+}
