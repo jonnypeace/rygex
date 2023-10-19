@@ -443,22 +443,24 @@ def counts(count_search: list, args):
             
     def rev_print(pattern_search: dict, padding: int):
         '''Reverse print based on counts'''
-        for key in reversed(pattern_search):
-            print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
+        #for key in reversed(pattern_search):
+            # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
+        return [f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in reversed(pattern_search)]
 
     if args.lines:
         if args.rev:
             pattern_search = dict(reversed(list(pattern_search.items()))) # type: ignore
         pattern_search, _ = line_func(start_end=pattern_search,
                                             args=args)
-        rev_print(pattern_search = pattern_search, padding = padding)
+        return rev_print(pattern_search = pattern_search, padding = padding)
     else:
         if args.rev:
-            rev_print(pattern_search = pattern_search, padding = padding)
+            return rev_print(pattern_search = pattern_search, padding = padding)
         else:
-            for key in pattern_search:
-                print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
-    exit(0)
+            # for key in pattern_search:
+                # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
+            return [ f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in pattern_search]
+    # exit(0)
 
 def get_args():
     '''Setting arg parser args'''
@@ -654,7 +656,7 @@ def main_seq(python_args_bool=False, args=None):
     if args.unique:
         pattern_search = list(dict.fromkeys(pattern_search))
     # sort search
-    if args.counts != True and args.sort != 'False':
+    if args.counts != True and args.sort:
         test_re = re.compile('^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
         test_ip = test_re.findall(pattern_search[0])
         if args.sort:
@@ -677,16 +679,19 @@ def main_seq(python_args_bool=False, args=None):
             #     print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
     # counts search
     if args.counts:
-        counts(count_search = pattern_search, args=args)
+        return counts(count_search = pattern_search, args=args)
     # lines search
     if args.lines:
         pattern_search, line_range = line_func(start_end=pattern_search, args=args)
         if line_range == True: # multiline
-            [print(i) for i in pattern_search]
+            # [print(i) for i in pattern_search]
+            return [i for i in pattern_search]
         else: # This prevents a single string from being separated into lines.
-           print(pattern_search)
+        #    print(pattern_search)
+            return pattern_search
     else:
-        [print(i) for i in pattern_search]
+        # [print(i) for i in pattern_search]
+        return pattern_search
     
 # Run main sequence if name == main.
 if __name__ == '__main__':
@@ -705,4 +710,5 @@ if __name__ == '__main__':
     #                     omitall=True
     #                     )
     # main_seq(python_args_bool=True, args=args)
-    main_seq()
+    #return_main = main_seq()
+    [print(i) for i in main_seq()]
