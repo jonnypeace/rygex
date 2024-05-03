@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""
+r"""
 PYGREP - Python string and regex search
 =======================================
 
@@ -664,7 +664,7 @@ def main_seq(python_args_bool=False, args=None):
         pattern_search = list(dict.fromkeys(pattern_search))
     # sort search
     if args.counts != True and args.sort != 'False':
-        test_re = re.compile('^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
+        test_re = re.compile(r'^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
         test_ip = test_re.findall(pattern_search[0])
         if args.sort:
 
