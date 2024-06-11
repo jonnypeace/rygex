@@ -587,6 +587,18 @@ def file_reader(file_path: str)-> Generator:
             yield line.strip()
 
 
+def chunked_file_reader(file_path: str, chunk_size: int) -> Iterable[list[str]]:
+    with open(file_path, 'r') as file:
+        chunk = []
+        for line in file:
+            chunk.append(line.strip())
+            if len(chunk) >= chunk_size:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
+
+
 def multi_cpu(file_path, pos_val, args, n_cores=cpu_count(), chunk_size: int = 10000)-> Iterable:
     '''
     Accepts file, and n_cores (default is system max cores)
@@ -600,38 +612,18 @@ def multi_cpu(file_path, pos_val, args, n_cores=cpu_count(), chunk_size: int = 1
     Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
     '''
 
-#    global worker
-#    def worker(line_list):
-#        return pygrep_search(args=args, func_search=line_list, pos_val=pos_val)
-
-#    if Path(file_path).exists:
-#        results = []
-#        with ProcessPoolExecutor(max_workers=n_cores) as executor:
-#            result = executor.map(worker, file_reader(file_path), chunksize=chunk_size)
-#            results.extend(result)
-#            gc.collect()  # Explicitly trigger garbage collection to manage memory
-#        return results
-#    else:
-#        raise FileExistsError(f'Check file {file_path}')
-
-    split_file = 16
-    file_list = [i for i in file_reader(file_path)]
-    core_split = len(file_list) // split_file
-    small_ls = []
-    big_ls = []
-    for i in range(0,split_file+1):
-        small_ls = file_list[core_split*i:core_split*(i+1)]
-        big_ls.append(small_ls)
-    del file_list
     global worker
-    def worker(filesss):
-        pattern_search = pygrep_search(args=args, func_search=filesss, pos_val=pos_val)
-        return pattern_search
-   
-    with Pool(n_cores) as fast_work:
-        quick = fast_work.map(worker,[ i for i in big_ls ]) # type: ignore
-    
-    return [r for i in quick for r in i]
+    def worker(line_list):
+        return pygrep_search(args=args, func_search=line_list, pos_val=pos_val)
+
+    if Path(file_path).exists:
+        with ProcessPoolExecutor(max_workers=n_cores) as executor:
+            result = executor.map(worker, chunked_file_reader(file_path, chunk_size))
+            gc.collect()  # Explicitly trigger garbage collection to manage memory
+        return [r for sublist in result for r in sublist]
+    else:
+        raise FileExistsError(f'Check file {file_path}')
+
 
 def main_seq(python_args_bool=False, args=None):
     '''main sequence for arguments to run'''
