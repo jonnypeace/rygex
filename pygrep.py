@@ -110,7 +110,7 @@ def sense_check(args,
     if args.file and not args.file.is_file():
         print_err(f'error, --file {args.file} does not exist')
 
-def lower_search(file_list: list,
+def lower_search(file_list: Generator,
                  args,
                  checkFirst: int=0,
                  checkLast: int=0)-> list:
@@ -172,10 +172,10 @@ def lower_search(file_list: list,
                 pass
     return start_end
 
-def normal_search(file_list: list,
-                 args,
-                 checkFirst: int=0,
-                 checkLast: int=0)-> list:
+def normal_search(file_list: Generator,
+                  args,
+                  checkFirst: int=0,
+                  checkLast: int=0)-> list:
     '''Normal start search, case sensitive'''
     # If positional number value not set, default to all.
     if len(args.start) < 2:
@@ -230,7 +230,7 @@ def normal_search(file_list: list,
                 pass
     return start_end
 
-def pygrep_search(args=None, func_search: list=[],
+def pygrep_search(args=None, func_search: Iterable[str] = None,
                   pos_val: int=0)-> list:
     '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
     pyreg_last_list: list= []
@@ -579,34 +579,41 @@ class PythonArgs:
         self.pyreg: str | list = kwargs.get('pyreg')
         self.file: Path = Path(kwargs.get('file')) # type: ignore
         self.multi: int = kwargs.get('multi' )
-        
-
-def file_reader(file_path: str)-> Generator:
-    with open(file_path, 'r') as file:
-        for line in file:
-            yield line.strip()
 
 
-def chunked_file_reader(file_path: str, chunk_size: int) -> Iterable[list[str]]:
-    with open(file_path, 'r') as file:
-        chunk = []
-        for line in file:
+def chunked_file_reader(chunk_size: int, file_path: str = None, stdin: sys.stdin = None) -> Iterable[list[str]]:
+    '''Yields chunks of lines from a file or stdin'''
+    chunk = []
+    try:
+        source = open(file_path, 'r') if file_path else stdin
+        if not source:
+            print_err('Input Error: Either file_path or stdin must be provided')
+        for line in source:
             chunk.append(line.strip())
             if len(chunk) >= chunk_size:
                 yield chunk
                 chunk = []
         if chunk:
             yield chunk
+    finally:
+        if file_path:
+            source.close()
 
 
-def multi_cpu(file_path, pos_val, args, n_cores=cpu_count(), chunk_size: int = 10000)-> Iterable:
-    '''
-    Accepts file, and n_cores (default is system max cores)
-    
-    Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
-    '''
-    # Experimental multiprocessing
-    
+
+def unified_input_reader(file_path: str = None) -> Iterable[str]:
+    '''Reads lines from a file or stdin'''
+    if file_path:
+        with open(file_path, 'r') as file:
+            for line in file:
+                yield line.strip()
+    else:
+        if not sys.stdin.isatty():
+            for line in sys.stdin:
+                yield line.strip()
+
+
+def multi_cpu(pos_val, args, n_cores=cpu_count(), file_path: str = None)-> Iterable:
     '''
     Accepts file_path, pos_val, args, and n_cores (default is system max cores)
     Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
@@ -616,13 +623,20 @@ def multi_cpu(file_path, pos_val, args, n_cores=cpu_count(), chunk_size: int = 1
     def worker(line_list):
         return pygrep_search(args=args, func_search=line_list, pos_val=pos_val)
 
-    if Path(file_path).exists:
-        with ProcessPoolExecutor(max_workers=n_cores) as executor:
-            result = executor.map(worker, chunked_file_reader(file_path, chunk_size))
-            gc.collect()  # Explicitly trigger garbage collection to manage memory
-        return [r for sublist in result for r in sublist]
-    else:
-        raise FileExistsError(f'Check file {file_path}')
+    chunk_size = n_cores * 1000
+    reader_args: dict = {
+        'chunk_size': chunk_size,
+        'file_path': file_path if file_path and Path(file_path).exists() else None,
+        'stdin': sys.stdin if not sys.stdin.isatty() else None
+        }
+    
+    with ProcessPoolExecutor(max_workers=n_cores) as executor:
+        result = executor.map(worker, chunked_file_reader(**reader_args))
+        gc.collect()  # Explicitly trigger garbage collection to manage memory
+
+    for sublist in result:
+        for r in sublist:
+            yield r
 
 
 def main_seq(python_args_bool=False, args=None):
@@ -631,14 +645,16 @@ def main_seq(python_args_bool=False, args=None):
     if python_args_bool is False:
         args = get_args()
 
-    # colour dictionary for outputing error message to screen
     sense_check(args=args, argTty=sys.stdin.isatty())
+
     # Getting input from file or piped input
-    if args.file and not args.multi:
-        with open(args.file, 'r') as my_file:
-            file_list = [ file.strip() for file in my_file ]
+    if args.file and Path(args.file).exists():
+        file_list = unified_input_reader(args.file)
     elif not sys.stdin.isatty(): # for using piped std input. 
-            file_list = [ file.strip() for file in sys.stdin.read().splitlines() ]
+        file_list = unified_input_reader()
+    else:
+        print_err('Input not recognised, check file path or stdin')
+
     # Initial case-insensitivity check
     checkFirst, checkLast = omit_check(args=args)
     if args.start:
