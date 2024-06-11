@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""
+r"""
 PYGREP - Python string and regex search
 =======================================
 
@@ -56,12 +56,11 @@ Examples
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -f ufw.test
 """
 
-import argparse
-import re
-import sys
+import argparse, re, sys, gc
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
-from typing import Iterable
+from typing import Iterable, Generator
+from concurrent.futures import ProcessPoolExecutor
 
 def print_err(msg):
     '''
@@ -582,7 +581,13 @@ class PythonArgs:
         self.multi: int = kwargs.get('multi' )
         
 
-def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
+def file_reader(file_path: str)-> Generator:
+    with open(file_path, 'r') as file:
+        for line in file:
+            yield line.strip()
+
+
+def multi_cpu(file_path, pos_val, args, n_cores=cpu_count(), chunk_size: int = 10000)-> Iterable:
     '''
     Accepts file, and n_cores (default is system max cores)
     
@@ -590,33 +595,36 @@ def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_coun
     '''
     # Experimental multiprocessing
     
-    core_split = len(file_list) // split_file
-    small_ls = []
-    big_ls = []
-    for i in range(0,split_file+1):
-        small_ls = file_list[core_split*i:core_split*(i+1)]
-        big_ls.append(small_ls)
-    del file_list
+    '''
+    Accepts file_path, pos_val, args, and n_cores (default is system max cores)
+    Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
+    '''
+
     global worker
-    def worker(filesss):
-        pattern_search = pygrep_search(args=args, func_search=filesss, pos_val=pos_val)
-        return pattern_search
-    
-    with Pool(n_cores) as fast_work:
-        quick = fast_work.map(worker,[ i for i in big_ls ]) # type: ignore
-    
-    return quick
+    def worker(line_list):
+        return pygrep_search(args=args, func_search=line_list, pos_val=pos_val)
+
+    if Path(file_path).exists:
+        results = []
+        with ProcessPoolExecutor(max_workers=n_cores) as executor:
+            result = executor.map(worker, file_reader(file_path), chunksize=chunk_size)
+            results.extend(result)
+            gc.collect()  # Explicitly trigger garbage collection to manage memory
+        return results
+    else:
+        raise FileExistsError(f'Check file {file_path}')
+
 
 def main_seq(python_args_bool=False, args=None):
     '''main sequence for arguments to run'''
     
-    if python_args_bool == False:
+    if python_args_bool is False:
         args = get_args()
 
     # colour dictionary for outputing error message to screen
     sense_check(args=args, argTty=sys.stdin.isatty())
     # Getting input from file or piped input
-    if args.file:
+    if args.file and not args.multi:
         with open(args.file, 'r') as my_file:
             file_list = [ file.strip() for file in my_file ]
     elif not sys.stdin.isatty(): # for using piped std input. 
@@ -642,9 +650,7 @@ def main_seq(python_args_bool=False, args=None):
         if args.start:
             file_list = pattern_search
         if args.multi:
-            quick = multi_cpu(args=args, file_list=file_list,pos_val=pos_val, n_cores=int(args.multi[0]), split_file=int(args.multi[0])*10)
-            pattern_search = [ z for i in quick for z in i ]
-            del quick
+            pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
         else:
             pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
         
@@ -657,7 +663,7 @@ def main_seq(python_args_bool=False, args=None):
         pattern_search = list(dict.fromkeys(pattern_search))
     # sort search
     if args.counts != True and args.sort:
-        test_re = re.compile('^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
+        test_re = re.compile(r'^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
         test_ip = test_re.findall(pattern_search[0])
         if args.sort:
 
@@ -711,4 +717,5 @@ if __name__ == '__main__':
     #                     )
     # main_seq(python_args_bool=True, args=args)
     #return_main = main_seq()
-    [print(i) for i in main_seq()]
+    for i in main_seq():
+        print(i) 
