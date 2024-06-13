@@ -290,6 +290,7 @@ def pygrep_search(args=None, func_search: Iterable[str] = None,
             except IndexError:
                 print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
 
+    gc.collect()
     return parsed.pyreg_last_list
 
 def line_func(start_end: list | dict, args)-> tuple:
@@ -696,6 +697,7 @@ def pygrep_mmap(args, file_path, pos_val): # single threaded
                     except IndexError:
                         print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
 
+    gc.collect()
     return parsed.pyreg_last_list
 
 
@@ -778,9 +780,11 @@ def main_seq(python_args_bool=False, args=None):
             file_list = pattern_search
         if args.multi:
             pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
+            gc.collect()
         else:
             # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
             pattern_search = pygrep_mmap(args=args, file_path=args.file, pos_val=pos_val)
+            gc.collect()
         
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:
