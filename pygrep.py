@@ -58,10 +58,8 @@ Examples
 
 import argparse, re, sys, gc, mmap
 from pathlib import Path
-from multiprocessing import cpu_count
 from typing import Iterable, Generator, Literal, TypedDict
 from dataclasses import dataclass, field
-from concurrent.futures import ProcessPoolExecutor
 
 def print_err(msg):
     '''
@@ -290,7 +288,6 @@ def pygrep_search(args=None, func_search: Iterable[str] = None,
             except IndexError:
                 print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
 
-    gc.collect()
     return parsed.pyreg_last_list
 
 def line_func(start_end: list | dict, args)-> tuple:
@@ -444,7 +441,6 @@ def counts(count_search: list, args):
             # for key in pattern_search:
                 # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
             return [ f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in pattern_search]
-    # exit(0)
 
 def get_args():
     '''Setting arg parser args'''
@@ -697,7 +693,6 @@ def pygrep_mmap(args, file_path, pos_val): # single threaded
                     except IndexError:
                         print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
 
-    gc.collect()
     return parsed.pyreg_last_list
 
 
@@ -715,12 +710,13 @@ def unified_input_reader(file_path: str = None) -> Iterable[str]:
                 yield line.strip()
 
 
-def multi_cpu(pos_val, args, n_cores=cpu_count(), file_path: str = None)-> Iterable:
+def multi_cpu(pos_val, args, n_cores=2, file_path: str = None)-> Iterable:
     '''
     Accepts file_path, pos_val, args, and n_cores (default is system max cores)
     Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
     '''
 
+    from concurrent.futures import ProcessPoolExecutor
     global worker
     def worker(line_list):
         return pygrep_search(args=args, func_search=line_list, pos_val=pos_val)
@@ -780,12 +776,11 @@ def main_seq(python_args_bool=False, args=None):
             file_list = pattern_search
         if args.multi:
             pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
-            gc.collect()
         else:
             # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
             pattern_search = pygrep_mmap(args=args, file_path=args.file, pos_val=pos_val)
-            gc.collect()
-        
+
+    gc.collect()
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:
         print('No Pattern Found')
