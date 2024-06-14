@@ -58,8 +58,8 @@ Examples
 
 import argparse, re, sys, gc, mmap
 from pathlib import Path
-from typing import Iterable, Generator, Literal, TypedDict
-from dataclasses import dataclass, field
+from typing import Iterable, Generator, Literal, TypedDict, NamedTuple
+
 
 def print_err(msg):
     '''
@@ -604,13 +604,12 @@ def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'm
                 case _:
                     print_err('Internal error with criteria matching')
 
-@dataclass
-class ParserPyReg:
+class ParserPyReg(NamedTuple):
     test_reg: re.Pattern
     pygen_length: int
     group_num: int
-    split_str: list = field(default_factory=list)
-    pyreg_last_list: list = field(default_factory=list)
+    split_str: list
+    pyreg_last_list: list
 
 def pygrep_parser(args):
 
