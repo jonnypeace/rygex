@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 r"""
 PYGREP - Python string and regex search
@@ -56,12 +56,10 @@ Examples
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -f ufw.test
 """
 
-import argparse
-import re
-import sys
+import argparse, re, sys, gc, mmap
 from pathlib import Path
-from multiprocessing import Pool, cpu_count
-from typing import Iterable
+from typing import Iterable, Generator, Literal, TypedDict, NamedTuple
+
 
 def print_err(msg):
     '''
@@ -111,7 +109,7 @@ def sense_check(args,
     if args.file and not args.file.is_file():
         print_err(f'error, --file {args.file} does not exist')
 
-def lower_search(file_list: list,
+def lower_search(file_list: Generator,
                  args,
                  checkFirst: int=0,
                  checkLast: int=0)-> list:
@@ -173,10 +171,10 @@ def lower_search(file_list: list,
                 pass
     return start_end
 
-def normal_search(file_list: list,
-                 args,
-                 checkFirst: int=0,
-                 checkLast: int=0)-> list:
+def normal_search(file_list: Generator,
+                  args,
+                  checkFirst: int=0,
+                  checkLast: int=0)-> list:
     '''Normal start search, case sensitive'''
     # If positional number value not set, default to all.
     if len(args.start) < 2:
@@ -231,83 +229,66 @@ def normal_search(file_list: list,
                 pass
     return start_end
 
-def pygrep_search(args=None, func_search: list=[],
+def grouped_iter(file_data: Iterable[str],test_reg: re.Pattern, int_list=None):
+    temp_list: list = []
+    for line in file_data:
+        reg_match = test_reg.findall(line)
+        if reg_match:
+            all_group = ''
+            if int_list:
+                for i in int_list:
+                    all_group = all_group + ' ' + reg_match[0][i-1]
+            else:
+                for i in reg_match[0]:
+                    all_group = all_group + ' ' + i
+            temp_list.append(all_group[1:])
+    return temp_list
+
+def pygrep_search(args=None, func_search: Iterable[str] = None,
                   pos_val: int=0)-> list:
     '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
-    pyreg_last_list: list= []
-    if args.insensitive == True:
-        test_re = re.compile(args.pyreg[0], re.IGNORECASE)
-    else:
-        test_re = re.compile(args.pyreg[0])
-    # Splitting the arg for capture groups into a list
-    try:
-        split_str: list = args.pyreg[1].split(' ')
-    # IndexError occurs when entire lines are required
-    except IndexError:
-        pass
-    pygen_length = len(args.pyreg)
-    group_num: int = test_re.groups
-    if pygen_length == 1: # defaults to printing full line if regular expression matches
+    parsed = pygrep_parser(args)
+    
+    if parsed.pygen_length == 1: # defaults to printing full line if regular expression matches
         for line in func_search:
-            reg_match = test_re.findall(line)
+            reg_match = parsed.test_reg.findall(line)
             if reg_match:
-                pyreg_last_list.append(line)
-    elif pygen_length == 2:
+                parsed.pyreg_last_list.append(line)
+
+    elif parsed.pygen_length == 2:
         if args.pyreg[1] == 'all':
-            if group_num > 1:
+            if parsed.group_num > 1:
+                parsed.pyreg_last_list = grouped_iter(file_data=func_search, test_reg=parsed.test_reg)
+            if parsed.group_num == 1:
                 for line in func_search:
-                    reg_match = test_re.findall(line)
+                    reg_match = parsed.test_reg.findall(line)
                     if reg_match:
-                        all_group: str = ''
-                        for i in reg_match[0]:
-                            all_group = all_group + ' ' + i
-                        pyreg_last_list.append(all_group[1:])
-            if group_num == 1:
-                for line in func_search:
-                    reg_match = test_re.findall(line)
-                    if reg_match:
-                        pyreg_last_list.append(reg_match[0])
-        elif len(split_str) == 1:
+                        parsed.pyreg_last_list.append(reg_match[0])
+        elif len(parsed.split_str) == 1:
             try:
-                pos_val = int(split_str[0])
+                pos_val = int(parsed.split_str[0])
             except ValueError: #valueError due to pos_val being a string
-                print_err(f'only string allowed to be used with pyreg is "all", check args {split_str}')
-            if group_num > 1:
-                for line in func_search:
-                    reg_match = test_re.findall(line)
-                    if reg_match:
-                        try:
-                            pyreg_last_list.append(reg_match[0][pos_val - 1])
-                        #indexerror when list exceeds index available
-                        except (IndexError):
-                            print_err(f'Error. Index chosen {split_str} is out of range. Check capture groups')
-            else:
-                for line in func_search:
-                    reg_match = test_re.findall(line)
-                    if reg_match:
-                        try:
-                            pyreg_last_list.append(reg_match[pos_val - 1])
-                        #indexerror when list exceeds index available
-                        except (IndexError):
-                            print_err(f'Error. Index chosen {split_str} is out of range. Check capture groups')
-        elif len(split_str) > 1:
+                print_err(f'only string allowed to be used with pyreg is "all", check args {parsed.split_str}')
+            for line in func_search:
+                reg_match = parsed.test_reg.findall(line)
+                if reg_match:
+                    try:
+                        parsed.pyreg_last_list.append(reg_match[0][pos_val - 1]) if parsed.group_num > 1 else parsed.pyreg_last_list.append(reg_match[pos_val - 1])
+                    #indexerror when list exceeds index available
+                    except (IndexError):
+                        print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
+        elif len(parsed.split_str) > 1:
             try:
                 # Create an int list for regex match iteration.
-                int_list: list[int] = [int(i) for i in split_str]
+                int_list: list[int] = [int(i) for i in parsed.split_str]
             except ValueError: # Value error when incorrect values for args.
-                print_err(f'Error. Index chosen {split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" ')
-            for line in func_search:
-                reg_match = test_re.findall(line)     
-                if reg_match:
-                    all_group = ''
-                    try:
-                        for i in int_list:
-                            all_group = all_group + ' ' + reg_match[0][i - 1]
-                        pyreg_last_list.append(all_group[1:])
-                    # Indexerror due to incorrect index
-                    except IndexError:
-                        print_err(f'Error. Index chosen {split_str} is out of range. Check capture groups')
-    return pyreg_last_list
+                print_err(f'Error. Index chosen {parsed.split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" ')
+            try:
+                parsed.pyreg_last_list = grouped_iter(func_search,parsed.test_reg, int_list)
+            except IndexError:
+                print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
+
+    return parsed.pyreg_last_list
 
 def line_func(start_end: list | dict, args)-> tuple:
     ''''Similar idea from using head and tail, requires --line'''
@@ -443,22 +424,23 @@ def counts(count_search: list, args):
             
     def rev_print(pattern_search: dict, padding: int):
         '''Reverse print based on counts'''
-        for key in reversed(pattern_search):
-            print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
+        #for key in reversed(pattern_search):
+            # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
+        return [f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in reversed(pattern_search)]
 
     if args.lines:
         if args.rev:
             pattern_search = dict(reversed(list(pattern_search.items()))) # type: ignore
         pattern_search, _ = line_func(start_end=pattern_search,
                                             args=args)
-        rev_print(pattern_search = pattern_search, padding = padding)
+        return rev_print(pattern_search = pattern_search, padding = padding)
     else:
         if args.rev:
-            rev_print(pattern_search = pattern_search, padding = padding)
+            return rev_print(pattern_search = pattern_search, padding = padding)
         else:
-            for key in pattern_search:
-                print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
-    exit(0)
+            # for key in pattern_search:
+                # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
+            return [ f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in pattern_search]
 
 def get_args():
     '''Setting arg parser args'''
@@ -557,16 +539,6 @@ class PythonArgs:
     '''
     
     def __init__(self, **kwargs) -> None:
-        # for key in ('start', 'end', 'insensitive', 'unique', 'counts'):
-        #     setattr(self, key, kwargs.get(key, False))
-        
-        # for key in ('omitfirst', 'omitlast', 'omitall', 'sort'):
-        #     setattr(self, key, kwargs.get(key, False))
-        
-        # for key in ('lines', 'pyreg', 'multi'):
-        #     setattr(self, key, kwargs.get(key))
-
-        # self.file: Path = Path(kwargs.get('file'))
 
         self.start: str | list = kwargs.get('start')
         self.end: str | list = kwargs.get('end')
@@ -575,6 +547,7 @@ class PythonArgs:
         # Omitfirst and Omitlast need list conditions for compatibility with the commandline syntax.
         # And I would rather not pass a omitfirst=list[int] for PythonArgs
         # And I would rather not enclose the False syntax in a list.
+        # The reason for bool, is to make sure comparisons are made in sense check, instead of a list of None.
         self.omitfirst: list[int] | bool = [ kwargs.get('omitfirst', False) ] if kwargs.get('omitfirst', False) != False else False
         self.omitlast: list[int] | bool = [ kwargs.get('omitlast', False) ] if kwargs.get('omitlast', False) != False else False
         
@@ -587,50 +560,202 @@ class PythonArgs:
         self.pyreg: str | list = kwargs.get('pyreg')
         self.file: Path = Path(kwargs.get('file')) # type: ignore
         self.multi: int = kwargs.get('multi' )
-        
 
-def multi_cpu(file_list, pos_val, args, n_cores=cpu_count(), split_file=cpu_count()*2)-> Iterable:
+
+def chunked_file_reader(chunk_size: int, file_path: str = None, stdin: sys.stdin = None) -> Iterable[list[str]]: # multi threaded
+    '''Yields chunks of lines from a file or stdin'''
+    chunk = []
+    try:
+        source = open(file_path, 'r') if file_path else stdin
+        if not source:
+            print_err('Input Error: Either file_path or stdin must be provided')
+        for line in source:
+            chunk.append(line.strip())
+            if len(chunk) >= chunk_size:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
+    finally:
+        if file_path:
+            source.close()
+
+
+def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'match'], insensitive: bool = False): # single threaded
+
+    with open(file_path, 'rb', buffering=0) as file:
+        with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            # Compile the regular expression pattern
+            pattern = re.compile(regex_pattern.encode('utf-8'), re.IGNORECASE) if insensitive else re.compile(regex_pattern.encode('utf-8'))
+            # Search using the pattern, yielding match objects
+            match criteria:
+                case 'line':
+                    for match in pattern.finditer(mm):
+                        start = max(0, mm.rfind(b'\n', 0, match.start())+1)
+                        end = mm.find(b'\n', match.end())
+                        if end == -1:
+                            end = len(mm)  # Handle case where the match is in the last line
+                        # Append the whole line as a decoded string
+                        yield mm[start:end].decode('utf-8')
+                case 'match':
+                    for match in pattern.finditer(mm):
+                        yield match.groups()
+                
+                case _:
+                    print_err('Internal error with criteria matching')
+
+class ParserPyReg(NamedTuple):
+    test_reg: re.Pattern
+    pygen_length: int
+    group_num: int
+    split_str: list
+    pyreg_last_list: list
+
+def pygrep_parser(args):
+
+    test_reg: re.Pattern = re.compile(args.pyreg[0], re.IGNORECASE) if args.insensitive else re.compile(args.pyreg[0])
+    # Splitting the arg for capture groups into a list
+    try:
+        split_str: list = args.pyreg[1].split(' ')
+    # IndexError occurs when entire lines are required
+    except IndexError:
+        split_str = []
+
+    return ParserPyReg(
+        test_reg = test_reg,
+        split_str = split_str,
+        pygen_length = len(args.pyreg),
+        group_num = test_reg.groups,
+        pyreg_last_list = []
+    )
+
+class ReaderArgs(TypedDict):
+    file_path: str
+    regex_pattern: str
+    criteria: Literal['line', 'match']
+    insensitive: bool = False
+
+def reader_args_parser(file_path, args):
+    return ReaderArgs(
+        file_path=file_path,
+        regex_pattern=args.pyreg[0],
+        criteria='match',
+        insensitive=args.insensitive
+    )
+
+
+def pygrep_mmap(args, file_path, pos_val): # single threaded
+    '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
+    parsed = pygrep_parser(args)
+    reader_args: ReaderArgs = reader_args_parser(file_path, args)
+
+    match parsed.pygen_length:
+        case 1: # defaults to printing full line if regular expression matches
+            reader_args['criteria'] = 'line'
+            for line in mmap_reader(**reader_args):
+                parsed.pyreg_last_list.append(line)
+        case 2:
+            if args.pyreg[1] == 'all':
+                if parsed.group_num > 1:
+                    for line in mmap_reader(**reader_args):
+                        all_group: str = ''
+                        for i in line:
+                            all_group = all_group + ' ' + i.decode()
+                        parsed.pyreg_last_list.append(all_group[1:])
+                if parsed.group_num == 1:
+                    for line in mmap_reader(**reader_args):
+                        parsed.pyreg_last_list.append(line[0].decode())
+            elif len(parsed.split_str) == 1:
+                try:
+                    pos_val = int(parsed.split_str[0])
+                except ValueError: #valueError due to pos_val being a string
+                    print_err(f'only string allowed to be used with pyreg is "all", check args {parsed.split_str}')
+                for line in mmap_reader(**reader_args):
+                    try:
+                        parsed.pyreg_last_list.append(line[pos_val-1].decode())
+                    #indexerror when list exceeds index available
+                    except (IndexError):
+                        print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
+            elif len(parsed.split_str) > 1:
+                try:
+                    # Create an int list for regex match iteration.
+                    int_list: list[int] = [int(i) for i in parsed.split_str]
+                except ValueError: # Value error when incorrect values for args.
+                    print_err(f'Error. Index chosen {parsed.split_str} are incorrect. Options are "all" or number value, i.e. "1 2 3" ')
+                for line in mmap_reader(**reader_args):
+                    all_group = ''
+                    try:
+                        for i in int_list:
+                            all_group = all_group + ' ' + line[i - 1].decode()
+                        parsed.pyreg_last_list.append(all_group[1:])
+                    # Indexerror due to incorrect index
+                    except IndexError:
+                        print_err(f'Error. Index chosen {parsed.split_str} is out of range. Check capture groups')
+
+    return parsed.pyreg_last_list
+
+
+###########################
+
+def unified_input_reader(file_path: str = None) -> Iterable[str]:
+    '''Reads lines from a file or stdin'''
+    if file_path:
+        with open(file_path, 'r') as file:
+            for line in file:
+                yield line.strip()
+    else:
+        if not sys.stdin.isatty():
+            for line in sys.stdin:
+                yield line.strip()
+
+
+def multi_cpu(pos_val, args, n_cores=2, file_path: str = None)-> Iterable:
     '''
-    Accepts file, and n_cores (default is system max cores)
-    
+    Accepts file_path, pos_val, args, and n_cores (default is system max cores)
     Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
     '''
-    # Experimental multiprocessing
-    
-    core_split = len(file_list) // split_file
-    small_ls = []
-    big_ls = []
-    for i in range(0,split_file+1):
-        small_ls = file_list[core_split*i:core_split*(i+1)]
-        big_ls.append(small_ls)
-    del file_list
+
+    from concurrent.futures import ProcessPoolExecutor
     global worker
-    def worker(filesss):
-        pattern_search = pygrep_search(args=args, func_search=filesss, pos_val=pos_val)
-        return pattern_search
+    def worker(line_list):
+        return pygrep_search(args=args, func_search=line_list, pos_val=pos_val)
+
+    # chunk_size = n_cores * 1000
+    chunk_size = 10000
+    reader_args: dict = {
+        'chunk_size': chunk_size,
+        'file_path': file_path if file_path and Path(file_path).exists() else None,
+        'stdin': sys.stdin if not sys.stdin.isatty() else None
+        }
     
-    with Pool(n_cores) as fast_work:
-        quick = fast_work.map(worker,[ i for i in big_ls ]) # type: ignore
-    
-    return quick
+    with ProcessPoolExecutor(max_workers=n_cores) as executor:
+        result = executor.map(worker, chunked_file_reader(**reader_args))
+        gc.collect()  # Explicitly trigger garbage collection to manage memory
+
+    for sublist in result:
+        for r in sublist:
+            yield r
+
 
 def main_seq(python_args_bool=False, args=None):
     '''main sequence for arguments to run'''
     
-    if python_args_bool == False:
+    if python_args_bool is False:
         args = get_args()
 
-    # colour dictionary for outputing error message to screen
     sense_check(args=args, argTty=sys.stdin.isatty())
-    # Getting input from file or piped input
-    if args.file:
-        with open(args.file, 'r') as my_file:
-            file_list = [ file.strip() for file in my_file ]
-    elif not sys.stdin.isatty(): # for using piped std input. 
-            file_list = [ file.strip() for file in sys.stdin.read().splitlines() ]
+
     # Initial case-insensitivity check
     checkFirst, checkLast = omit_check(args=args)
     if args.start:
+        # Getting input from file or piped input
+        if args.file and Path(args.file).exists():
+            file_list = unified_input_reader(args.file)
+        elif not sys.stdin.isatty(): # for using piped std input. 
+            file_list = unified_input_reader()
+        else:
+            print_err('Input not recognised, check file path or stdin')
+
         # check for case-insensitive & initial 'start' search
         if args.insensitive == False:
             pattern_search = normal_search(file_list=file_list,args=args,
@@ -649,12 +774,12 @@ def main_seq(python_args_bool=False, args=None):
         if args.start:
             file_list = pattern_search
         if args.multi:
-            quick = multi_cpu(args=args, file_list=file_list,pos_val=pos_val, n_cores=int(args.multi[0]), split_file=int(args.multi[0])*10)
-            pattern_search = [ z for i in quick for z in i ]
-            del quick
+            pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
         else:
-            pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
-        
+            # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
+            pattern_search = pygrep_mmap(args=args, file_path=args.file, pos_val=pos_val)
+
+    gc.collect()
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:
         print('No Pattern Found')
@@ -663,7 +788,7 @@ def main_seq(python_args_bool=False, args=None):
     if args.unique:
         pattern_search = list(dict.fromkeys(pattern_search))
     # sort search
-    if args.counts != True and args.sort != 'False':
+    if args.counts != True and args.sort:
         test_re = re.compile(r'^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
         test_ip = test_re.findall(pattern_search[0])
         if args.sort:
@@ -686,16 +811,19 @@ def main_seq(python_args_bool=False, args=None):
             #     print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
     # counts search
     if args.counts:
-        counts(count_search = pattern_search, args=args)
+        return counts(count_search = pattern_search, args=args)
     # lines search
     if args.lines:
         pattern_search, line_range = line_func(start_end=pattern_search, args=args)
         if line_range == True: # multiline
-            [print(i) for i in pattern_search]
+            # [print(i) for i in pattern_search]
+            return [i for i in pattern_search]
         else: # This prevents a single string from being separated into lines.
-           print(pattern_search)
+        #    print(pattern_search)
+            return pattern_search
     else:
-        [print(i) for i in pattern_search]
+        # [print(i) for i in pattern_search]
+        return pattern_search
     
 # Run main sequence if name == main.
 if __name__ == '__main__':
@@ -714,4 +842,5 @@ if __name__ == '__main__':
     #                     omitall=True
     #                     )
     # main_seq(python_args_bool=True, args=args)
-    main_seq()
+    #return_main = main_seq()
+    [ print(i) for i in main_seq() ]

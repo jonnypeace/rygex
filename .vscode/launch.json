@@ -12,6 +12,7 @@
             "module": "pygrep",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
+                "-c",
                 "-f", "ufw.test"
             ],
             "cwd": "${workspaceFolder}"
@@ -25,6 +26,7 @@
                 "-s", "SRC=", "1",
                 "-e", " DST=", "1",
                 "-O",
+                "-c",
                 "-f", "ufw.test"
             ],
             "cwd": "${workspaceFolder}"
@@ -37,6 +39,7 @@
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
                 "-m", "12",
+                "-c",
                 "-f", "ufw.test"
             ],
             "cwd": "${workspaceFolder}"
