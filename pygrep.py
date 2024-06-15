@@ -843,5 +843,4 @@ if __name__ == '__main__':
     #                     )
     # main_seq(python_args_bool=True, args=args)
     #return_main = main_seq()
-    for i in main_seq():
-        print(i) 
+    [ print(i) for i in main_seq() ]
