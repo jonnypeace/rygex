@@ -774,6 +774,7 @@ def main_seq(python_args_bool=False, args=None):
         if args.start:
             file_list = pattern_search
         if args.multi:
+            print(int(args.multi[0]))
             pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
         else:
             # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
