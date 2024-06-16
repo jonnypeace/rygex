@@ -61,10 +61,10 @@ def run_free_m(stop_event):
     return 
 
 def timer_run(grp, description, command):
-    print('\n', '# ', markdown_colour(f'Group {grp}: {description}', colour='red'), '\n')
+    print(f'\n# Group {grp}: {description}\n')
     #print_colour(f'Group {grp}: {description}\n\n')
     #print(f'{Colour.green}*** {command}{Colour.end}\n')
-    print(markdown_colour(f'*** {command}', colour='green'), '\n')
+    print(f'```{command}```\n')
     def run_command():
         process = subprocess.Popen(f'/usr/bin/time -v {command}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
@@ -85,7 +85,7 @@ def timer_run(grp, description, command):
     print(f'* Python Subprocess Execution time: {exec_time:.2f} seconds')
     time_data = stderr.decode().splitlines()
 
-    metrics = ['\tCommand being timed', '\tUser time (seconds)', '\tSystem time (seconds)', '\tPercent of CPU this job got',
+    metrics = ['\tUser time (seconds)', '\tSystem time (seconds)', '\tPercent of CPU this job got',
                '\tElapsed (wall clock) time (h:mm:ss or m:ss)', '\tMaximum resident set size (kbytes)']
 
     for data in time_data:
@@ -100,7 +100,7 @@ def timer_run(grp, description, command):
                     print(f'* {data.strip()}')
 
     # print(green(f'\nResult:\n{stdout.decode()}'))
-    print('\n', markdown_colour(f'\nResult:\n{stdout.decode()}', colour='green'))
+    print(f'\nResult:\n{stdout.decode()}')
 
 # List of tuples with group, description and command
 commands = [
