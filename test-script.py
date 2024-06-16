@@ -3,8 +3,42 @@
 import subprocess
 import time
 import gc
-from typing import NamedTuple
+from typing import NamedTuple, Literal
 import multiprocessing
+
+class Colour:
+    red: str = '\033[91m'
+    green: str = '\033[32m'
+    end: str = '\033[0m'
+
+def print_colour(msg):
+    '''
+    Print error messages, to std error and exit with exit code 1.
+    '''
+    print(f'\n{Colour.red}{msg}{Colour.end}', end=' ')
+
+
+def markdown_colour(msg, colour: Literal['red', 'green', 'blue']):
+    match colour:
+        case 'red':
+            return f'<span style="color: red;">{msg}</span>'
+
+        case 'green':
+            return f'<span style="color: green;">{msg}</span>'
+
+        case 'blue':
+            return f'<span style="color: blue;">{msg}</span>'
+
+        case _:
+            return msg
+
+
+def red(msg):
+    return f'{Colour.red}{msg}{Colour.end}'
+
+def green(msg):
+    return f'{Colour.green}{msg}{Colour.end}'
+
 
 def run_free_m(stop_event):
     mem_list: list = []
@@ -21,46 +55,52 @@ def run_free_m(stop_event):
             continue
         else:
             print(f'Command failed with return code {result.returncode}')
-        time.sleep(0.5) 
+        time.sleep(0.1) 
     mem_use = (max(mem_list) - min(mem_list)) / 1024
-    print(f'Memory Usage: {mem_use:.2f} MB')
+    print(f'* free -k Total System Memory Increase, Converted to MB: {mem_use:.2f} MB')
     return 
 
-class Colour:
-    red: str = '\033[91m'
-    green: str = '\033[32m'
-    end: str = '\033[0m'
-
-def print_colour(msg):
-    '''
-    Print error messages, to std error and exit with exit code 1.
-    '''
-    print(f'\n{Colour.red}{msg}{Colour.end}', end=' ')
-
-
 def timer_run(grp, description, command):
-    print_colour(f'Group {grp}: {description}\n\n')
-    print(f'{Colour.green}*** {command}{Colour.end}\n')
-
+    print('\n', '# ', markdown_colour(f'Group {grp}: {description}', colour='red'), '\n')
+    #print_colour(f'Group {grp}: {description}\n\n')
+    #print(f'{Colour.green}*** {command}{Colour.end}\n')
+    print(markdown_colour(f'*** {command}', colour='green'), '\n')
     def run_command():
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(f'/usr/bin/time -v {command}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        print(stdout.decode())
+        return stdout, stderr
 
     gc.collect()
     stop_event = multiprocessing.Event()
     free_m_process = multiprocessing.Process(target=run_free_m, args=(stop_event,))
     free_m_process.start()
     start_time = time.time()
-    run_command()
+    stdout, stderr = run_command()
     end_time = time.time()
     stop_event.set()
     free_m_process.join()
     gc.collect()
     exec_time = end_time - start_time
 
-    print(f'Execution time: {exec_time:.2f} seconds')
+    print(f'* Python Subprocess Execution time: {exec_time:.2f} seconds')
+    time_data = stderr.decode().splitlines()
 
+    metrics = ['\tCommand being timed', '\tUser time (seconds)', '\tSystem time (seconds)', '\tPercent of CPU this job got',
+               '\tElapsed (wall clock) time (h:mm:ss or m:ss)', '\tMaximum resident set size (kbytes)']
+
+    for data in time_data:
+        for metric in metrics:
+            if metric in data:
+                if 'Maximum resident set size' in metric:
+                    mb = int(data.split(' ')[-1]) / 1024
+                    print('*', end=' ')
+                    [ print(i.strip(), end=' ') for i in data.split(' ')[:-2] ]
+                    print(f'(MBytes): {mb:.2f}')
+                else:
+                    print(f'* {data.strip()}')
+
+    # print(green(f'\nResult:\n{stdout.decode()}'))
+    print('\n', markdown_colour(f'\nResult:\n{stdout.decode()}', colour='green'))
 
 # List of tuples with group, description and command
 commands = [
