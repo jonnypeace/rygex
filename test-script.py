@@ -100,7 +100,7 @@ def timer_run(grp, description, command):
                     print(f'* {data.strip()}')
 
     # print(green(f'\nResult:\n{stdout.decode()}'))
-    print(f'\nResult:\n{stdout.decode()}')
+    print(f'\nResult:\n```\n{stdout.decode()}```')
 
 # List of tuples with group, description and command
 commands = [
