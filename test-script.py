@@ -4,7 +4,7 @@ import subprocess
 import time
 import gc
 from typing import NamedTuple, Literal
-import multiprocessing
+import multiprocessing, datetime
 
 class Colour:
     red: str = '\033[91m'
@@ -250,6 +250,8 @@ commands = [
 ]
 
 num = -1
+now = datetime.datetime.now()
+print('Updated:',now.strftime("%d-%m-%Y %H:%M:%S"))
 # Loop through the list and call the timer_run function
 for grp, description, command in commands:
     if num != grp:

@@ -1,3 +1,4 @@
+Updated: 18-06-2024 21:42:57
 
 ############################################################################
 
@@ -5,13 +6,13 @@
 
 ```./pygrep.py -p '\sDST=([\d\.]+)\s' '1' -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 794.00 MB
-* Python Subprocess Execution time: 13.21 seconds
-* User time (seconds): 12.63
-* System time (seconds): 0.57
+* free -k Total System Memory Increase, Converted to MB: 789.68 MB
+* Python Subprocess Execution time: 13.09 seconds
+* User time (seconds): 12.58
+* System time (seconds): 0.50
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.21
-* Maximum resident set size (MBytes): 3520.62
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.08
+* Maximum resident set size (MBytes): 3520.50
 
 Result:
 ```
@@ -23,13 +24,13 @@ Result:
 
 ```./pygrep.py -p '\sDST=([\d\.]+)\s' '1' -m12 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 2240.59 MB
-* Python Subprocess Execution time: 12.66 seconds
-* User time (seconds): 26.18
-* System time (seconds): 12.29
-* Percent of CPU this job got: 303%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.66
-* Maximum resident set size (MBytes): 2142.96
+* free -k Total System Memory Increase, Converted to MB: 2256.47 MB
+* Python Subprocess Execution time: 12.42 seconds
+* User time (seconds): 25.55
+* System time (seconds): 12.23
+* Percent of CPU this job got: 304%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.41
+* Maximum resident set size (MBytes): 2162.70
 
 Result:
 ```
@@ -43,10 +44,10 @@ Result:
 
 ```./pygrep.py -s 'SRC=' 1 -e ' DST' 1 -O -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 786.54 MB
+* free -k Total System Memory Increase, Converted to MB: 789.82 MB
 * Python Subprocess Execution time: 12.09 seconds
-* User time (seconds): 11.37
-* System time (seconds): 0.70
+* User time (seconds): 11.34
+* System time (seconds): 0.73
 * Percent of CPU this job got: 99%
 * Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.08
 * Maximum resident set size (MBytes): 780.00
@@ -62,13 +63,13 @@ Result:
 
 ```./pygrep.py -p 'SRC=([\d\.]+)\s+DST' all -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 787.09 MB
-* Python Subprocess Execution time: 5.28 seconds
-* User time (seconds): 4.73
-* System time (seconds): 0.53
+* free -k Total System Memory Increase, Converted to MB: 776.85 MB
+* Python Subprocess Execution time: 5.46 seconds
+* User time (seconds): 4.83
+* System time (seconds): 0.62
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.27
-* Maximum resident set size (MBytes): 3520.50
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.46
+* Maximum resident set size (MBytes): 3520.62
 
 Result:
 ```
@@ -81,12 +82,12 @@ Result:
 
 ```rg --no-unicode -No 'SRC=([\d\.]+)\s+DST' ufw.test1 -cr '$1'```
 
-* free -k Total System Memory Increase, Converted to MB: 16.04 MB
-* Python Subprocess Execution time: 2.74 seconds
-* User time (seconds): 2.54
-* System time (seconds): 0.19
+* free -k Total System Memory Increase, Converted to MB: 15.44 MB
+* Python Subprocess Execution time: 2.75 seconds
+* User time (seconds): 2.56
+* System time (seconds): 0.18
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.73
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.75
 * Maximum resident set size (MBytes): 2746.38
 
 Result:
@@ -98,13 +99,13 @@ Result:
 
 ```rg --no-unicode -No 'SRC=([\d\.]+)\s+DST' ufw.test1 -r '$1' | sort | uniq -c```
 
-* free -k Total System Memory Increase, Converted to MB: 27.77 MB
-* Python Subprocess Execution time: 19.30 seconds
-* User time (seconds): 17.57
-* System time (seconds): 0.26
+* free -k Total System Memory Increase, Converted to MB: 23.11 MB
+* Python Subprocess Execution time: 19.31 seconds
+* User time (seconds): 17.52
+* System time (seconds): 0.27
 * Percent of CPU this job got: 96%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:18.43
-* Maximum resident set size (MBytes): 2747.00
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:18.37
+* Maximum resident set size (MBytes): 2746.75
 
 Result:
 ```
@@ -119,12 +120,12 @@ Result:
 
 ```rg --no-unicode -No '\s+DST=(124.14.124.14)' -r '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 14.50 MB
-* Python Subprocess Execution time: 3.48 seconds
-* User time (seconds): 3.27
+* free -k Total System Memory Increase, Converted to MB: 19.74 MB
+* Python Subprocess Execution time: 3.43 seconds
+* User time (seconds): 3.23
 * System time (seconds): 0.19
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.47
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.43
 * Maximum resident set size (MBytes): 2746.50
 
 Result:
@@ -136,12 +137,12 @@ Result:
 
 ```./pygrep.py -p '\s+DST=(124.14.124.14)' 1 -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 32.54 MB
-* Python Subprocess Execution time: 24.01 seconds
-* User time (seconds): 23.80
+* free -k Total System Memory Increase, Converted to MB: 26.44 MB
+* Python Subprocess Execution time: 24.29 seconds
+* User time (seconds): 24.09
 * System time (seconds): 0.19
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:24.01
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:24.28
 * Maximum resident set size (MBytes): 2753.62
 
 Result:
@@ -153,13 +154,13 @@ Result:
 
 ```./pygrep.py -p '\s+DST=(124.14.124.14)' 1 -m12 -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 1912.94 MB
-* Python Subprocess Execution time: 12.03 seconds
-* User time (seconds): 40.61
-* System time (seconds): 11.46
-* Percent of CPU this job got: 433%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.02
-* Maximum resident set size (MBytes): 1802.08
+* free -k Total System Memory Increase, Converted to MB: 1972.69 MB
+* Python Subprocess Execution time: 12.11 seconds
+* User time (seconds): 40.43
+* System time (seconds): 11.56
+* Percent of CPU this job got: 429%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.10
+* Maximum resident set size (MBytes): 1861.90
 
 Result:
 ```
@@ -170,13 +171,13 @@ Result:
 
 ```./pygrep.py -p '\s+DST=(124.14.124.14)' 1 -m4 -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 2196.73 MB
-* Python Subprocess Execution time: 13.12 seconds
-* User time (seconds): 37.49
-* System time (seconds): 11.91
-* Percent of CPU this job got: 376%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.11
-* Maximum resident set size (MBytes): 2135.81
+* free -k Total System Memory Increase, Converted to MB: 2345.20 MB
+* Python Subprocess Execution time: 13.31 seconds
+* User time (seconds): 36.90
+* System time (seconds): 12.09
+* Percent of CPU this job got: 368%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.30
+* Maximum resident set size (MBytes): 2280.23
 
 Result:
 ```
@@ -189,13 +190,13 @@ Result:
 
 ```rg -No -F '124.14.124.14' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 11.05 MB
+* free -k Total System Memory Increase, Converted to MB: 8.25 MB
 * Python Subprocess Execution time: 0.38 seconds
-* User time (seconds): 0.16
-* System time (seconds): 0.21
+* User time (seconds): 0.18
+* System time (seconds): 0.19
 * Percent of CPU this job got: 100%
 * Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.37
-* Maximum resident set size (MBytes): 2746.38
+* Maximum resident set size (MBytes): 2746.50
 
 Result:
 ```
@@ -206,12 +207,12 @@ Result:
 
 ```./pygrep.py -s ' DST=' 1 -e '124.14.124.14' 1 -of 5 -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 18.12 MB
-* Python Subprocess Execution time: 10.84 seconds
-* User time (seconds): 10.49
-* System time (seconds): 0.34
-* Percent of CPU this job got: 100%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:10.83
+* free -k Total System Memory Increase, Converted to MB: 80.07 MB
+* Python Subprocess Execution time: 10.80 seconds
+* User time (seconds): 10.37
+* System time (seconds): 0.42
+* Percent of CPU this job got: 99%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:10.80
 * Maximum resident set size (MBytes): 13.12
 
 Result:
@@ -225,13 +226,13 @@ Result:
 
 ```./pygrep.py -p '\s+DST=(123.12.123.12)' 1 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 784.23 MB
-* Python Subprocess Execution time: 29.03 seconds
-* User time (seconds): 28.42
-* System time (seconds): 0.60
+* free -k Total System Memory Increase, Converted to MB: 781.30 MB
+* Python Subprocess Execution time: 26.71 seconds
+* User time (seconds): 26.18
+* System time (seconds): 0.52
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:29.03
-* Maximum resident set size (MBytes): 3520.62
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:26.70
+* Maximum resident set size (MBytes): 3520.38
 
 Result:
 ```
@@ -242,13 +243,13 @@ Result:
 
 ```./pygrep.py -p '\s+DST=(123.12.123.12)' 1 -m12 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 2610.21 MB
-* Python Subprocess Execution time: 13.35 seconds
-* User time (seconds): 45.48
-* System time (seconds): 12.18
-* Percent of CPU this job got: 432%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.34
-* Maximum resident set size (MBytes): 2491.38
+* free -k Total System Memory Increase, Converted to MB: 2581.19 MB
+* Python Subprocess Execution time: 13.53 seconds
+* User time (seconds): 45.01
+* System time (seconds): 11.85
+* Percent of CPU this job got: 420%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.53
+* Maximum resident set size (MBytes): 2459.60
 
 Result:
 ```
@@ -259,13 +260,13 @@ Result:
 
 ```rg --no-unicode -No '\s+DST=(123.12.123.12)' -cr '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 31.79 MB
-* Python Subprocess Execution time: 6.16 seconds
-* User time (seconds): 5.94
-* System time (seconds): 0.21
+* free -k Total System Memory Increase, Converted to MB: 38.62 MB
+* Python Subprocess Execution time: 6.15 seconds
+* User time (seconds): 5.97
+* System time (seconds): 0.17
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.16
-* Maximum resident set size (MBytes): 2746.50
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.15
+* Maximum resident set size (MBytes): 2746.38
 
 Result:
 ```
@@ -276,13 +277,13 @@ Result:
 
 ```./pygrep.py -p ' DST=(123\.12\.123\.12)' all -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 778.30 MB
-* Python Subprocess Execution time: 5.48 seconds
-* User time (seconds): 4.90
-* System time (seconds): 0.56
+* free -k Total System Memory Increase, Converted to MB: 771.03 MB
+* Python Subprocess Execution time: 5.39 seconds
+* User time (seconds): 4.86
+* System time (seconds): 0.52
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.47
-* Maximum resident set size (MBytes): 3520.50
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.39
+* Maximum resident set size (MBytes): 3520.38
 
 Result:
 ```
@@ -293,13 +294,13 @@ Result:
 
 ```rg -No ' DST=(123\.12\.123\.12)' -cr '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 11.41 MB
-* Python Subprocess Execution time: 1.39 seconds
-* User time (seconds): 1.22
-* System time (seconds): 0.15
+* free -k Total System Memory Increase, Converted to MB: 13.00 MB
+* Python Subprocess Execution time: 1.36 seconds
+* User time (seconds): 1.16
+* System time (seconds): 0.19
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.38
-* Maximum resident set size (MBytes): 2746.62
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.35
+* Maximum resident set size (MBytes): 2746.50
 
 Result:
 ```
@@ -312,13 +313,13 @@ Result:
 
 ```./pygrep.py -p '124\.14\.124\.14' -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 18.46 MB
+* free -k Total System Memory Increase, Converted to MB: 19.43 MB
 * Python Subprocess Execution time: 1.11 seconds
-* User time (seconds): 0.91
-* System time (seconds): 0.18
+* User time (seconds): 0.93
+* System time (seconds): 0.17
 * Percent of CPU this job got: 100%
 * Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.10
-* Maximum resident set size (MBytes): 2753.50
+* Maximum resident set size (MBytes): 2753.75
 
 Result:
 ```
@@ -329,10 +330,10 @@ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c
 
 ```rg -F '124.14.124.14' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 7.40 MB
+* free -k Total System Memory Increase, Converted to MB: 7.01 MB
 * Python Subprocess Execution time: 0.38 seconds
-* User time (seconds): 0.16
-* System time (seconds): 0.20
+* User time (seconds): 0.18
+* System time (seconds): 0.19
 * Percent of CPU this job got: 99%
 * Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.37
 * Maximum resident set size (MBytes): 2746.38
@@ -346,11 +347,11 @@ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c
 
 ```grep -F '124.14.124.14' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 8.32 MB
-* Python Subprocess Execution time: 0.84 seconds
+* free -k Total System Memory Increase, Converted to MB: 9.14 MB
+* Python Subprocess Execution time: 0.83 seconds
 * User time (seconds): 0.60
-* System time (seconds): 0.23
-* Percent of CPU this job got: 100%
+* System time (seconds): 0.22
+* Percent of CPU this job got: 99%
 * Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.83
 * Maximum resident set size (MBytes): 2.38
 
@@ -363,13 +364,13 @@ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c
 
 ```./pygrep.py -s '124.14.124.14' -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 10.70 MB
-* Python Subprocess Execution time: 2.36 seconds
-* User time (seconds): 1.90
-* System time (seconds): 0.45
-* Percent of CPU this job got: 100%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.36
-* Maximum resident set size (MBytes): 13.00
+* free -k Total System Memory Increase, Converted to MB: 17.91 MB
+* Python Subprocess Execution time: 2.35 seconds
+* User time (seconds): 1.94
+* System time (seconds): 0.40
+* Percent of CPU this job got: 99%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.35
+* Maximum resident set size (MBytes): 13.12
 
 Result:
 ```
@@ -382,13 +383,13 @@ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c
 
 ```./pygrep.py -p '\w+\s+DST=(123.12.123.12)\s+\w+' 1 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 780.12 MB
-* Python Subprocess Execution time: 79.17 seconds
-* User time (seconds): 78.64
-* System time (seconds): 0.52
+* free -k Total System Memory Increase, Converted to MB: 786.92 MB
+* Python Subprocess Execution time: 78.28 seconds
+* User time (seconds): 77.77
+* System time (seconds): 0.49
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 1:19.16
-* Maximum resident set size (MBytes): 3520.38
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 1:18.27
+* Maximum resident set size (MBytes): 3520.62
 
 Result:
 ```
@@ -399,13 +400,13 @@ Result:
 
 ```./pygrep.py -p '\w+\s+DST=(123.12.123.12)\s+\w+' 1 -m12 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 2885.71 MB
-* Python Subprocess Execution time: 20.49 seconds
+* free -k Total System Memory Increase, Converted to MB: 2868.32 MB
+* Python Subprocess Execution time: 20.14 seconds
 * User time (seconds): 172.10
-* System time (seconds): 13.62
-* Percent of CPU this job got: 906%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:20.48
-* Maximum resident set size (MBytes): 2774.70
+* System time (seconds): 13.29
+* Percent of CPU this job got: 920%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:20.13
+* Maximum resident set size (MBytes): 2748.82
 
 Result:
 ```
@@ -416,13 +417,13 @@ Result:
 
 ```rg --no-unicode -No '\w+\s+DST=(123.12.123.12)\s+\w+' -cr '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 31.23 MB
-* Python Subprocess Execution time: 8.85 seconds
-* User time (seconds): 8.63
-* System time (seconds): 0.20
+* free -k Total System Memory Increase, Converted to MB: 26.71 MB
+* Python Subprocess Execution time: 8.81 seconds
+* User time (seconds): 8.56
+* System time (seconds): 0.24
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.84
-* Maximum resident set size (MBytes): 2746.38
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.80
+* Maximum resident set size (MBytes): 2746.12
 
 Result:
 ```
@@ -433,13 +434,13 @@ Result:
 
 ```rg --no-unicode -No '\w+\s+DST=(123.12.123.12)\s+\w+' -r '$1' ufw.test1 | sort | uniq -c```
 
-* free -k Total System Memory Increase, Converted to MB: 32.41 MB
-* Python Subprocess Execution time: 49.28 seconds
-* User time (seconds): 48.14
-* System time (seconds): 0.26
+* free -k Total System Memory Increase, Converted to MB: 32.79 MB
+* Python Subprocess Execution time: 49.05 seconds
+* User time (seconds): 47.95
+* System time (seconds): 0.22
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:48.41
-* Maximum resident set size (MBytes): 2746.75
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:48.18
+* Maximum resident set size (MBytes): 2746.88
 
 Result:
 ```
@@ -452,13 +453,13 @@ Result:
 
 ```rg --no-unicode -No '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' -cr '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 26.30 MB
-* Python Subprocess Execution time: 12.49 seconds
-* User time (seconds): 12.28
-* System time (seconds): 0.20
+* free -k Total System Memory Increase, Converted to MB: 32.00 MB
+* Python Subprocess Execution time: 13.52 seconds
+* User time (seconds): 13.30
+* System time (seconds): 0.21
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.49
-* Maximum resident set size (MBytes): 2746.38
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.51
+* Maximum resident set size (MBytes): 2746.50
 
 Result:
 ```
@@ -469,12 +470,12 @@ Result:
 
 ```./pygrep.py -p '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' 1 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 783.89 MB
-* Python Subprocess Execution time: 54.10 seconds
-* User time (seconds): 53.54
-* System time (seconds): 0.54
+* free -k Total System Memory Increase, Converted to MB: 777.82 MB
+* Python Subprocess Execution time: 52.82 seconds
+* User time (seconds): 52.32
+* System time (seconds): 0.49
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:54.09
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:52.81
 * Maximum resident set size (MBytes): 3520.38
 
 Result:
@@ -486,13 +487,13 @@ Result:
 
 ```./pygrep.py -p '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' 1 -m12 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 2859.12 MB
-* Python Subprocess Execution time: 16.15 seconds
-* User time (seconds): 108.55
-* System time (seconds): 12.03
-* Percent of CPU this job got: 746%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:16.14
-* Maximum resident set size (MBytes): 2734.24
+* free -k Total System Memory Increase, Converted to MB: 2693.05 MB
+* Python Subprocess Execution time: 16.05 seconds
+* User time (seconds): 109.02
+* System time (seconds): 12.55
+* Percent of CPU this job got: 757%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:16.04
+* Maximum resident set size (MBytes): 2577.28
 
 Result:
 ```
@@ -505,13 +506,13 @@ Result:
 
 ```rg --no-unicode -No '.*DST=(123.12.123.12).*' -cr '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 30.03 MB
-* Python Subprocess Execution time: 11.09 seconds
-* User time (seconds): 10.92
-* System time (seconds): 0.16
-* Percent of CPU this job got: 100%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:11.08
-* Maximum resident set size (MBytes): 2746.50
+* free -k Total System Memory Increase, Converted to MB: 35.05 MB
+* Python Subprocess Execution time: 11.01 seconds
+* User time (seconds): 10.83
+* System time (seconds): 0.17
+* Percent of CPU this job got: 99%
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:11.01
+* Maximum resident set size (MBytes): 2746.25
 
 Result:
 ```
@@ -522,13 +523,13 @@ Result:
 
 ```rg -No '.*DST=(123.12.123.12).*' -cr '$1' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 24.91 MB
-* Python Subprocess Execution time: 11.40 seconds
-* User time (seconds): 11.23
-* System time (seconds): 0.16
+* free -k Total System Memory Increase, Converted to MB: 23.16 MB
+* Python Subprocess Execution time: 11.09 seconds
+* User time (seconds): 10.90
+* System time (seconds): 0.17
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:11.39
-* Maximum resident set size (MBytes): 2746.25
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:11.08
+* Maximum resident set size (MBytes): 2746.38
 
 Result:
 ```
@@ -539,13 +540,13 @@ Result:
 
 ```./pygrep.py -p '.*DST=(123.12.123.12).*' 1 -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 783.01 MB
-* Python Subprocess Execution time: 7.22 seconds
-* User time (seconds): 6.67
-* System time (seconds): 0.53
+* free -k Total System Memory Increase, Converted to MB: 776.08 MB
+* Python Subprocess Execution time: 7.15 seconds
+* User time (seconds): 6.53
+* System time (seconds): 0.61
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:07.22
-* Maximum resident set size (MBytes): 3520.88
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:07.14
+* Maximum resident set size (MBytes): 3520.38
 
 Result:
 ```
@@ -558,12 +559,12 @@ Result:
 
 ```rg -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' -cr '$1 $2' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 14.25 MB
-* Python Subprocess Execution time: 8.69 seconds
-* User time (seconds): 8.49
-* System time (seconds): 0.19
+* free -k Total System Memory Increase, Converted to MB: 19.24 MB
+* Python Subprocess Execution time: 8.61 seconds
+* User time (seconds): 8.37
+* System time (seconds): 0.22
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.69
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.60
 * Maximum resident set size (MBytes): 2746.50
 
 Result:
@@ -575,13 +576,13 @@ Result:
 
 ```rg --no-unicode -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' -cr '$1 $2' ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 27.49 MB
-* Python Subprocess Execution time: 8.64 seconds
-* User time (seconds): 8.38
-* System time (seconds): 0.24
+* free -k Total System Memory Increase, Converted to MB: 17.78 MB
+* Python Subprocess Execution time: 8.58 seconds
+* User time (seconds): 8.39
+* System time (seconds): 0.18
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.63
-* Maximum resident set size (MBytes): 2746.12
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.58
+* Maximum resident set size (MBytes): 2746.38
 
 Result:
 ```
@@ -592,13 +593,13 @@ Result:
 
 ```rg --no-unicode -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' -r '$1 $2' ufw.test1 | sort | uniq -c```
 
-* free -k Total System Memory Increase, Converted to MB: 35.25 MB
-* Python Subprocess Execution time: 91.57 seconds
-* User time (seconds): 90.16
-* System time (seconds): 0.29
+* free -k Total System Memory Increase, Converted to MB: 36.97 MB
+* Python Subprocess Execution time: 94.07 seconds
+* User time (seconds): 92.67
+* System time (seconds): 0.30
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 1:30.46
-* Maximum resident set size (MBytes): 2746.75
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 1:32.98
+* Maximum resident set size (MBytes): 2746.88
 
 Result:
 ```
@@ -611,13 +612,13 @@ Result:
 
 ```./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 946.96 MB
-* Python Subprocess Execution time: 9.54 seconds
-* User time (seconds): 8.89
-* System time (seconds): 0.63
+* free -k Total System Memory Increase, Converted to MB: 952.80 MB
+* Python Subprocess Execution time: 9.49 seconds
+* User time (seconds): 8.88
+* System time (seconds): 0.60
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:09.53
-* Maximum resident set size (MBytes): 3690.88
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:09.49
+* Maximum resident set size (MBytes): 3690.99
 
 Result:
 ```
@@ -630,12 +631,12 @@ Result:
 
 ```./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' 'all' -Sc -f ufw.test1```
 
-* free -k Total System Memory Increase, Converted to MB: 952.52 MB
-* Python Subprocess Execution time: 8.98 seconds
+* free -k Total System Memory Increase, Converted to MB: 951.29 MB
+* Python Subprocess Execution time: 8.92 seconds
 * User time (seconds): 8.32
-* System time (seconds): 0.65
+* System time (seconds): 0.59
 * Percent of CPU this job got: 99%
-* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.97
+* Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.91
 * Maximum resident set size (MBytes): 3691.12
 
 Result:
