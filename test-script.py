@@ -249,6 +249,21 @@ commands = [
      r"./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' 'all' -Sc -f ufw.test1")
 ]
 
+def versions(cmd):
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    return stdout, stderr
+
+for cmd in ('/usr/bin/rg --version', '/usr/bin/python --version'):
+    print('\n')
+    stdout, stderr = versions(cmd)
+    for line in stdout.decode().splitlines():
+        print(line)
+    for line in stderr.decode().splitlines():
+        print(line)
+
+print('\n')
+
 num = -1
 now = datetime.datetime.now()
 print('Updated:',now.strftime("%d-%m-%Y %H:%M:%S"))
