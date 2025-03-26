@@ -17,9 +17,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD: cp312-* cp313-*
-      CIBW_BEFORE_ALL: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-        export PATH="$HOME/.cargo/bin:$PATH"
+    #   CIBW_BEFORE_ALL: |
+    #     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    #     export PATH="$HOME/.cargo/bin:$PATH"
     steps:
       - uses: actions/checkout@v3
 
@@ -28,6 +28,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install Rust toolchain on Linux
+        if: runner.os == 'Linux'
+        run: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+            export PATH="$HOME/.cargo/bin:$PATH"
+
+      - name: Install Rust toolchain on Windows
+        if: runner.os == 'Windows'
+        run: |
+            powershell -Command "Invoke-WebRequest -Uri https://win.rustup.rs -OutFile rustup-init.exe; Start-Process rustup-init.exe -ArgumentList '-y' -NoNewWindow -Wait; Remove-Item rustup-init.exe"
+            # Optionally add Cargo to PATH (this may be automatic)
+            powershell -Command "echo $env:USERPROFILE + '\\.cargo\\bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append"
 
       - name: Install dependencies
         run: pip install maturin cibuildwheel
