@@ -32,7 +32,9 @@ jobs:
         run: pip install maturin cibuildwheel
 
       - name: Build wheels
-        run: CIBW_SKIP="cp36-*,cp37-*,cp38-*,cp39-*" cibuildwheel --output-dir wheelhouse .
+        env:
+            CIBW_SKIP: cp36-*,cp37-*,cp38-*,cp39-*
+        run: cibuildwheel --output-dir wheelhouse .
       
       # Optional: Upload wheels as artifacts for later download
       - name: Upload wheels
