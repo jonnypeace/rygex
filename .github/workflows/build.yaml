@@ -15,8 +15,6 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.12", "3.13"]
     runs-on: ${{ matrix.os }}
-    env:
-        CIBW_SKIP: cp36-*,cp37-*,cp38-*,cp39-*
     steps:
       - uses: actions/checkout@v3
 
@@ -34,7 +32,7 @@ jobs:
         run: pip install maturin cibuildwheel
 
       - name: Build wheels
-        run: cibuildwheel --output-dir wheelhouse .
+        run: CIBW_SKIP="cp36-*,cp37-*,cp38-*,cp39-*" cibuildwheel --output-dir wheelhouse .
       
       # Optional: Upload wheels as artifacts for later download
       - name: Upload wheels
