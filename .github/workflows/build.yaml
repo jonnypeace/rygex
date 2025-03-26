@@ -16,7 +16,7 @@ jobs:
         python-version: ["3.12", "3.13"]
     runs-on: ${{ matrix.os }}
     env:
-        CIBW_SKIP: cp37-*,cp38-*,cp39-*
+        CIBW_SKIP: cp36-*,cp37-*,cp38-*,cp39-*
     steps:
       - uses: actions/checkout@v3
 
