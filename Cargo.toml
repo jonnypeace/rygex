@@ -1,0 +1,15 @@
+[package]
+name = "rust_regex_py"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+pyo3 = { version = "0.18", features = ["extension-module"] }
+regex = "1.7"
+rayon = "1.6"
+memmap2 = "0.5"
+
+[lib]
+name = "regex"  # This will be the module name in Python.
+path = "src/lib.rs"
+crate-type = ["cdylib"]

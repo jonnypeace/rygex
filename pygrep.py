@@ -56,9 +56,11 @@ Examples
 ./pygrep.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -f ufw.test
 """
 
-import argparse, re, sys, gc, mmap
+import argparse, re, sys, os, gc, mmap
 from pathlib import Path
-from typing import Iterable, Generator, Literal, TypedDict, NamedTuple
+from typing import Iterable, Generator, Literal, TypedDict
+from dataclasses import dataclass
+import regex # Your Rust-powered module
 
 
 def print_err(msg):
@@ -81,7 +83,7 @@ def sense_check(args,
         print_err('Requires stdin from somewhere, either from --file or pipe')
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
-    if not args.start and not args.pyreg:
+    if not args.start and not args.pyreg and not args.rpyreg:
         print_err('This programme requires the --start or --pyreg flag to work properly')
 
     if args.pyreg and len(args.pyreg) > 2:
@@ -492,6 +494,13 @@ def get_args():
         type=str,
         nargs='+',
         required=False)
+    
+    pk.add_argument('-rp', '--rpyreg',
+        metavar="[regex [numerical value|all]]",
+        help='python regular expression, use with -rp "regex" or follow up with a numerical value for a capture group',
+        type=str,
+        nargs='+',
+        required=False)
 
     pk.add_argument('-l', '--lines',
         metavar="'1-10' | '1' | '$-3'",
@@ -523,8 +532,9 @@ def get_args():
 
     pk.add_argument('-m', '--multi',
         help="optional argument to for multi processing example= ./pygrep.py -p search -m 4 -f file for 4 threads",
-        nargs=1,
-        type=int,
+        nargs='?',
+        type=lambda x: [int(x)],
+        const=[os.cpu_count()],
         required=False
         )
     
@@ -604,7 +614,8 @@ def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'm
                 case _:
                     print_err('Internal error with criteria matching')
 
-class ParserPyReg(NamedTuple):
+@dataclass
+class ParserPyReg:
     test_reg: re.Pattern
     pygen_length: int
     group_num: int
@@ -778,6 +789,19 @@ def main_seq(python_args_bool=False, args=None):
         else:
             # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
             pattern_search = pygrep_mmap(args=args, file_path=args.file, pos_val=pos_val)
+
+    if args.rpyreg:
+        # pattern_search = regex.find_joined_matches_in_file(args.rpyreg[0], str(args.file), [int(args.rpyreg[1])])
+        if len(args.rpyreg) > 1:
+            cg_str: str = args.rpyreg[1]
+            cg_list = cg_str.split(' ')
+            cg_list = [int(x) for x in cg_list]
+        else:
+            cg_list = None
+        if args.multi:
+            pattern_search = regex.find_joined_matches_in_file_by_line_parallel(args.rpyreg[0], str(args.file), cg_list)
+        else:
+            pattern_search = regex.find_joined_matches_in_file(args.rpyreg[0], str(args.file), cg_list)
 
     gc.collect()
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
