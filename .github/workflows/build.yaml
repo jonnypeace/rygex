@@ -16,8 +16,12 @@ jobs:
         python-version: ["3.12", "3.13"]
     runs-on: ${{ matrix.os }}
     env:
-      CIBW_BUILD: cp312-* cp313-*
-      CIBW_ARCHS: "x86_64"
+      # The below line means:
+      #  - cp312-manylinux_x86_64  (Python 3.12 on Linux x86_64)
+      #  - cp313-manylinux_x86_64  (Python 3.13 on Linux x86_64)
+      #  - cp312-win_amd64         (Python 3.12 on Windows 64-bit)
+      #  - cp313-win_amd64         (Python 3.13 on Windows 64-bit)
+      CIBW_BUILD: cp312-manylinux_x86_64 cp313-manylinux_x86_64 cp312-win_amd64 cp313-win_amd64
       # The important part: set your custom Docker image for x86_64
       CIBW_MANYLINUX_X86_64_IMAGE: ghcr.io/jonnypeace/manylinux_rust:latest
 
