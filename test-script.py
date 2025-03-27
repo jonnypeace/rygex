@@ -106,19 +106,19 @@ def timer_run(grp, description, command):
 commands = [
     (1,
     "pygrep: Regex search DST with digit dot pattern, single threaded", 
-     r"./pygrep.py -p '\sDST=([\d\.]+)\s' '1' -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '\sDST=([\d\.]+)\s' '1' -Sc -f ufw.test1"),
     
     (1,
     "pygrep: Regex search DST with digit dot pattern and multithreaded (12) count", 
-     r"./pygrep.py -p '\sDST=([\d\.]+)\s' '1' -m12 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '\sDST=([\d\.]+)\s' '1' -m12 -Sc -f ufw.test1"),
     
     (2,
     "pygrep: String Search Between SRC= and DST in UFW log using pygrep", 
-     r"./pygrep.py -s 'SRC=' 1 -e ' DST' 1 -O -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -s 'SRC=' 1 -e ' DST' 1 -O -Sc -f ufw.test1"),
 
     (2,
     "pygrep: SRC to DST pattern match", 
-     r"./pygrep.py -p 'SRC=([\d\.]+)\s+DST' all -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p 'SRC=([\d\.]+)\s+DST' all -Sc -f ufw.test1"),
     
     (2,
     "rg: search SRC to DST pattern", 
@@ -134,15 +134,15 @@ commands = [
     
     (3,
     "pygrep: DST with specific IP", 
-     r"./pygrep.py -p '\s+DST=(124.14.124.14)' 1 -f ufw.test1"),
+     r"./pygrep/cli.py -p '\s+DST=(124.14.124.14)' 1 -f ufw.test1"),
     
     (3,
     "pygrep: DST with specific IP multithreaded (12)", 
-     r"./pygrep.py -p '\s+DST=(124.14.124.14)' 1 -m12 -f ufw.test1"),
+     r"./pygrep/cli.py -p '\s+DST=(124.14.124.14)' 1 -m12 -f ufw.test1"),
     
     (3,
     "pygrep: DST with specific IP multithreaded (4)", 
-     r"./pygrep.py -p '\s+DST=(124.14.124.14)' 1 -m4 -f ufw.test1"),
+     r"./pygrep/cli.py -p '\s+DST=(124.14.124.14)' 1 -m4 -f ufw.test1"),
     
     (4,
     "rg: String rg search specific IP", 
@@ -150,15 +150,15 @@ commands = [
     
     (4,
     "pygrep: String Search DST ending with specific IP", 
-     r"./pygrep.py -s ' DST=' 1 -e '124.14.124.14' 1 -of 5 -f ufw.test1"),
+     r"./pygrep/cli.py -s ' DST=' 1 -e '124.14.124.14' 1 -of 5 -f ufw.test1"),
     
     (5,
     "pygrep: DST with another specific IP", 
-     r"./pygrep.py -p '\s+DST=(123.12.123.12)' 1 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '\s+DST=(123.12.123.12)' 1 -Sc -f ufw.test1"),
     
     (5,
     "pygrep: DST with another specific IP and multithreaded (12) count", 
-     r"./pygrep.py -p '\s+DST=(123.12.123.12)' 1 -m12 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '\s+DST=(123.12.123.12)' 1 -m12 -Sc -f ufw.test1"),
     
     (5,
     "rg: search exact DST match builtin count", 
@@ -166,7 +166,7 @@ commands = [
     
     (5,
     "pygrep: DST exact match pattern", 
-     r"./pygrep.py -p ' DST=(123\.12\.123\.12)' all -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p ' DST=(123\.12\.123\.12)' all -Sc -f ufw.test1"),
     
     (5,
     "rg: search DST exact match with builtin count", 
@@ -174,7 +174,7 @@ commands = [
     
     (6,
     "pygrep: fixed string search specific IP", 
-     r"./pygrep.py -p '124\.14\.124\.14' -f ufw.test1"),
+     r"./pygrep/cli.py -p '124\.14\.124\.14' -f ufw.test1"),
     
     (6,
     "rg: fixed string search specific IP", 
@@ -186,15 +186,15 @@ commands = [
     
     (6,
     "pygrep: fixed string search specific IP", 
-     r"./pygrep.py -s '124.14.124.14' -f ufw.test1"),
+     r"./pygrep/cli.py -s '124.14.124.14' -f ufw.test1"),
     
     (7,
     "pygrep: Struggles Here. Previous Result 100Sec", 
-     r"./pygrep.py -p '\w+\s+DST=(123.12.123.12)\s+\w+' 1 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '\w+\s+DST=(123.12.123.12)\s+\w+' 1 -Sc -f ufw.test1"),
     
     (7,
     "pygrep: Lets try with multithreading (12). Previous Result 100Sec", 
-     r"./pygrep.py -p '\w+\s+DST=(123.12.123.12)\s+\w+' 1 -m12 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '\w+\s+DST=(123.12.123.12)\s+\w+' 1 -m12 -Sc -f ufw.test1"),
     
     (7,
     "rg: very good performance by comparison", 
@@ -210,11 +210,11 @@ commands = [
     
     (8,
     "pygrep: Wildcard . Searches", 
-     r"./pygrep.py -p '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' 1 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' 1 -Sc -f ufw.test1"),
     
     (8,
     "pygrep: Wildcard . Searches multithreaded (12)", 
-     r"./pygrep.py -p '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' 1 -m12 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '.*\w+\s+DST=(123.12.123.12)\s+\w+.*' 1 -m12 -Sc -f ufw.test1"),
     
     (9,
     "rg: wildcard .* with unicode", 
@@ -226,7 +226,7 @@ commands = [
     
     (9,
     "pygrep: .* Previous result 11.8s", 
-     r"./pygrep.py -p '.*DST=(123.12.123.12).*' 1 -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p '.*DST=(123.12.123.12).*' 1 -Sc -f ufw.test1"),
     
     (10,
     "rg: 2 capture group regex with wildcard in the middle", 
@@ -242,11 +242,11 @@ commands = [
     
     (10,
     "pygrep: 2 capture group regex with wildcard in the middle", 
-     r"./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Sc -f ufw.test1"),
+     r"./pygrep/cli.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Sc -f ufw.test1"),
     
     (10,
     "pygrep: 2 capture group regex with wildcard in the middle using all", 
-     r"./pygrep.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' 'all' -Sc -f ufw.test1")
+     r"./pygrep/cli.py -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' 'all' -Sc -f ufw.test1")
 ]
 
 def versions(cmd):
