@@ -1,3 +1,34 @@
 [build-system]
 requires = ["maturin>=0.13"]
 build-backend = "maturin"
+
+[project]
+name = "pygrep"
+version = "0.1.0"
+description = "A fast grep tool using a Rust-powered regex extension"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.7"
+authors = [
+  { name = "JP", email = "jonnypeace@outlook.com" },
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Rust",
+  "Operating System :: OS Independent",
+]
+
+# The following [tool.maturin] section tells maturin how to build the extension.
+[tool.maturin]
+bindings = "pyo3"
+# Include the Python package folder in the built wheel:
+include = ["pygrep/**/*", "src/**/*"]
+
+
+[project.scripts]
+# This defines a console script entry point. When installed, running "pygrep" will invoke the main() function
+# from the module pygrep.pygrep.
+pygrep = "pygrep.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/pygrep"

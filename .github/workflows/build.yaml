@@ -31,8 +31,11 @@ jobs:
       - name: Install Rust toolchain on Linux
         if: runner.os == 'Linux'
         run: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-            export PATH="$HOME/.cargo/bin:$PATH" && . "$HOME/.cargo/env" && echo "$PATH"
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
+            export PATH="$HOME/.cargo/bin:$PATH" && . "$HOME/.cargo/env" && echo "$PATH" &&
+            pip install maturin cibuildwheel &&
+            cibuildwheel --output-dir wheelhouse .
+
 
       - name: Install Rust toolchain on Windows
         if: runner.os == 'Windows'
@@ -41,19 +44,9 @@ jobs:
             # Optionally add Cargo to PATH (this may be automatic)
             powershell -Command "echo $env:USERPROFILE + '\\.cargo\\bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append"
 
-      - name: Install dependencies
-        run: pip install maturin cibuildwheel
-
-      - name: Build wheels Linux
-        if: runner.os == 'Linux'
-        run: |
-            export PATH="$HOME/.cargo/bin:$PATH" && . "$HOME/.cargo/env" && echo "$PATH"
-            cibuildwheel --output-dir wheelhouse .
-
       - name: Build wheels Windows
         if: runner.os == 'Windows'
         run: |
-            powershell -Command "echo $env:USERPROFILE + '\\.cargo\\bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append"
             cibuildwheel --output-dir wheelhouse .
       
       # Optional: Upload wheels as artifacts for later download

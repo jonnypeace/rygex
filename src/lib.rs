@@ -422,7 +422,7 @@ fn find_joined_matches_in_file_by_line_parallel(
 
 
 #[pymodule]
-fn regex(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pygrep_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Regex>()?;
     m.add_class::<Match>()?;
     m.add_function(wrap_pyfunction!(compile, m)?)?;

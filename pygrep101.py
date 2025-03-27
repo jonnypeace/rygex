@@ -60,7 +60,7 @@ import argparse, re, sys, os, gc, mmap
 from pathlib import Path
 from typing import Iterable, Generator, Literal, TypedDict
 from dataclasses import dataclass
-import regex # Your Rust-powered module
+import pygrep_ext # Your Rust-powered module
 
 
 def print_err(msg):
@@ -799,9 +799,9 @@ def main_seq(python_args_bool=False, args=None):
         else:
             cg_list = None
         if args.multi:
-            pattern_search = regex.find_joined_matches_in_file_by_line_parallel(args.rpyreg[0], str(args.file), cg_list)
+            pattern_search = pygrep_ext.find_joined_matches_in_file_by_line_parallel(args.rpyreg[0], str(args.file), cg_list)
         else:
-            pattern_search = regex.find_joined_matches_in_file(args.rpyreg[0], str(args.file), cg_list)
+            pattern_search = pygrep_ext.find_joined_matches_in_file(args.rpyreg[0], str(args.file), cg_list)
 
     gc.collect()
         # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)

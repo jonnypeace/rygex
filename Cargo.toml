@@ -1,5 +1,5 @@
 [package]
-name = "rust_regex_py"
+name = "pygrep_ext"
 version = "0.1.0"
 edition = "2024"
 
@@ -10,6 +10,6 @@ rayon = "1.6"
 memmap2 = "0.5"
 
 [lib]
-name = "regex"  # This will be the module name in Python.
+name = "pygrep_ext"  # This will be the module name in Python.
 path = "src/lib.rs"
 crate-type = ["cdylib"]
