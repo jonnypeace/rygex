@@ -22,12 +22,12 @@ classifiers = [
 [tool.maturin]
 bindings = "pyo3"
 # Include the Python package folder in the built wheel:
-include = ["pygrep/**/*", "src/**/*"]
+include = ["pygrep/**/*", "src/**/*", "pygrep_ext.pyi"]
 
 
 [project.scripts]
 # This defines a console script entry point. When installed, running "pygrep" will invoke the main() function
-# from the module pygrep.pygrep.
+# from the module pygrep.cli.
 pygrep = "pygrep.cli:main"
 
 [project.urls]
