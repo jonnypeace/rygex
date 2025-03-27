@@ -17,13 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD: cp312-* cp313-*
-      CIBW_BEFORE_ALL: |
-        set -e
-        echo "Installing Rust..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        echo "Sourcing Cargo environment..."
-        . "$HOME/.cargo/env"
-        echo "rustc version: $(rustc --version)"
+
     steps:
       - uses: actions/checkout@v3
 
@@ -32,10 +26,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Rust toolchain on Linux
+      - name: Build wheels Linux
         if: runner.os == 'Linux'
         run: |
-            pip install maturin cibuildwheel &&
+            set -e
+            echo "Installing Rust..."
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            echo "Sourcing Cargo environment..."
+            . "$HOME/.cargo/env"
+            echo "PATH: $PATH"
+            echo "rustc version: $(rustc --version)"
             cibuildwheel --output-dir wheelhouse .
 
 
