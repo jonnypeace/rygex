@@ -17,6 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD: cp312-* cp313-*
+      CIBW_ARCHS: "x86_64"
       # The important part: set your custom Docker image for x86_64
       CIBW_MANYLINUX_X86_64_IMAGE: ghcr.io/jonnypeace/manylinux_rust:latest
 
