@@ -36,6 +36,7 @@ jobs:
             . "$HOME/.cargo/env"
             echo "PATH: $PATH"
             echo "rustc version: $(rustc --version)"
+            pip install maturin cibuildwheel
             cibuildwheel --output-dir wheelhouse .
 
 
