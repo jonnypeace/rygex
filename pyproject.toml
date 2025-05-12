@@ -3,7 +3,7 @@ requires = ["maturin>=0.13"]
 build-backend = "maturin"
 
 [project]
-name = "pygrep"
+name = "rygex"
 version = "0.1.0"
 description = "A fast grep tool using a Rust-powered regex extension"
 readme = "README.md"
@@ -22,13 +22,13 @@ classifiers = [
 [tool.maturin]
 bindings = "pyo3"
 # Include the Python package folder in the built wheel:
-include = ["pygrep/**/*", "src/**/*", "pygrep_ext.pyi"]
+include = ["rygex/**/*", "src/**/*", "rygex_ext.pyi"]
 
 
 [project.scripts]
-# This defines a console script entry point. When installed, running "pygrep" will invoke the main() function
-# from the module pygrep.cli.
-pygrep = "pygrep.cli:main"
+# This defines a console script entry point. When installed, running "rygex" will invoke the main() function
+# from the module rygex.cli.
+rygex = "rygex.cli:main"
 
 [project.urls]
-"Homepage" = "https://github.com/yourusername/pygrep"
+"Homepage" = "https://github.com/jonnypeace/rygex"

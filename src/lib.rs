@@ -685,7 +685,7 @@ fn extract_fixed_lines_parallel(
 
 
 
-// … at the bottom of the file, before the `#[pymodule] fn pygrep_ext` block …
+// … at the bottom of the file, before the `#[pymodule] fn rygex_ext` block …
 
 /// Count total number of matches (across all lines) for the given regex.
 /// Returns a one‐element Vec<String> containing the numeric total.
@@ -786,7 +786,7 @@ fn total_count_fixed_str(
 
 
 #[pymodule]
-fn pygrep_ext(_py: Python, m: &PyModule) -> PyResult<()> {
+fn rygex_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Regex>()?;
     m.add_class::<Match>()?;
     m.add_function(wrap_pyfunction!(compile, m)?)?;

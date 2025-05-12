@@ -1,5 +1,5 @@
 [package]
-name = "pygrep_ext"
+name = "rygex_ext"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,6 +11,6 @@ memmap2 = "0.5"
 memchr = "2.5"
 
 [lib]
-name = "pygrep_ext"  # This will be the module name in Python.
+name = "rygex_ext"  # This will be the module name in Python.
 path = "src/lib.rs"
 crate-type = ["cdylib"]

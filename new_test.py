@@ -37,12 +37,12 @@ REGEX_TOOLS_1 = [
     ("ripgrep (-Nocr $1 total only)",          "rg --no-unicode -No {pat} ufw.test1 -cr '$1'"),
     ("ripgrep (-Nocr $1 | sort | uniq -c)",    "rg --no-unicode -No {pat} ufw.test1 -r '$1' | sort | uniq -c"),
     ("grep (-coP total only)",                 "grep -coP {pat} ufw.test1"),
-    ("pygrep (-rp -t total only)",             "pygrep -rp {pat} '1' -t -f ufw.test1"),
-    ("pygrep (-rp -tm total only)",            "pygrep -rp {pat} '1' -tm -f ufw.test1"),
-    ("pygrep (-p -Sc)",                        "pygrep -p {pat} '1' -Sc -f ufw.test1"),
-    ("pygrep (-rp -Sc)",                       "pygrep -rp {pat} '1' -Sc -f ufw.test1"),
-    ("pygrep (-p -Scm)",                       "pygrep -p {pat} '1' -Sc -m -f ufw.test1"),
-    ("pygrep (-rp -Scm)",                      "pygrep -rp {pat} '1' -Sc -m -f ufw.test1"),
+    ("rygex (-rp -t total only)",             "rygex -rp {pat} '1' -t -f ufw.test1"),
+    ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1' -tm -f ufw.test1"),
+    ("rygex (-p -Sc)",                        "rygex -p {pat} '1' -Sc -f ufw.test1"),
+    ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1' -Sc -f ufw.test1"),
+    ("rygex (-p -Scm)",                       "rygex -p {pat} '1' -Sc -m -f ufw.test1"),
+    ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1' -Sc -m -f ufw.test1"),
     ("perl (1 grp)",                           r"""perl -nE '++$c{$1} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
 ]
 REGEX_TOOLS_2 = [
@@ -56,18 +56,18 @@ REGEX_TOOLS_2 = [
     ("ripgrep (-Nocr $1 $2 total only)",       "rg --no-unicode -No {pat} ufw.test1 -cr '$1 $2'"),
     ("ripgrep (-Nocr $1 $2 | sort | uniq -c)", "rg --no-unicode -No {pat} ufw.test1 -r '$1 $2' | sort | uniq -c"),
     ("grep (-coP total only)",                 "grep -coP {pat} ufw.test1"),
-    ("pygrep (-rp -t total only)",             "pygrep -rp {pat} '1 2' -t -f ufw.test1"),
-    ("pygrep (-rp -tm total only)",            "pygrep -rp {pat} '1 2' -tm -f ufw.test1"),
-    ("pygrep (-p -Sc)",                        "pygrep -p {pat} '1 2' -Sc -f ufw.test1"),
-    ("pygrep (-rp -Sc)",                       "pygrep -rp {pat} '1 2' -Sc -f ufw.test1"),
-    ("pygrep (-p -Scm)",                       "pygrep -p {pat} '1 2' -Scm -f ufw.test1"),
-    ("pygrep (-rp -Scm)",                      "pygrep -rp {pat} '1 2' -Scm -f ufw.test1"),
+    ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2' -t -f ufw.test1"),
+    ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2' -tm -f ufw.test1"),
+    ("rygex (-p -Sc)",                        "rygex -p {pat} '1 2' -Sc -f ufw.test1"),
+    ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1 2' -Sc -f ufw.test1"),
+    ("rygex (-p -Scm)",                       "rygex -p {pat} '1 2' -Scm -f ufw.test1"),
+    ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1 2' -Scm -f ufw.test1"),
     ("perl (2 grp)",                           r"""perl -nE '++$c{"$1 $2"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
 ]
 FIXED_TOOLS = [
     ("ripgrep (fixed)",        "rg -F {pat} ufw.test1"),
     ("grep (fixed)",           "grep -F {pat} ufw.test1"),
-    ("pygrep (fixed)",         "pygrep -F {pat} -f ufw.test1"),
+    ("rygex (fixed)",         "rygex -F {pat} -f ufw.test1"),
 ]
 
 
@@ -159,7 +159,7 @@ def run_benchmark(key: str, pattern: str, literal: bool, one: bool, two: bool):
                 # insert the raw regex into the Perl // literal
                 sub = pattern
             else:
-                # shell-quote for grep/rg/pygrep
+                # shell-quote for grep/rg/rygex
                 sub = safe
 
             if tmpl.startswith('gawk') or tmpl.startswith('sed'):
