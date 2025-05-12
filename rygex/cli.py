@@ -708,7 +708,7 @@ class RustParsed(TypedDict):
 def rust_args_parser(args:argparse) -> RustParsed:
     rp = RustParsed()
     if args.file:
-        rp['file_path'] = args.file.name
+        rp['file_path'] = str(args.file)
     if args.start:
         rp['start_delim'] = args.start[0]
         if len(args.start) > 1:
