@@ -8,6 +8,7 @@ pyo3 = { version = "0.18", features = ["extension-module"] }
 regex = "1.7"
 rayon = "1.6"
 memmap2 = "0.5"
+memchr = "2.5"
 
 [lib]
 name = "pygrep_ext"  # This will be the module name in Python.
