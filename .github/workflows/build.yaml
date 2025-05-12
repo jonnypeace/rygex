@@ -52,12 +52,17 @@ jobs:
         with:
           path: all-wheels/
 
+      - name: 'Debug: list everything under all-wheels'
+        run: |
+          echo "=== file tree under ./all-wheels ==="
+          find all-wheels -type f -print
+
       - name: Create GitHub Release & attach wheels
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }} Release
-          files: all-wheels/*.whl
+          files: all-wheels/**/*.whl
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
