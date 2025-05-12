@@ -4,11 +4,13 @@ use pyo3::wrap_pyfunction;
 use pyo3::types::PyDict;
 use ::regex::Regex as RustRegex;
 use ::regex::bytes::Regex as RustRegexBytes;
-use pyo3::buffer::PyBuffer;
 use memmap2::Mmap;
 use std::fs::File;
 use rayon::prelude::*;
-
+use std::collections::HashMap;
+use pyo3::exceptions::PyIOError;
+use memchr::memmem::Finder;
+use pyo3::exceptions::PyValueError;
 
 #[pyclass]
 struct Regex {
@@ -420,6 +422,368 @@ fn find_joined_matches_in_file_by_line_parallel(
 }
 
 
+/// find the nth occurrence of `needle` in `haystack`
+fn nth_index(haystack: &str, needle: &str, n: usize) -> Option<usize> {
+    let mut pos = 0;
+    for _ in 0..n {
+        match haystack[pos..].find(needle) {
+            Some(i) => pos += i + needle.len(),
+            None    => return None,
+        }
+    }
+    Some(pos - needle.len())
+}
+
+// ... same imports and nth_index helper ...
+
+#[pyfunction]
+#[pyo3(signature = (
+    file_path,
+    start_delim,
+    start_index      = 1,
+    end_delim        = None,
+    end_index        = 1,
+    omit_first       = None,
+    omit_last        = None,
+    print_line_on_match = false,
+    case_insensitive = false
+))]
+fn extract_fixed_spans(
+    file_path: &str,
+    start_delim: &str,
+    start_index: usize,
+    end_delim: Option<&str>,
+    end_index: usize,
+    omit_first: Option<usize>,
+    omit_last: Option<usize>,
+    print_line_on_match: bool,
+    case_insensitive: bool,
+) -> PyResult<Vec<String>> {
+    let file = File::open(file_path).map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
+
+    let s_key = if case_insensitive {
+        start_delim.to_ascii_lowercase()
+    } else {
+        start_delim.to_string()
+    };
+    let e_key = end_delim.map(|ed| {
+        if case_insensitive { ed.to_ascii_lowercase() } else { ed.to_string() }
+    });
+
+    // simple: 0 when None, or whatever Python gave us
+    let omit_f = omit_first.unwrap_or(0);
+    let omit_l = omit_last.unwrap_or(0);
+
+    let mut out = Vec::new();
+    for chunk in mmap.split(|&b| b == b'\n') {
+        let line = std::str::from_utf8(chunk).unwrap_or("");
+        let hay  = if case_insensitive {
+            line.to_ascii_lowercase()
+        } else {
+            line.to_string()
+        };
+
+        if let Some(s_pos) = nth_index(&hay, &s_key, start_index) {
+            if let Some(ref ed) = e_key {
+                if let Some(e_start) = nth_index(&hay, ed, end_index) {
+                    let e_pos = e_start + ed.len();
+                    if e_pos > s_pos {
+                        let mut slice = &line[s_pos .. e_pos];
+                        // strip exactly omit_f / omit_l
+                        if omit_f < slice.len() { slice = &slice[omit_f ..]; }
+                        if omit_l < slice.len() {
+                            slice = &slice[.. slice.len() - omit_l];
+                        }
+                        out.push(slice.to_string());
+                        continue;
+                    }
+                }
+            } else if print_line_on_match {
+                out.push(line.to_string());
+                continue;
+            }
+        }
+    }
+    Ok(out)
+}
+
+#[pyfunction]
+#[pyo3(signature = (
+    file_path,
+    start_delim,
+    start_index      = 1,
+    end_delim        = None,
+    end_index        = 1,
+    omit_first       = None,
+    omit_last        = None,
+    print_line_on_match = false,
+    case_insensitive = false
+))]
+fn extract_fixed_spans_parallel(
+    file_path: &str,
+    start_delim: &str,
+    start_index: usize,
+    end_delim: Option<&str>,
+    end_index: usize,
+    omit_first: Option<usize>,
+    omit_last: Option<usize>,
+    print_line_on_match: bool,
+    case_insensitive: bool,
+) -> PyResult<Vec<String>> {
+    let file = File::open(file_path).map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
+
+    let s_key = if case_insensitive {
+        start_delim.to_ascii_lowercase()
+    } else {
+        start_delim.to_string()
+    };
+    let e_key = end_delim.map(|ed| {
+        if case_insensitive { ed.to_ascii_lowercase() } else { ed.to_string() }
+    });
+
+    let omit_f = omit_first.unwrap_or(0);
+    let omit_l = omit_last.unwrap_or(0);
+
+    let results: Vec<String> = mmap
+        .split(|&b| b == b'\n')
+        .par_bridge()
+        .filter_map(|chunk| {
+            let line = std::str::from_utf8(chunk).unwrap_or("");
+            let hay  = if case_insensitive {
+                line.to_ascii_lowercase()
+            } else {
+                line.to_string()
+            };
+
+            nth_index(&hay, &s_key, start_index).and_then(|s_pos| {
+                if let Some(ref ed) = e_key {
+                    nth_index(&hay, ed, end_index).and_then(|e_start| {
+                        let e_pos = e_start + ed.len();
+                        if e_pos > s_pos {
+                            let mut slice = &line[s_pos .. e_pos];
+                            if omit_f < slice.len() { slice = &slice[omit_f ..]; }
+                            if omit_l < slice.len() {
+                                slice = &slice[.. slice.len() - omit_l];
+                            }
+                            return Some(slice.to_string());
+                        }
+                        None
+                    })
+                } else if print_line_on_match {
+                    Some(line.to_string())
+                } else {
+                    None
+                }
+            })
+        })
+        .collect();
+
+    Ok(results)
+}
+
+
+
+/// Standalone counter: takes a Vec<String>, returns Vec<(String, usize)> sorted desc.
+#[pyfunction]
+fn count_string_occurrences(items: Vec<String>) -> PyResult<Vec<(String, usize)>> {
+    let mut map = HashMap::new();
+    for s in items {
+        *map.entry(s).or_insert(0) += 1;
+    }
+    let mut sorted: Vec<_> = map.into_iter().collect();
+    sorted.sort_unstable_by(|a, b| b.1.cmp(&a.1));
+    Ok(sorted)
+}
+
+
+// Single‐threaded fixed‐string → full‐line extractor
+#[pyfunction]
+#[pyo3(signature=(
+    file_path,
+    pattern,
+    case_insensitive = false
+))]
+fn extract_fixed_lines(
+    file_path: &str,
+    pattern: &str,
+    case_insensitive: bool,
+) -> PyResult<Vec<String>> {
+    let file = File::open(file_path)
+        .map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
+
+    // Precompute the finder on the pattern (lowercased if needed)
+    let pat_bytes = if case_insensitive {
+        pattern.to_ascii_lowercase().into_bytes()
+    } else {
+        pattern.as_bytes().to_vec()
+    };
+    let finder = Finder::new(&pat_bytes);
+
+    let mut out = Vec::new();
+    for chunk in mmap.split(|&b| b == b'\n') {
+        if case_insensitive {
+            // only allocate lowercase when needed
+            let hay = String::from_utf8_lossy(chunk).to_ascii_lowercase();
+            if finder.find(hay.as_bytes()).is_some() {
+                out.push(String::from_utf8_lossy(chunk).into_owned());
+            }
+        } else {
+            // zero allocation: search raw bytes
+            if finder.find(chunk).is_some() {
+                // only now convert to UTF-8 string once
+                out.push(std::str::from_utf8(chunk).unwrap_or("").to_string());
+            }
+        }
+    }
+    Ok(out)
+}
+
+// Parallel fixed‐string → full‐line extractor (same logic)
+#[pyfunction]
+#[pyo3(signature=(
+    file_path,
+    pattern,
+    case_insensitive = false
+))]
+fn extract_fixed_lines_parallel(
+    file_path: &str,
+    pattern: &str,
+    case_insensitive: bool,
+) -> PyResult<Vec<String>> {
+    let file = File::open(file_path)
+        .map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
+
+    let pat_bytes = if case_insensitive {
+        pattern.to_ascii_lowercase().into_bytes()
+    } else {
+        pattern.as_bytes().to_vec()
+    };
+    let finder = Finder::new(&pat_bytes);
+
+    let results: Vec<String> = mmap
+        .split(|&b| b == b'\n')
+        .par_bridge()
+        .filter_map(|chunk| {
+            if case_insensitive {
+                let hay = String::from_utf8_lossy(chunk).to_ascii_lowercase();
+                if finder.find(hay.as_bytes()).is_none() {
+                    return None;
+                }
+            } else if finder.find(chunk).is_none() {
+                return None;
+            }
+            Some(std::str::from_utf8(chunk).unwrap_or("").to_string())
+        })
+        .collect();
+
+    Ok(results)
+}
+
+
+
+// … at the bottom of the file, before the `#[pymodule] fn pygrep_ext` block …
+
+/// Count total number of matches (across all lines) for the given regex.
+/// Returns a one‐element Vec<String> containing the numeric total.
+#[pyfunction]
+fn total_count(
+    pattern: &str,
+    file_path: &str,
+    parallel: bool,
+) -> PyResult<Vec<String>> {
+    // open + mmap the file
+    let file = File::open(file_path)
+        .map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe { Mmap::map(&file)
+        .map_err(|e| PyIOError::new_err(e.to_string()))? };
+
+    // compile the regex
+    let regex = RustRegex::new(pattern)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    // count matches per line, then sum
+    let total = if parallel {
+        mmap
+            .split(|&b| b == b'\n')
+            .par_bridge()
+            .map(|line| regex.find_iter(std::str::from_utf8(line).unwrap_or("")).count())
+            .sum::<usize>()
+    } else {
+        mmap
+            .split(|&b| b == b'\n')
+            .map(|line| regex.find_iter(std::str::from_utf8(line).unwrap_or("")).count())
+            .sum::<usize>()
+    };
+
+    // return as a single‐element Vec<String>
+    Ok(vec![ total.to_string() ])
+}
+
+
+#[pyfunction]
+fn total_count_fixed_str(
+    pattern: &str,
+    file_path: &str,
+    parallel: bool,
+    case_insensitive: bool,
+) -> PyResult<Vec<String>> {
+    // 1. Open + mmap
+    let file = File::open(file_path)
+        .map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe { Mmap::map(&file)
+        .map_err(|e| PyIOError::new_err(e.to_string()))? };
+
+    // 2. Prepare the pattern bytes
+    let pat_bytes = if case_insensitive {
+        pattern.to_ascii_lowercase().into_bytes()
+    } else {
+        pattern.as_bytes().to_vec()
+    };
+    let finder = Finder::new(&pat_bytes);
+
+    // 3. Split into lines
+    let lines = mmap.split(|&b| b == b'\n');
+
+    // 4. Count in parallel or sequentially
+    let total: usize = if parallel {
+        // use rayon’s par_bridge
+        lines
+            .par_bridge()
+            .map(|line| {
+                if case_insensitive {
+                    // lowercase the line
+                    let lower = line.iter()
+                                    .map(|&b| (b as char).to_ascii_lowercase() as u8)
+                                    .collect::<Vec<u8>>();
+                    finder.find_iter(&lower).count()
+                } else {
+                    finder.find_iter(line).count()
+                }
+            })
+            .sum::<usize>()
+    } else {
+        // just the normal iterator
+        lines
+            .map(|line| {
+                if case_insensitive {
+                    let lower = line.iter()
+                                    .map(|&b| (b as char).to_ascii_lowercase() as u8)
+                                    .collect::<Vec<u8>>();
+                    finder.find_iter(&lower).count()
+                } else {
+                    finder.find_iter(line).count()
+                }
+            })
+            .sum::<usize>()
+    };
+
+    Ok(vec![ total.to_string() ])
+}
+
 
 #[pymodule]
 fn pygrep_ext(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -436,5 +800,12 @@ fn pygrep_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(find_joined_matches_in_file_by_line_bytes_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(find_joined_matches_in_file, m)?)?;
     m.add_function(wrap_pyfunction!(find_joined_matches_in_file_by_line_parallel, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_fixed_spans, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_fixed_spans_parallel, m)?)?;
+    m.add_function(wrap_pyfunction!(count_string_occurrences, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_fixed_lines, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_fixed_lines_parallel, m)?)?;
+    m.add_function(wrap_pyfunction!(total_count, m)?)?;
+    m.add_function(wrap_pyfunction!(total_count_fixed_str, m)?)?;
     Ok(())
 }

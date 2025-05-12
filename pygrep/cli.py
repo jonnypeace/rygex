@@ -58,9 +58,15 @@ Examples
 
 import argparse, re, sys, os, gc, mmap
 from pathlib import Path
-from typing import Iterable, Generator, Literal, TypedDict
+from typing import Iterable, Generator, Literal, TypedDict, NamedTuple
 from dataclasses import dataclass
-import pygrep_ext as regex # Your Rust-powered module
+import pygrep_ext as regex
+from collections.abc import Sequence
+import importlib.metadata 
+
+# (1) Define your package version in one place, e.g. in pyproject.toml / setup.cfg
+#     so importlib.metadata.version() can pick it up.
+__version__ = importlib.metadata.version("pygrep")
 
 
 def print_err(msg):
@@ -83,8 +89,8 @@ def sense_check(args,
         print_err('Requires stdin from somewhere, either from --file or pipe')
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
-    if not args.start and not args.pyreg and not args.rpyreg:
-        print_err('This programme requires the --start or --pyreg flag to work properly')
+    if not args.start and not args.pyreg and not args.rpyreg and not args.fixed_string:
+        print_err('This programme requires the --start or --pyreg or -rp or - F flag to work properly')
 
     if args.pyreg and len(args.pyreg) > 2:
         print_err('--pyreg can only have 2 args... search pattern and option')
@@ -292,112 +298,6 @@ def pygrep_search(args=None, func_search: Iterable[str] = None,
 
     return parsed.pyreg_last_list
 
-def line_func(start_end: list | dict, args)-> tuple:
-    ''''Similar idea from using head and tail, requires --line'''
-
-    # args for args.line
-    line_num_split = []
-    line_num = args.lines[0]
-    # Run some tests, set some variables..
-    if '-' in line_num:
-        line_range = True
-        line_num_split = line_num.split('-')
-        # If there is only one string in the list, there will be no range, so just output the line, we need get_int to get the int first
-        try:
-            if not '$' in line_num_split[0]:
-                get_int = int(line_num_split[0])
-            if not '$' in line_num_split[1]:
-                get_int = int(line_num_split[1])
-        except ValueError: # Value error if '$' in index
-            print_err('error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"')    
-        # after passing previous try test, extract two number values if they exist
-        try:
-            num1, num2 = int(line_num_split[0]),int(line_num_split[1])
-        except ValueError:
-            pass # if this fails, it'll be because one of the indexes is '$'
-        if '$' in line_num:
-            # Check if range is too high, and return if it is.
-            if len(start_end) <= get_int:
-                return start_end, line_range
-        else:
-            # First calculate whether enough lines have been found, and return what we have if not.
-            num_diff = max(num1,num2) - min(num1,num2)
-            if len(start_end) <= num_diff:
-                return start_end, line_range
-    else:
-        try:
-            get_int = int(line_num)
-            if len(start_end) < get_int:
-                print_err('error, not enough lines in file. Try reducing line numbers')
-        except ValueError:
-            if line_num != '$':
-                print_err('error, --line arg examples:\n--line "$-10"\n--line "10-$"\n--line "$"\n--line "1-10"\n--line "10"')
-
-    # Conditional for lines using the counts arg
-    if isinstance(start_end, dict):
-        start_end_line = dict()
-        if '-' in line_num:
-            if '$' in line_num:
-                if line_num_split[0] == '$':
-                    max_num = int(line_num_split[1])
-                    for num, key in enumerate(reversed(start_end), 1):
-                        start_end_line[key] = start_end[key]
-                        if num >= max_num:
-                            return start_end_line, line_range
-                elif line_num_split[1] == '$':
-                    line_count = len(start_end) - int(line_num_split[0]) + 1
-                    for num, key in enumerate(reversed(start_end), 1):
-                        start_end_line[key] = start_end[key]
-                        if num >= line_count:
-                            return start_end_line, line_range
-            else:
-                line_count = len(start_end) + 1
-                low_num = line_count - max(int(line_num_split[0]),int(line_num_split[1]))
-                high_num = line_count - min(int(line_num_split[0]),int(line_num_split[1]))                
-                for num, key in enumerate(reversed(start_end), 1):
-                    if num >= low_num:
-                        start_end_line[key] = start_end[key]
-                    if num >= high_num:
-                        return start_end_line, line_range
-        else: # no range
-            # if last line
-            line_range = False
-            if line_num == '$':
-                line_count = len(start_end)
-                for key in reversed(start_end):
-                    start_end_line[key] = start_end[key]
-                    return start_end_line, line_range
-            else: # specific line
-                line_num = int(line_num)
-                for num, key in enumerate(start_end, 1):
-                    if num == line_num:
-                        start_end_line[key] = start_end[key]
-                        return start_end_line, line_range
-    # For everything else but not including the counts arg.
-    start_end_line_list: list = []
-    if '-' in line_num:
-        if '$' in line_num:
-            if line_num_split[0] == '$':
-                for rev_count in range(int(line_num_split[1]), 0, -1):
-                    start_end_line_list.append(start_end[-rev_count])
-            elif line_num_split[1] == '$':
-                line_count = len(start_end) - int(line_num_split[0]) + 2
-                for rev_count in range(line_count, 0, -1):
-                    start_end_line_list.append(start_end[-rev_count])
-        else:
-            low_num, high_num = min(num1,num2), max(num1,num2)
-            for rev_count in range(1, high_num + 1, 1):
-                if rev_count >= low_num:
-                    start_end_line_list.append(start_end[rev_count - 1])
-    else: # no range
-        # if last line
-        line_range = False
-        if line_num == '$':
-            start_end_line_list = start_end[-1]
-        else:
-            line_num = int(line_num)
-            start_end_line_list = start_end[line_num - 1]
-    return start_end_line_list, line_range
 
 def omit_check(first=None, last=None, args=None)-> tuple:
     '''Omit characters for --start and --end args'''
@@ -415,34 +315,59 @@ def omit_check(first=None, last=None, args=None)-> tuple:
     if args.omitlast and isinstance(args.omitlast[0], int):
         last = - int(args.omitlast[0])
     return first, last
+        
 
-def counts(count_search: list, args):
-    '''Counts the number of times a line is present and outputs a count, uses the --counts arg'''
-    from collections import Counter
-    pattern_search = Counter(count_search)
-    padding = max([len(z) for z in pattern_search]) + 4
+def format_counts(counts: Sequence[tuple[str,int]], args) -> list[str]:
+    """
+    Given a list of (key, count) tuples from Rust, apply your
+    --sort/--rev/--lines logic and return lines like:
+      "{key:<{padding}}Line-Counts = {count}"
+    """
+    # 1) Determine padding
+    padding = max(len(k) for k, _ in counts) + 4
+
+    # 2) Start with Rust’s sorted list
+    items = list(counts)
+
+    # 3) Python-side sort flag (if you still want Python sort)
     if args.sort:
-        pattern_search = dict(pattern_search.most_common()) # type: ignore
-            
-    def rev_print(pattern_search: dict, padding: int):
-        '''Reverse print based on counts'''
-        #for key in reversed(pattern_search):
-            # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
-        return [f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in reversed(pattern_search)]
+        items.sort(key=lambda kv: kv[1], reverse=True)
 
-    if args.lines:
-        if args.rev:
-            pattern_search = dict(reversed(list(pattern_search.items()))) # type: ignore
-        pattern_search, _ = line_func(start_end=pattern_search,
-                                            args=args)
-        return rev_print(pattern_search = pattern_search, padding = padding)
-    else:
-        if args.rev:
-            return rev_print(pattern_search = pattern_search, padding = padding)
-        else:
-            # for key in pattern_search:
-                # print(f'{key:{padding}}Line-Counts = {pattern_search[key]}')
-            return [ f'{key:{padding}}Line-Counts = {pattern_search[key]}' for key in pattern_search]
+    # 4) Reverse if requested
+    if args.rev:
+        items = list(reversed(items))
+
+    # 5) Apply --lines filtering if requested
+    if args.lines != slice(None, None, None):
+        items = items[args.lines[0]]
+
+    # 6) Format
+    return [f"{k:{padding}}Line-Counts = {v}" for k, v in items]
+
+
+def parse_slice(s: str):
+    """
+    Turn
+      '5'     → 5            (an int index)
+      '2:10'  → slice(2,10)
+      '3:15:2'→ slice(3,15,2)
+      ':5'    → slice(None,5)
+      '-1'    → -1           (last element)
+    """
+    if ':' in s:
+        parts = s.split(':')
+        if len(parts) not in (2,3):
+            raise argparse.ArgumentTypeError(f"Invalid slice syntax: {s!r}")
+        start = int(parts[0]) if parts[0] else None
+        stop  = int(parts[1]) if parts[1] else None
+        step  = int(parts[2]) if len(parts)==3 and parts[2] else None
+        return slice(start, stop, step)
+    # no colon → must be an integer
+    try:
+        return int(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid integer index: {s!r}")
+
 
 def get_args():
     '''Setting arg parser args'''
@@ -459,7 +384,16 @@ def get_args():
         help='end of string search -e [keyword|character [position]]',
         type=str,
         nargs='+',
+        default=None,
         required=False)
+    
+    pk.add_argument('-F', '--fixed-string',
+        help='Search and print lines with fixed string -F [Str Pattern]',
+        type=str,
+        required=False,
+        default=None,
+        nargs=1,
+        )
 
     pk.add_argument('-f', '--file',
         help='filename to string search through',
@@ -475,12 +409,14 @@ def get_args():
         help='optional argument for --start. -of [int] - Removes characters from --start (left) side of ouput',
         type=int,
         nargs=1,
+        default=None,
         required=False)
 
     pk.add_argument('-ol', '--omitlast',
         help='optional argument for --end. -ol [int] - Removes characters from --end (right) side of ouput',
         type=int,
         nargs=1,
+        default=None,
         required=False)
     
     pk.add_argument('-O', '--omitall',
@@ -503,11 +439,10 @@ def get_args():
         required=False)
 
     pk.add_argument('-l', '--lines',
-        metavar="'1-10' | '1' | '$-3'",
-        help='optional argument to display specific lines, example= ./pygrep.py -s search -l \'$-2\' for last 2 lines. -l \'1-3\' for first 3 lines. -l 6 for the 6th line',
-        type=str,
+        help='slice in the form start:stop[:step], e.g. 0:10 or :5 or 2:20:2',
+        type=parse_slice,
         nargs=1,
-        default=None,
+        default=slice(None, None, None),
         required=False)
 
     pk.add_argument('-S', '--sort',
@@ -530,6 +465,11 @@ def get_args():
         action='store_true',
         required=False)
 
+    pk.add_argument('-t', '--totalcounts',
+        help='This is just a flag for counting total matches no args required, just flag',
+        action='store_true',
+        required=False)
+
     pk.add_argument('-m', '--multi',
         help="optional argument to for multi processing example= ./pygrep.py -p search -m 4 -f file for 4 threads",
         nargs='?',
@@ -538,7 +478,13 @@ def get_args():
         required=False
         )
     
-    # our variables args parses the function (argparse)
+    pk.add_argument(
+        "-v", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="show program’s version number and exit"
+    )
+    
     args = pk.parse_args()
 
     return args
@@ -747,6 +693,67 @@ def multi_cpu(pos_val, args, n_cores=2, file_path: str = None)-> Iterable:
         for r in sublist:
             yield r
 
+class RustParsed(TypedDict):
+    file_path: str = None
+    start_delim: str = None
+    start_index: int = None
+    end_delim: str = None
+    end_index: int = None
+    omit_first: int = None
+    omit_last: int = None
+    print_line_on_match: bool = False
+    case_insensitive: bool = False
+
+
+def rust_args_parser(args:argparse) -> RustParsed:
+    rp = RustParsed()
+    if args.file:
+        rp['file_path'] = args.file.name
+    if args.start:
+        rp['start_delim'] = args.start[0]
+        if len(args.start) > 1:
+            rp['start_index'] = int(args.start[1])
+    if args.end:
+        rp['end_delim'] = args.end[0]
+        if len(args.end) > 1:
+            rp['end_index'] = int(args.end[1])
+
+    if not args.end and args.start and len(args.start) < 2:
+        rp['print_line_on_match'] = True
+
+    rp['case_insensitive'] = args.insensitive
+
+
+    # omit_first logic:
+    if args.omitfirst:
+        val = int(args.omitfirst[0])
+        if val == 0:
+            # “0” means strip the *entire* start_delim
+            rp['omit_first'] = len(args.start[0])
+        else:
+            rp['omit_first'] = val
+
+    # omit_last logic:
+    if args.omitlast:
+        val = int(args.omitlast[0])
+        if val == 0 and args.end:
+            # “0” means strip the *entire* end_delim
+            rp['omit_last'] = len(args.end[0])
+        else:
+            rp['omit_last'] = val
+
+    if args.omitall:
+        if args.start:
+            rp['omit_first'] = len(args.start[0])
+        if args.end:
+            rp['omit_last'] = len(args.end[0])
+
+    # drop any None values so Rust sees only the ones we set
+    call_args = {k: v for k, v in rp.items() if v is not None}
+
+    # now call with keyword-args
+    return call_args
+
 
 def main_seq(python_args_bool=False, args=None):
     '''main sequence for arguments to run'''
@@ -757,54 +764,76 @@ def main_seq(python_args_bool=False, args=None):
     sense_check(args=args, argTty=sys.stdin.isatty())
 
     # Initial case-insensitivity check
-    checkFirst, checkLast = omit_check(args=args)
+    # checkFirst, checkLast = omit_check(args=args)
+    rp = rust_args_parser(args)
     if args.start:
-        # Getting input from file or piped input
-        if args.file and Path(args.file).exists():
-            file_list = unified_input_reader(args.file)
-        elif not sys.stdin.isatty(): # for using piped std input. 
-            file_list = unified_input_reader()
-        else:
-            print_err('Input not recognised, check file path or stdin')
 
-        # check for case-insensitive & initial 'start' search
-        if args.insensitive == False:
-            pattern_search = normal_search(file_list=file_list,args=args,
-                                                    checkFirst=checkFirst,
-                                                    checkLast=checkLast)
-        else:               
-            pattern_search = lower_search(file_list=file_list,args=args,
-                                          checkFirst=checkFirst,
-                                          checkLast=checkLast)
+        if args.multi:
+            pattern_search = regex.extract_fixed_spans_parallel(**rp)
+        else:
+            pattern_search = regex.extract_fixed_spans(**rp)
+        # Getting input from file or piped input
+        # if args.file and Path(args.file).exists():
+        #     file_list = unified_input_reader(args.file)
+        # elif not sys.stdin.isatty(): # for using piped std input. 
+        #     file_list = unified_input_reader()
+        # else:
+        #     print_err('Input not recognised, check file path or stdin')
+
+        # # check for case-insensitive & initial 'start' search
+        # if args.insensitive == False:
+        #     pattern_search = normal_search(file_list=file_list,args=args,
+        #                                             checkFirst=checkFirst,
+        #                                             checkLast=checkLast)
+        # else:               
+        #     pattern_search = lower_search(file_list=file_list,args=args,
+        #                                   checkFirst=checkFirst,
+        #                                   checkLast=checkLast)
     # python regex search
+    multi = True if args.multi else False
+
+    if args.fixed_string:
+        if args.totalcounts:
+            return regex.total_count_fixed_str(args.fixed_string[0], rp['file_path'], multi, rp['case_insensitive'])
+        if args.multi:
+            pattern_search = regex.extract_fixed_lines_parallel(
+                file_path=rp['file_path'],
+                pattern=args.fixed_string[0],
+                case_insensitive=rp['case_insensitive']                
+            )
+        else:
+            pattern_search = regex.extract_fixed_lines(
+                file_path=rp['file_path'],
+                pattern=args.fixed_string[0],
+                case_insensitive=rp['case_insensitive']
+            )
     if args.pyreg:
         try:
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline
             pos_val = 0
-        if args.start:
-            file_list = pattern_search
         if args.multi:
             pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
         else:
-            # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
             pattern_search = pygrep_mmap(args=args, file_path=args.file, pos_val=pos_val)
 
     if args.rpyreg:
-        # pattern_search = regex.find_joined_matches_in_file(args.rpyreg[0], str(args.file), [int(args.rpyreg[1])])
         if len(args.rpyreg) > 1:
             cg_str: str = args.rpyreg[1]
             cg_list = cg_str.split(' ')
             cg_list = [int(x) for x in cg_list]
         else:
             cg_list = None
+
+        if args.totalcounts:
+            return regex.total_count(args.rpyreg[0], str(args.file), multi)
+
         if args.multi:
             pattern_search = regex.find_joined_matches_in_file_by_line_parallel(args.rpyreg[0], str(args.file), cg_list)
         else:
             pattern_search = regex.find_joined_matches_in_file(args.rpyreg[0], str(args.file), cg_list)
 
     gc.collect()
-        # pattern_search = pygrep_search(args=args, func_search=file_list, pos_val=pos_val)
     if not pattern_search:
         print('No Pattern Found')
         exit(0)
@@ -816,41 +845,42 @@ def main_seq(python_args_bool=False, args=None):
         test_re = re.compile(r'^[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}$')
         test_ip = test_re.findall(pattern_search[0])
         if args.sort:
-
-        #match args.sort:
-        #    case None:
             if test_ip:
                 import ipaddress
                 pattern_search.sort(key=ipaddress.IPv4Address)
             else:
                 pattern_search.sort()
-        #    case 'r':
         if args.rev:
             if test_ip:
                 import ipaddress
                 pattern_search.sort(key=ipaddress.IPv4Address, reverse=True)
             else:
                 pattern_search.sort(reverse=True)
-            # case _:
-            #     print_err('--sort / -S can only take r as an arg, or standalone, \nFor Example:\n-Sr or -S')
     # counts search
     if args.counts:
-        return counts(count_search = pattern_search, args=args)
+        from collections import Counter
+        pattern_search_tuple = tuple(Counter(pattern_search).items())
+        return format_counts(pattern_search_tuple, args=args)
+    if args.totalcounts:
+        return [str(len(pattern_search))]
     # lines search
-    if args.lines:
-        pattern_search, line_range = line_func(start_end=pattern_search, args=args)
-        if line_range == True: # multiline
-            # [print(i) for i in pattern_search]
-            return [i for i in pattern_search]
-        else: # This prevents a single string from being separated into lines.
-        #    print(pattern_search)
-            return pattern_search
+    if args.lines != slice(None, None, None):
+        if isinstance(args.lines[0], int):
+            pattern_search = [pattern_search[args.lines[0]]]
+        else:
+            pattern_search = pattern_search[args.lines[0]]
+        return pattern_search
     else:
         # [print(i) for i in pattern_search]
         return pattern_search
 
+
 def main():
-    print('\n'.join(main_seq()))
+    try:
+        print('\n'.join(main_seq()))
+    except KeyboardInterrupt:
+        sys.exit(1)
+
 # Run main sequence if name == main.
 if __name__ == '__main__':
 
