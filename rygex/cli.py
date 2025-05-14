@@ -369,35 +369,53 @@ def parse_slice(s: str):
         raise argparse.ArgumentTypeError(f"Invalid integer index: {s!r}")
 
 
+class NoEllipsisFormatter(argparse.HelpFormatter):
+    def _format_action_invocation(self, action):
+        # when we’re printing the "-s/--start" bit:
+        if action.dest in ("start", 'end', 'pyreg', 'rpyreg'):
+            opts = ", ".join(action.option_strings)
+            # force it to look like exactly one PATTERN plus an optional INDEX
+            return f"{opts} PATTERN [INDEX]"
+        # otherwise, fall back to argparse’s normal behavior
+        return super()._format_action_invocation(action)
+
+
 def get_args():
     '''Setting arg parser args'''
-    pk = argparse.ArgumentParser(prog='rygex',description='Search files with keywords, characters or python regex')
+    pk = argparse.ArgumentParser(
+        prog='rygex',
+        description='Search files with keywords, characters or python regex',
+        formatter_class=NoEllipsisFormatter
+        )
 
     pk.add_argument('-s', '--start',
-        help='This is the starting string search -s [keyword|character [position]]',
+        metavar=('TEXT', 'INDEX'),
+        help='This is the starting string search -s text_pattern optional[index] Note: Requires --end',
         type=str,
         required=False,
         nargs='+',
         )
 
     pk.add_argument('-e', '--end',
-        help='end of string search -e [keyword|character [position]]',
+        metavar=('TEXT', 'INDEX'),
+        help='end of string search -e text_pattern optional[index] Note: Requires --start',
         type=str,
         nargs='+',
-        default=None,
         required=False)
     
     pk.add_argument('-F', '--fixed-string',
-        help='Search and print lines with fixed string -F [Str Pattern]',
+        help='Search and print lines with fixed string -F text_pattern',
         type=str,
         required=False,
         default=None,
         nargs=1,
+        metavar='TEXT', 
         )
 
     pk.add_argument('-f', '--file',
         help='filename to string search through',
         type=Path,
+        metavar='PATH/FILENAME', 
         required=False)
 
     pk.add_argument('-i', '--insensitive',
@@ -410,6 +428,7 @@ def get_args():
         type=int,
         nargs=1,
         default=None,
+        metavar='[INDEX]', 
         required=False)
 
     pk.add_argument('-ol', '--omitlast',
@@ -417,6 +436,7 @@ def get_args():
         type=int,
         nargs=1,
         default=None,
+        metavar='[INDEX]',
         required=False)
     
     pk.add_argument('-O', '--omitall',
@@ -425,24 +445,25 @@ def get_args():
         required=False)
 
     pk.add_argument('-p', '--pyreg',
-        metavar="[regex [numerical value|all]]",
-        help='python regular expression, use with -p "regex" or follow up with a numerical value for a capture group',
+        help='python regular expression, use with -p "pattern" and follow up with a numerical value for a capture group (optional)',
         type=str,
+        metavar=('PATTERN', 'INDEX'),
         nargs='+',
         required=False)
     
     pk.add_argument('-rp', '--rpyreg',
-        metavar="[regex [numerical value|all]]",
-        help='python regular expression, use with -rp "regex" or follow up with a numerical value for a capture group',
+        metavar=('PATTERN', 'INDEX'),
+        help='python regular expression, use with -rp "pattern" and follow up with a numerical value for a capture group (optional)',
         type=str,
         nargs='+',
         required=False)
 
     pk.add_argument('-l', '--lines',
-        help='slice in the form start:stop[:step], e.g. 0:10 or :5 or 2:20:2',
+        help='slice in the form start:stop[:step], e.g. :10 first 10 entries or -1 for last entry or -5: for last 5',
         type=parse_slice,
         nargs=1,
         default=slice(None, None, None),
+        metavar='SLICE', 
         required=False)
 
     pk.add_argument('-S', '--sort',
@@ -470,13 +491,18 @@ def get_args():
         action='store_true',
         required=False)
 
-    pk.add_argument('-m', '--multi',
-        help="optional argument to for multi processing example= ./rygex.py -p search -m 4 -f file for 4 threads",
+    pk.add_argument(
+        '-m', '--multi',
+        metavar='CORES',
         nargs='?',
-        type=lambda x: [int(x)],
-        const=[os.cpu_count()],
-        required=False
-        )
+        type=int,
+        const=(os.cpu_count() or 1),
+        default=None,
+        help=(
+            "number of CPU cores to use;\n"
+            "if you omit the value (just '-m'), it picks all available cores;\n"
+            "if you omit the flag entirely, it won't do multiprocessing"
+        ))
     
     pk.add_argument(
         "-v", "--version",
