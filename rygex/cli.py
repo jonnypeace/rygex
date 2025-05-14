@@ -839,7 +839,7 @@ def main_seq(python_args_bool=False, args=None):
         except IndexError: # only if no group arg is added on commandline
             pos_val = 0
         if args.multi:
-            pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=int(args.multi[0]))
+            pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=args.multi)
         else:
             pattern_search = rygex_mmap(args=args, file_path=args.file, pos_val=pos_val)
 
@@ -888,6 +888,8 @@ def main_seq(python_args_bool=False, args=None):
         pattern_search_tuple = tuple(Counter(pattern_search).items())
         return format_counts(pattern_search_tuple, args=args)
     if args.totalcounts:
+        if isinstance(pattern_search, Generator):
+            pattern_search = list(pattern_search)
         return [str(len(pattern_search))]
     # lines search
     if args.lines != slice(None, None, None):
