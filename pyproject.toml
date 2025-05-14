@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "rygex"
-version = "0.1.2"
+version = "0.1.3"
 description = "A fast grep tool using a Rust-powered regex extension"
 readme = "README.md"
 license = { file = "LICENSE" }
