@@ -11,7 +11,7 @@ from rich.progress import (
 )
 
 import subprocess, time, gc, datetime, shlex, resource
-from typing import Tuple, Sequence
+from typing import Tuple
 from multiprocessing import Process, Event, Queue
 
 ### Required Pip install Rich
@@ -33,7 +33,7 @@ REGEX_TOOLS_1 = [
         r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
         r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
     ),
-    ("sed (1grp)",                             r"sed -nEn 's/.*{pat}.*/\1/p' ufw.test1 | sort | uniq -c"),
+    ("sed (1grp) sort | uniq -c",              r"sed -nE 's/.*{pat}.*/\1/p' ufw.test1 | sort | uniq -c"),
     ("ripgrep (-Nocr $1 total only)",          "rg --no-unicode -No {pat} ufw.test1 -cr '$1'"),
     ("ripgrep (-Nocr $1 | sort | uniq -c)",    "rg --no-unicode -No {pat} ufw.test1 -r '$1' | sort | uniq -c"),
     ("grep (-coP total only)",                 "grep -coP {pat} ufw.test1"),
@@ -43,7 +43,7 @@ REGEX_TOOLS_1 = [
     ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1' -Sc -f ufw.test1"),
     ("rygex (-p -Scm)",                       "rygex -p {pat} '1' -Sc -m -f ufw.test1"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1' -Sc -m -f ufw.test1"),
-    ("perl (1 grp)",                           r"""perl -nE '++$c{$1} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
+    ("perl (-nE 1 grp)",                      r"""perl -nE '++$c{$1} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
 ]
 REGEX_TOOLS_2 = [
     (
@@ -52,17 +52,17 @@ REGEX_TOOLS_2 = [
         r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
         r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
     ),
-    ("sed (2grp)",                             r"""sed -nEn 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
-    ("ripgrep (-Nocr $1 $2 total only)",       "rg --no-unicode -No {pat} ufw.test1 -cr '$1 $2'"),
-    ("ripgrep (-Nocr $1 $2 | sort | uniq -c)", "rg --no-unicode -No {pat} ufw.test1 -r '$1 $2' | sort | uniq -c"),
-    ("grep (-coP total only)",                 "grep -coP {pat} ufw.test1"),
+    ("sed (2grp) sort | uniq -c",             r"""sed -nE 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
+    ("ripgrep (-Nocr $1 $2 total only)",      "rg --no-unicode -No {pat} ufw.test1 -cr '$1 $2'"),
+    ("ripgrep (-Nocr $1 $2 | sort | uniq -c)","rg --no-unicode -No {pat} ufw.test1 -r '$1 $2' | sort | uniq -c"),
+    ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
     ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2' -t -f ufw.test1"),
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2' -tm -f ufw.test1"),
     ("rygex (-p -Sc)",                        "rygex -p {pat} '1 2' -Sc -f ufw.test1"),
     ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1 2' -Sc -f ufw.test1"),
     ("rygex (-p -Scm)",                       "rygex -p {pat} '1 2' -Scm -f ufw.test1"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1 2' -Scm -f ufw.test1"),
-    ("perl (2 grp)",                           r"""perl -nE '++$c{"$1 $2"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
+    ("perl (-nE 2 grp)",                      r"""perl -nE '++$c{"$1 $2"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
 ]
 FIXED_TOOLS = [
     ("ripgrep (fixed)",        "rg -F {pat} ufw.test1"),

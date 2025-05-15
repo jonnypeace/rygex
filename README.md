@@ -65,14 +65,14 @@ rygex [OPTIONS] -f <FILE>
 
 ### Required arguments  
 You must supply **one** of:
-- `-s/--start PATTERN [INDEX]`
+- `-s/--start PATTERN [INDEX] -e/--end PATTERN [INDEX]`
 - `-p/--pyreg <REGEX> [GROUP]`
 - `-rp/--rpyreg <REGEX> [GROUP]`
 - `-F/--fixed-string <PATTERN>`
 
 …and a source:
 - `-f/--file <PATH>`
-- piped input (e.g. `cat file | rygex -s foo`)
+- piped input (e.g. `cat file | rygex -p foo`). Currently, piping only works with -p as i switch support to the rust implementation.
 
 ---
 
