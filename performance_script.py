@@ -46,13 +46,13 @@ REGEX_TOOLS_1 = [
     ("perl (-nE 1 grp)",                      r"""perl -nE '++$c{$1} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
 ]
 REGEX_TOOLS_2 = [
-    # (
-    #     "gawk (2grp)",
-    #     r"""gawk 'match($0,/{pat}/,a){c[a[1]" "a[2]]++}"""
-    #     r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
-    #     r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
-    # ),
-    # ("sed (2grp) sort | uniq -c",             r"""sed -nE 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
+    (
+        "gawk (2grp)",
+        r"""gawk 'match($0,/{pat}/,a){c[a[1]" "a[2]]++}"""
+        r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
+        r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
+    ),
+    ("sed (2grp) sort | uniq -c",             r"""sed -nE 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
     ("ripgrep (-Nocr $1 $2 total only)",      "rg --no-unicode -No {pat} ufw.test1 -cr '$1 $2'"),
     ("ripgrep (-Nocr $1 $2 | sort | uniq -c)","rg --no-unicode -No {pat} ufw.test1 -r '$1 $2' | sort | uniq -c"),
     ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
@@ -77,7 +77,7 @@ def run_free_m(stop_event, out_q: Queue):
     while not stop_event.is_set():
         result = subprocess.run(['free', '-k'], capture_output=True, text=True)
         lines = result.stdout.splitlines()
-        headers = lines[0].split()
+        headers: list = lines[0].split()
         values  = lines[1].split()
         headers.insert(0, 0)
         memory_info = dict(zip(headers, values))
@@ -89,7 +89,7 @@ def run_free_m(stop_event, out_q: Queue):
 
 
 # ─── MEASUREMENT ────────────────────────────────────────────────────────────────
-def measure(cmd: str) -> Tuple[float, float, float, float]:
+def measure(cmd: str) -> Tuple[float, float, float, str, float]:
     resource.setrlimit(resource.RLIMIT_AS, (-1, -1))
     stop_event = Event()
     out_q      = Queue()
