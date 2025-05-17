@@ -56,13 +56,20 @@ Examples
 ./rygex.py -p 'SRC=(\d+\.\d+\.\d+\.\d+)\s+DST=123.12.123.12' -f ufw.test
 """
 
-import argparse, re, sys, os, gc, mmap
+import argparse, re, sys, os, gc, mmap, math
 from pathlib import Path
 from typing import Iterable, Generator, Literal, TypedDict, NamedTuple
 from dataclasses import dataclass
 import rygex_ext as regex
 from collections.abc import Sequence
 import importlib.metadata 
+
+
+from concurrent.futures import ProcessPoolExecutor, as_completed, ThreadPoolExecutor
+from functools import partial
+from itertools import islice
+from typing import List, Tuple, Any
+
 
 # (1) Define your package version in one place, e.g. in pyproject.toml / setup.cfg
 #     so importlib.metadata.version() can pick it up.
@@ -544,23 +551,23 @@ class PythonArgs:
         self.multi: int = kwargs.get('multi' )
 
 
-def chunked_file_reader(chunk_size: int, file_path: str = None, stdin: sys.stdin = None) -> Iterable[list[str]]: # multi threaded
-    '''Yields chunks of lines from a file or stdin'''
-    chunk = []
-    try:
-        source = open(file_path, 'r') if file_path else stdin
-        if not source:
-            print_err('Input Error: Either file_path or stdin must be provided')
-        for line in source:
-            chunk.append(line.strip())
-            if len(chunk) >= chunk_size:
-                yield chunk
-                chunk = []
-        if chunk:
-            yield chunk
-    finally:
-        if file_path:
-            source.close()
+# def chunked_file_reader(chunk_size: int, file_path: str = None, stdin: sys.stdin = None) -> Iterable[list[str]]: # multi threaded
+#     '''Yields chunks of lines from a file or stdin'''
+#     chunk = []
+#     try:
+#         source = open(file_path, 'r') if file_path else stdin
+#         if not source:
+#             print_err('Input Error: Either file_path or stdin must be provided')
+#         for line in source:
+#             chunk.append(line.strip())
+#             if len(chunk) >= chunk_size:
+#                 yield chunk
+#                 chunk = []
+#         if chunk:
+#             yield chunk
+#     finally:
+#         if file_path:
+#             source.close()
 
 
 def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'match'], insensitive: bool = False): # single threaded
@@ -692,32 +699,146 @@ def unified_input_reader(file_path: str = None) -> Iterable[str]:
                 yield line.strip()
 
 
-def multi_cpu(pos_val, args, n_cores=2, file_path: str = None)-> Iterable:
-    '''
-    Accepts file_path, pos_val, args, and n_cores (default is system max cores)
-    Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
-    '''
+# def multi_cpu(pos_val, args, n_cores=2, file_path: str = None)-> Iterable:
+#     '''
+#     Accepts file_path, pos_val, args, and n_cores (default is system max cores)
+#     Only supported with python regex, where multiprocessing above 15 seconds in duration will see a benefit.
+#     '''
 
-    from concurrent.futures import ProcessPoolExecutor
-    global worker
-    def worker(line_list):
-        return rygex_search(args=args, func_search=line_list, pos_val=pos_val)
+#     from concurrent.futures import ProcessPoolExecutor
+#     global worker
+#     def worker(line_list):
+#         return rygex_search(args=args, func_search=line_list, pos_val=pos_val)
 
-    # chunk_size = n_cores * 1000
-    chunk_size = 10000
-    reader_args: dict = {
-        'chunk_size': chunk_size,
-        'file_path': file_path if file_path and Path(file_path).exists() else None,
-        'stdin': sys.stdin if not sys.stdin.isatty() else None
-        }
+#     # chunk_size = n_cores * 1000
+#     chunk_size = 10000
+#     reader_args: dict = {
+#         'chunk_size': chunk_size,
+#         'file_path': file_path if file_path and Path(file_path).exists() else None,
+#         'stdin': sys.stdin if not sys.stdin.isatty() else None
+#         }
     
-    with ProcessPoolExecutor(max_workers=n_cores) as executor:
-        result = executor.map(worker, chunked_file_reader(**reader_args))
-        gc.collect()  # Explicitly trigger garbage collection to manage memory
+#     with ProcessPoolExecutor(max_workers=n_cores) as executor:
+#         result = executor.map(worker, chunked_file_reader(**reader_args))
+#         gc.collect()  # Explicitly trigger garbage collection to manage memory
 
-    for sublist in result:
-        for r in sublist:
-            yield r
+#     for sublist in result:
+#         for r in sublist:
+#             yield r
+
+
+
+
+# ——— Globals for worker processes ——————————————
+_mm: mmap.mmap
+
+def _init_worker(mmap_path: str):
+    """Worker initializer: open & mmap the file once, disable GC."""
+    global _mm
+    f = open(mmap_path, 'rb')
+    _mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+    gc.disable()
+
+def _rygex_worker_lines(pos_val: Any, args: Any, lines: List[str]) -> List[Any]:
+    return rygex_search(args=args, func_search=lines, pos_val=pos_val)
+
+def _rygex_worker_range(pos_val: Any, args: Any, byte_range: Tuple[int,int]) -> List[Any]:
+    start, end = byte_range
+    chunk = _mm[start:end]
+    lines = [ln.decode('utf8', 'ignore') for ln in chunk.splitlines()]
+    return rygex_search(args=args, func_search=lines, pos_val=pos_val)
+
+def _compute_byte_ranges(file_path: str, chunk_size_bytes: int) -> List[Tuple[int,int]]:
+    """Split the file into newline‐aligned byte ranges ~chunk_size_bytes."""
+    size = os.path.getsize(file_path)
+    ranges: List[Tuple[int,int]] = []
+    with open(file_path, 'rb') as f, \
+         mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+        offset = 0
+        while offset < size:
+            end = min(offset + chunk_size_bytes, size)
+            mm.seek(end)
+            mm.readline()        # advance to end of line
+            end = mm.tell()
+            ranges.append((offset, end))
+            offset = end
+    return ranges
+
+# ——— Pure line‐based chunk reader (fallback) ——————
+def chunked_line_reader(
+    chunk_size: int,
+    file_path: str | None = None,
+    stdin=None
+) -> Iterable[List[str]]:
+    """Yield lists of lines (decoded) from file_path or stdin."""
+    source = open(file_path, 'r') if file_path else stdin
+    if source is None:
+        raise ValueError("Need a valid file_path or piped stdin")
+    try:
+        buf: List[str] = []
+        for line in source:
+            buf.append(line.rstrip('\n'))
+            if len(buf) >= chunk_size:
+                yield buf
+                buf = []
+        if buf:
+            yield buf
+    finally:
+        if file_path:
+            source.close()
+
+# ——— multi_cpu that picks the right reader/worker ————
+def multi_cpu(
+    pos_val: Any,
+    args: Any,
+    n_cores: int | None = 8,
+    file_path: str | None = None,
+    # for line‐reader
+    chunk_size: int = 10_000,
+    # for mmap reader
+    chunk_size_bytes: int = 100 * 1024 * 1024
+) -> Iterable[Any]:
+    """
+    Parallel regex over either:
+     - mmap‐sliced byte‐ranges if file_path is a real file
+     - or line‐based chunks otherwise.
+    """
+    # n_cores = n_cores or os.cpu_count() or 1
+    use_mmap = bool(file_path and Path(file_path).is_file())
+
+    file_size = os.path.getsize(file_path)
+    tasks_per_core = 4
+    n_chunks = max( n_cores * tasks_per_core, 1 )
+    chunk_size_bytes = math.ceil( file_size / n_chunks )
+
+
+    if use_mmap:
+        # Prepare byte‐ranges & mmap‐worker
+        ranges = _compute_byte_ranges(file_path, chunk_size_bytes)
+        worker_fn = partial(_rygex_worker_range, pos_val, args)
+        executor_kwargs = {
+            'initializer': _init_worker,
+            'initargs': (file_path,)
+        }
+        tasks = ranges
+    else:
+        # Prepare line‐reader & line‐worker
+        reader = partial(chunked_line_reader,
+                         chunk_size,
+                         file_path,
+                         sys.stdin if not sys.stdin.isatty() else None)
+        worker_fn = partial(_rygex_worker_lines, pos_val, args)
+        executor_kwargs = {}
+        tasks = list(reader())
+
+    with ProcessPoolExecutor(max_workers=n_cores, **executor_kwargs) as executor:
+        futures = [executor.submit(worker_fn, t) for t in tasks]
+        for fut in as_completed(futures):
+            for match in fut.result():
+                yield match
+            gc.collect()
+
+
 
 class RustParsed(TypedDict):
     file_path: str = None
