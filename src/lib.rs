@@ -364,6 +364,28 @@ fn find_joined_matches_in_file(
 }
 
 
+fn compute_ranges(data: &[u8], n_threads: usize, target_chunks_per_thread: usize) 
+    -> Vec<(usize, usize)> 
+{
+    let size = data.len();
+    let total_chunks = (n_threads * target_chunks_per_thread).max(1);
+    let mut ranges = Vec::with_capacity(total_chunks);
+    let mut start = 0;
+    let chunk_bytes = (size + total_chunks - 1) / total_chunks;
+
+    while start < size {
+        let mut end = (start + chunk_bytes).min(size);
+        // advance to next newline
+        while end < size && data[end] != b'\n' {
+            end += 1;
+        }
+        if end < size { end += 1; } // include the '\n'
+        ranges.push((start, end));
+        start = end;
+    }
+    ranges
+}
+
 
 
 #[pyfunction]
@@ -378,10 +400,9 @@ fn find_joined_matches_in_file_by_line_parallel(
     // Memory-map the file.
     let mmap = unsafe { Mmap::map(&file) }
         .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
-    let bytes = &mmap[..];
 
-    // Split the file into lines by newline byte (b'\n') without copying.
-    let lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').collect();
+    // // Split the file into lines by newline byte (b'\n') without copying.
+    // let lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').collect();
 
     // Compile the regex pattern using the bytes API.
     let regex = RustRegexBytes::new(pattern)
@@ -390,33 +411,38 @@ fn find_joined_matches_in_file_by_line_parallel(
     // Process each line in parallel.
     // If groups is provided, for each match in the line join the specified groups.
     // If groups is None, then if the line matches the regex, return the entire line.
-    let results: Vec<String> = lines.par_iter()
-        .flat_map(|line| {
+    let data: &[u8] = &mmap;
+    let ranges = compute_ranges(data, rayon::current_num_threads(), 4);
+
+    let results: Vec<String> = ranges.par_iter()
+        .flat_map(|&(s,e)| {
+            let slice = &data[s..e];
             if let Some(ref indices) = groups {
-                // If specific capture groups are requested, run the regex and join them.
-                regex.captures_iter(line)
+                regex.captures_iter(slice)
                     .map(|caps| {
-                        let mut parts = Vec::new();
-                        for &idx in indices {
-                            if let Some(mat) = caps.get(idx) {
-                                let s = String::from_utf8_lossy(mat.as_bytes()).into_owned();
-                                parts.push(s);
-                            }
+                        indices.iter()
+                            .filter_map(|&idx| caps.get(idx))
+                            .map(|m| String::from_utf8_lossy(m.as_bytes()))
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                // split the chunk into lines, test each line
+                slice.split(|&b| b == b'\n')
+                    .filter_map(|slice| {
+                        if regex.is_match(slice) {
+                            // emit exactly that one matching slice
+                            Some(String::from_utf8_lossy(slice).into_owned())
+                        } else {
+                            None
                         }
-                        parts.join(" ")
                     })
                     .collect::<Vec<String>>()
-            } else {
-                // If no capture groups are specified, check if the line matches.
-                if regex.is_match(line) {
-                    // Return the entire line (decoded from UTF-8).
-                    vec![String::from_utf8_lossy(line).into_owned()]
-                } else {
-                    Vec::new()
-                }
             }
         })
         .collect();
+
 
     Ok(results)
 }
@@ -653,10 +679,16 @@ fn extract_fixed_lines_parallel(
     pattern: &str,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
+    // 1) Open & mmap the file
     let file = File::open(file_path)
-        .map_err(|e| PyIOError::new_err(e.to_string()))?;
-    let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
+        .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?
+    };
+    let data: &[u8] = &mmap;
 
+    // 2) Prepare the Finder (byte-based)
     let pat_bytes = if case_insensitive {
         pattern.to_ascii_lowercase().into_bytes()
     } else {
@@ -664,25 +696,45 @@ fn extract_fixed_lines_parallel(
     };
     let finder = Finder::new(&pat_bytes);
 
-    let results: Vec<String> = mmap
-        .split(|&b| b == b'\n')
-        .par_bridge()
-        .filter_map(|chunk| {
-            if case_insensitive {
-                let hay = String::from_utf8_lossy(chunk).to_ascii_lowercase();
-                if finder.find(hay.as_bytes()).is_none() {
-                    return None;
-                }
-            } else if finder.find(chunk).is_none() {
-                return None;
-            }
-            Some(std::str::from_utf8(chunk).unwrap_or("").to_string())
+    // 3) Compute balanced, newline-aligned ranges
+    let n_threads = rayon::current_num_threads();
+    let ranges = compute_ranges(data, n_threads, 4);
+
+    // 4) Parallel extract matching lines
+    let results: Vec<String> = ranges.par_iter()
+        .flat_map(|&(start, end)| {
+            // For each chunk, split into individual lines
+            let slice = &data[start..end];
+            slice.split(|&b| b == b'\n')
+                 .filter_map(|line| {
+                     if line.is_empty() {
+                         return None;
+                     }
+
+                     // For case-insensitive, lowercase the line before searching
+                     let hay = if case_insensitive {
+                         // decode lossily, lowercase, re-encode as bytes
+                         String::from_utf8_lossy(line)
+                             .to_ascii_lowercase()
+                             .into_bytes()
+                     } else {
+                         line.to_vec()
+                     };
+
+                     // If found, return the original line as a String
+                     if finder.find(&hay).is_some() {
+                         // decode original (not lowercased) line for output
+                         Some(String::from_utf8_lossy(line).into_owned())
+                     } else {
+                         None
+                     }
+                 })
+                 .collect::<Vec<String>>()
         })
         .collect();
 
     Ok(results)
 }
-
 
 
 // … at the bottom of the file, before the `#[pymodule] fn rygex_ext` block …
@@ -695,34 +747,45 @@ fn total_count(
     file_path: &str,
     parallel: bool,
 ) -> PyResult<Vec<String>> {
-    // open + mmap the file
+    // 1) Open & mmap
     let file = File::open(file_path)
-        .map_err(|e| PyIOError::new_err(e.to_string()))?;
-    let mmap = unsafe { Mmap::map(&file)
-        .map_err(|e| PyIOError::new_err(e.to_string()))? };
+        .map_err(|e| PyIOError::new_err(format!("open error: {}", e)))?;
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| PyIOError::new_err(format!("mmap error: {}", e)))?
+    };
+    let data: &[u8] = &mmap;
 
-    // compile the regex
+    // 2) Compile regex (UTF-8 API)
     let regex = RustRegex::new(pattern)
-        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| PyValueError::new_err(format!("regex error: {}", e)))?;
 
-    // count matches per line, then sum
-    let total = if parallel {
-        mmap
-            .split(|&b| b == b'\n')
-            .par_bridge()
-            .map(|line| regex.find_iter(std::str::from_utf8(line).unwrap_or("")).count())
-            .sum::<usize>()
+    // 3) Compute chunks (4 per thread)
+    let n_threads = rayon::current_num_threads();
+    let ranges = compute_ranges(data, n_threads, 4);
+
+    // 4) Count matches across chunks
+    let total: usize = if parallel {
+        ranges.par_iter()
+            .map(|&(s, e)| {
+                let slice = &data[s..e];
+                // SAFETY: slicing at newline boundaries; any invalid UTF-8 yields 0 matches
+                let text = std::str::from_utf8(slice).unwrap_or("");
+                regex.find_iter(text).count()
+            })
+            .sum()
     } else {
-        mmap
-            .split(|&b| b == b'\n')
-            .map(|line| regex.find_iter(std::str::from_utf8(line).unwrap_or("")).count())
-            .sum::<usize>()
+        ranges.iter()
+            .map(|&(s, e)| {
+                let slice = &data[s..e];
+                let text = std::str::from_utf8(slice).unwrap_or("");
+                regex.find_iter(text).count()
+            })
+            .sum()
     };
 
-    // return as a single‐element Vec<String>
     Ok(vec![ total.to_string() ])
 }
-
 
 #[pyfunction]
 fn total_count_fixed_str(
@@ -731,13 +794,16 @@ fn total_count_fixed_str(
     parallel: bool,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
-    // 1. Open + mmap
+    // 1) Open & mmap file
     let file = File::open(file_path)
-        .map_err(|e| PyIOError::new_err(e.to_string()))?;
-    let mmap = unsafe { Mmap::map(&file)
-        .map_err(|e| PyIOError::new_err(e.to_string()))? };
+        .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?
+    };
+    let data: &[u8] = &mmap;
 
-    // 2. Prepare the pattern bytes
+    // 2) Prepare byte-pattern (lowercased if needed)
     let pat_bytes = if case_insensitive {
         pattern.to_ascii_lowercase().into_bytes()
     } else {
@@ -745,44 +811,45 @@ fn total_count_fixed_str(
     };
     let finder = Finder::new(&pat_bytes);
 
-    // 3. Split into lines
-    let lines = mmap.split(|&b| b == b'\n');
+    // 3) Compute balanced, newline-aligned ranges
+    let n_threads = rayon::current_num_threads();
+    let ranges = compute_ranges(data, n_threads, 4);
 
-    // 4. Count in parallel or sequentially
+    // 4) Count matches per chunk
     let total: usize = if parallel {
-        // use rayon’s par_bridge
-        lines
-            .par_bridge()
-            .map(|line| {
+        ranges.par_iter()
+            .map(|&(s, e)| {
+                let slice = &data[s..e];
+                // For case-insensitive, lowercase the slice first
                 if case_insensitive {
-                    // lowercase the line
-                    let lower = line.iter()
-                                    .map(|&b| (b as char).to_ascii_lowercase() as u8)
-                                    .collect::<Vec<u8>>();
+                    let lower = slice.iter()
+                        .map(|&b| (b as char).to_ascii_lowercase() as u8)
+                        .collect::<Vec<u8>>();
                     finder.find_iter(&lower).count()
                 } else {
-                    finder.find_iter(line).count()
+                    finder.find_iter(slice).count()
                 }
             })
-            .sum::<usize>()
+            .sum()
     } else {
-        // just the normal iterator
-        lines
-            .map(|line| {
+        ranges.iter()
+            .map(|&(s, e)| {
+                let slice = &data[s..e];
                 if case_insensitive {
-                    let lower = line.iter()
-                                    .map(|&b| (b as char).to_ascii_lowercase() as u8)
-                                    .collect::<Vec<u8>>();
+                    let lower = slice.iter()
+                        .map(|&b| (b as char).to_ascii_lowercase() as u8)
+                        .collect::<Vec<u8>>();
                     finder.find_iter(&lower).count()
                 } else {
-                    finder.find_iter(line).count()
+                    finder.find_iter(slice).count()
                 }
             })
-            .sum::<usize>()
+            .sum()
     };
 
     Ok(vec![ total.to_string() ])
 }
+
 
 
 #[pymodule]
