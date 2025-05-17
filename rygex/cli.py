@@ -65,7 +65,6 @@ from collections.abc import Sequence
 import importlib.metadata 
 
 
-from concurrent.futures import ProcessPoolExecutor, as_completed, ThreadPoolExecutor
 from functools import partial
 from itertools import islice
 from typing import List, Tuple, Any
@@ -803,6 +802,9 @@ def multi_cpu(
      - mmap‐sliced byte‐ranges if file_path is a real file
      - or line‐based chunks otherwise.
     """
+    
+    # importing here to shave off some mseconds from import time if multi not used
+    from concurrent.futures import ProcessPoolExecutor, as_completed
     # n_cores = n_cores or os.cpu_count() or 1
     use_mmap = bool(file_path and Path(file_path).is_file())
 
