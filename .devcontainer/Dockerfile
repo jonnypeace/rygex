@@ -10,6 +10,10 @@ RUN apt-get update \
       curl \
       pkg-config \
       libssl-dev \
+      gawk \
+      perl \
+      sed \
+      ripgrep \
  && rm -rf /var/lib/apt/lists/*
 
 ARG USER=vscode
