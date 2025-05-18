@@ -460,8 +460,6 @@ fn nth_index(haystack: &str, needle: &str, n: usize) -> Option<usize> {
     Some(pos - needle.len())
 }
 
-// ... same imports and nth_index helper ...
-
 #[pyfunction]
 #[pyo3(signature = (
     file_path,
@@ -497,7 +495,7 @@ fn extract_fixed_spans(
         if case_insensitive { ed.to_ascii_lowercase() } else { ed.to_string() }
     });
 
-    // simple: 0 when None, or whatever Python gave us
+    // simple: 0 when None, or whatever Python handed over
     let omit_f = omit_first.unwrap_or(0);
     let omit_l = omit_last.unwrap_or(0);
 
@@ -557,9 +555,16 @@ fn extract_fixed_spans_parallel(
     print_line_on_match: bool,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
-    let file = File::open(file_path).map_err(|e| PyIOError::new_err(e.to_string()))?;
-    let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
+    // memory-map the file
+    let file = File::open(file_path)
+        .map_err(|e| PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| PyIOError::new_err(e.to_string()))?
+    };
+    let data = &mmap[..];
 
+    // normalize delimiters
     let s_key = if case_insensitive {
         start_delim.to_ascii_lowercase()
     } else {
@@ -572,37 +577,52 @@ fn extract_fixed_spans_parallel(
     let omit_f = omit_first.unwrap_or(0);
     let omit_l = omit_last.unwrap_or(0);
 
-    let results: Vec<String> = mmap
-        .split(|&b| b == b'\n')
-        .par_bridge()
-        .filter_map(|chunk| {
-            let line = std::str::from_utf8(chunk).unwrap_or("");
-            let hay  = if case_insensitive {
-                line.to_ascii_lowercase()
-            } else {
-                line.to_string()
-            };
+    // determine number of threads
+    let threads = rayon::current_num_threads();
 
-            nth_index(&hay, &s_key, start_index).and_then(|s_pos| {
-                if let Some(ref ed) = e_key {
-                    nth_index(&hay, ed, end_index).and_then(|e_start| {
-                        let e_pos = e_start + ed.len();
-                        if e_pos > s_pos {
-                            let mut slice = &line[s_pos .. e_pos];
-                            if omit_f < slice.len() { slice = &slice[omit_f ..]; }
-                            if omit_l < slice.len() {
-                                slice = &slice[.. slice.len() - omit_l];
-                            }
-                            return Some(slice.to_string());
+    // compute newline-aligned ranges (1 chunk per thread)
+    let ranges = compute_ranges(data, threads, 1);
+
+    // process each range in parallel
+    let results: Vec<String> = ranges
+        .into_par_iter()
+        .flat_map(|(start, end)| {
+            let slice = &data[start..end];
+            slice
+                .split(|&b| b == b'\n')
+                .filter_map(|chunk| {
+                    let line = std::str::from_utf8(chunk).unwrap_or("");
+                    let hay = if case_insensitive {
+                        line.to_ascii_lowercase()
+                    } else {
+                        line.to_string()
+                    };
+
+                    nth_index(&hay, &s_key, start_index).and_then(|s_pos| {
+                        if let Some(ref ed) = e_key {
+                            nth_index(&hay, ed, end_index).and_then(|e_start| {
+                                let e_pos = e_start + ed.len();
+                                if e_pos > s_pos {
+                                    let mut matched = &line[s_pos..e_pos];
+                                    if omit_f < matched.len() {
+                                        matched = &matched[omit_f..];
+                                    }
+                                    if omit_l < matched.len() {
+                                        matched = &matched[..matched.len() - omit_l];
+                                    }
+                                    Some(matched.to_string())
+                                } else {
+                                    None
+                                }
+                            })
+                        } else if print_line_on_match {
+                            Some(line.to_string())
+                        } else {
+                            None
                         }
-                        None
                     })
-                } else if print_line_on_match {
-                    Some(line.to_string())
-                } else {
-                    None
-                }
-            })
+                })
+                .collect::<Vec<_>>()
         })
         .collect();
 
@@ -737,8 +757,6 @@ fn extract_fixed_lines_parallel(
 }
 
 
-// … at the bottom of the file, before the `#[pymodule] fn rygex_ext` block …
-
 /// Count total number of matches (across all lines) for the given regex.
 /// Returns a one‐element Vec<String> containing the numeric total.
 #[pyfunction]
@@ -747,7 +765,7 @@ fn total_count(
     file_path: &str,
     parallel: bool,
 ) -> PyResult<Vec<String>> {
-    // 1) Open & mmap
+    // Open & mmap
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(format!("open error: {}", e)))?;
     let mmap = unsafe {
@@ -756,15 +774,15 @@ fn total_count(
     };
     let data: &[u8] = &mmap;
 
-    // 2) Compile regex (UTF-8 API)
+    // Compile regex (UTF-8 API)
     let regex = RustRegex::new(pattern)
         .map_err(|e| PyValueError::new_err(format!("regex error: {}", e)))?;
 
-    // 3) Compute chunks (4 per thread)
+    // Compute chunks (4 per thread)
     let n_threads = rayon::current_num_threads();
     let ranges = compute_ranges(data, n_threads, 4);
 
-    // 4) Count matches across chunks
+    // Count matches across chunks
     let total: usize = if parallel {
         ranges.par_iter()
             .map(|&(s, e)| {
@@ -794,7 +812,7 @@ fn total_count_fixed_str(
     parallel: bool,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
-    // 1) Open & mmap file
+    // Open & mmap file
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe {
@@ -803,7 +821,7 @@ fn total_count_fixed_str(
     };
     let data: &[u8] = &mmap;
 
-    // 2) Prepare byte-pattern (lowercased if needed)
+    // Prepare byte-pattern (lowercased if needed)
     let pat_bytes = if case_insensitive {
         pattern.to_ascii_lowercase().into_bytes()
     } else {
@@ -811,11 +829,11 @@ fn total_count_fixed_str(
     };
     let finder = Finder::new(&pat_bytes);
 
-    // 3) Compute balanced, newline-aligned ranges
+    // Compute balanced, newline-aligned ranges
     let n_threads = rayon::current_num_threads();
     let ranges = compute_ranges(data, n_threads, 4);
 
-    // 4) Count matches per chunk
+    // Count matches per chunk
     let total: usize = if parallel {
         ranges.par_iter()
             .map(|&(s, e)| {
