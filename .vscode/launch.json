@@ -9,7 +9,7 @@
             "name": "001: -p small file",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rygex/cli.py",
+            "program": "${workspaceFolder}/irygex.py",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
                 "-c",
@@ -22,7 +22,7 @@
             "name": "002: start end omitall small file",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rygex/cli.py",
+            "program": "${workspaceFolder}/irygex.py",
             "args": [
                 "-s", "SRC=", "1",
                 "-e", " DST=", "1",
@@ -37,10 +37,10 @@
             "name": "003: -p -m small file",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rygex/cli.py",
+            "program": "${workspaceFolder}/irygex.py",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
-                "-m", "12",
+                "-m",
                 "-c",
                 "-f", "ufw.test"
             ],
@@ -51,10 +51,10 @@
             "name": "004: -p -m BIG file",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rygex/cli.py",
+            "program": "${workspaceFolder}/irygex.py",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
-                "-m", "12",
+                "-m", "8",
                 "-c",
                 "-f", "ufw.test1"
             ],
