@@ -21,7 +21,7 @@ git push origin "$1"
 # Force update 'latest' tag
 echo "🔄 Updating 'latest' tag"
 git tag -f latest
-git push origin latest --force
+git push origin latest --follow-tags --force
 
 echo "✅ Done!"
 
