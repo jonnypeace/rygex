@@ -7,21 +7,22 @@
 
         {
             "name": "001: -p small file",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "module": "pygrep",
+            "program": "${workspaceFolder}/rygex/cli.py",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
                 "-c",
                 "-f", "ufw.test"
             ],
+            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         },
         {
             "name": "002: start end omitall small file",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "module": "pygrep",
+            "program": "${workspaceFolder}/rygex/cli.py",
             "args": [
                 "-s", "SRC=", "1",
                 "-e", " DST=", "1",
@@ -29,39 +30,36 @@
                 "-c",
                 "-f", "ufw.test"
             ],
+            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         },
         {
             "name": "003: -p -m small file",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "module": "pygrep",
+            "program": "${workspaceFolder}/rygex/cli.py",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
                 "-m", "12",
                 "-c",
                 "-f", "ufw.test"
             ],
+            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         },
         {
             "name": "004: -p -m BIG file",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "module": "pygrep",
+            "program": "${workspaceFolder}/rygex/cli.py",
             "args": [
                 "-p", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "1",
                 "-m", "12",
                 "-c",
                 "-f", "ufw.test1"
             ],
+            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "005 time test",
-            "command": "time ./pygrep.py -p '\\w+\\s+DST=(123.12.123.12)\\s+\\w+' all -m 12 -f ufw.test1 | wc -l",
-            "request": "launch",
-            "type": "node-terminal"
-        },
+        }
     ]
 }

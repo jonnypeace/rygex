@@ -1,0 +1,27 @@
+// .devcontainer/devcontainer.json
+{
+  "name": "CLI App Dev",
+  "dockerFile": "Dockerfile",
+  "context": "..",
+  "remoteUser": "vscode",
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+
+  "postCreateCommand": "pip install --user -r requirements.txt",
+
+  "customizations": {
+    "vscode": {
+        // Add extensions you want installed in the containers
+        "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-azuretools.vscode-docker"
+      ],
+        "settings": {
+            "terminal.integrated.shell.linux": "/bin/bash"
+        }
+      // To remove an extension, prefix with a minus, e.g. "-ms-vscode.git"
+    }
+  }
+}
