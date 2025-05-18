@@ -19,21 +19,23 @@ from multiprocessing import Process, Event, Queue
 
 # ─── PATTERNS ──────────────────────────────────────────────────────────────────
 PATTERNS = [
-    (r"dst 1grp",     r"\sDST=([\d\.]+)\s",                False, True, False),
-    ("src spt 2grp",  r"SRC=([\d\.]+).*SPT=([\d\.]+)",     False, False, True),
-    ("fixed str",     r"124.14.124.14",                    True, False, False),
-    (r'1grp',         r'\w+\s+DST=([\d\.]+)\s+\w+',        False, True, False),
+    ("1 ip 1grp",     r"(124\.\d+\.124\.\d+)",               False, True, False),
+    ('rygex -s -e',   r"-s 'DST=' 1 -e ' LEN' 1 -O -Scm",    False, False, False),
+    (r"dst 1grp",     r"\sDST=([\d\.]+)\s",                  False, True, False),
+    ("src spt 2grp",  r"SRC=([\d\.]+).*SPT=([\d\.]+)",       False, False, True),
+    ("fixed str",     r"124.14.124.14",                      True, False, False),
+    (r'1grp',         r'\w+\s+DST=([\d\.]+)\s+\w+',          False, True, False),
 ]
 
 # ─── TOOL TEMPLATES ────────────────────────────────────────────────────────────
 REGEX_TOOLS_1 = [
-    (
-        "gawk (1grp)",
-        r"""gawk 'match($0,/{pat}/,a){c[a[1]]++}"""
-        r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
-        r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
-    ),
-    ("sed (1grp) sort | uniq -c",             r"sed -nE 's/.*{pat}.*/\1/p' ufw.test1 | sort | uniq -c"),
+    # (
+    #     "gawk (1grp)",
+    #     r"""gawk 'match($0,/{pat}/,a){c[a[1]]++}"""
+    #     r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
+    #     r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
+    # ),
+    # ("sed (1grp) sort | uniq -c",             r"sed -nE 's/.*{pat}.*/\1/p' ufw.test1 | sort | uniq -c"),
     ("ripgrep (-Nocr $1 total only)",         "rg --no-unicode -No {pat} ufw.test1 -cr '$1'"),
     ("ripgrep (-Nocr $1 | sort | uniq -c)",   "rg --no-unicode -No {pat} ufw.test1 -r '$1' | sort | uniq -c"),
     ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
@@ -41,18 +43,19 @@ REGEX_TOOLS_1 = [
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1' -tm -f ufw.test1"),
     ("rygex (-p -Sc)",                        "rygex -p {pat} '1' -Sc -f ufw.test1"),
     ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1' -Sc -f ufw.test1"),
-    ("rygex (-p -Scm8)",                      "rygex -p {pat} '1' -Sc -m8 -f ufw.test1"),
+    ("rygex (-p -Scm)",                       "rygex -p {pat} '1' -Sc -m -f ufw.test1"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1' -Sc -m -f ufw.test1"),
     ("perl (-nE 1 grp)",                      r"""perl -nE '++$c{$1} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
+    ("perl (-nE totals 1grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ufw.test1""")
 ]
 REGEX_TOOLS_2 = [
-    (
-        "gawk (2grp)",
-        r"""gawk 'match($0,/{pat}/,a){c[a[1]" "a[2]]++}"""
-        r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
-        r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
-    ),
-    ("sed (2grp) sort | uniq -c",             r"""sed -nE 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
+    # (
+    #     "gawk (2grp)",
+    #     r"""gawk 'match($0,/{pat}/,a){c[a[1]" "a[2]]++}"""
+    #     r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
+    #     r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
+    # ),
+    # ("sed (2grp) sort | uniq -c",             r"""sed -nE 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
     ("ripgrep (-Nocr $1 $2 total only)",      "rg --no-unicode -No {pat} ufw.test1 -cr '$1 $2'"),
     ("ripgrep (-Nocr $1 $2 | sort | uniq -c)","rg --no-unicode -No {pat} ufw.test1 -r '$1 $2' | sort | uniq -c"),
     ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
@@ -60,15 +63,22 @@ REGEX_TOOLS_2 = [
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2' -tm -f ufw.test1"),
     ("rygex (-p -Sc)",                        "rygex -p {pat} '1 2' -Sc -f ufw.test1"),
     ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1 2' -Sc -f ufw.test1"),
-    ("rygex (-p -Scm8)",                      "rygex -p {pat} '1 2' -Scm8 -f ufw.test1"),
+    ("rygex (-p -Scm)",                       "rygex -p {pat} '1 2' -Scm -f ufw.test1"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1 2' -Scm -f ufw.test1"),
     ("perl (-nE 2 grp)",                      r"""perl -nE '++$c{"$1 $2"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
+    ("perl (-nE totals 2grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ufw.test1""")
 ]
 FIXED_TOOLS = [
     ("ripgrep (fixed)",        "rg -F {pat} ufw.test1"),
     ("grep (fixed)",           "grep -F {pat} ufw.test1"),
     ("rygex (fixed)",          "rygex -F {pat} -f ufw.test1"),
     ("rygex (fixed -m)",       "rygex -F {pat} -m -f ufw.test1"),
+    ("perl (fixed)",           r"""perl -lne 'print if index($_, "{pat}") >= 0' ufw.test1""")
+]
+
+NEW_TOOLS = [
+    ("rygen --start --end --omitall -Scm", "rygex -s 'DST=' 1 -e ' LEN' 1 -O -Scm -f ufw.test1"),
+    ("rygen --start --end --omitall -Sc", "rygex -s 'DST=' 1 -e ' LEN' 1 -O -Sc -f ufw.test1"),
 ]
 
 
@@ -134,8 +144,10 @@ def run_benchmark(key: str, pattern: str, literal: bool, one: bool, two: bool):
         tools = FIXED_TOOLS
     elif one:
         tools = REGEX_TOOLS_1
-    else:
+    elif two:
         tools = REGEX_TOOLS_2
+    else:
+        tools = NEW_TOOLS
 
     safe = shlex.quote(pattern)
     results = []
