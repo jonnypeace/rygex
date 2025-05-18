@@ -809,8 +809,9 @@ def multi_cpu(
     use_mmap = bool(file_path and Path(file_path).is_file())
 
     file_size = os.path.getsize(file_path)
-    tasks_per_core = 4
-    n_chunks = max( n_cores * tasks_per_core, 1 )
+    #tasks_per_core = 4
+    #n_chunks = max( n_cores * tasks_per_core, 1 )
+    n_chunks = n_cores * 20
     chunk_size_bytes = math.ceil( file_size / n_chunks )
 
 
@@ -836,9 +837,10 @@ def multi_cpu(
     with ProcessPoolExecutor(max_workers=n_cores, **executor_kwargs) as executor:
         futures = [executor.submit(worker_fn, t) for t in tasks]
         for fut in as_completed(futures):
-            for match in fut.result():
-                yield match
-            gc.collect()
+            yield fut.result()
+       #     for match in fut.result():
+       #         yield match
+      #      gc.collect()
 
 
 
@@ -962,7 +964,8 @@ def main_seq(python_args_bool=False, args=None):
         except IndexError: # only if no group arg is added on commandline
             pos_val = 0
         if args.multi:
-            pattern_search = multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=args.multi)
+            import itertools
+            pattern_search = itertools.chain.from_iterable(multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=args.multi))
         else:
             pattern_search = rygex_mmap(args=args, file_path=args.file, pos_val=pos_val)
 
