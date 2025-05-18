@@ -34,8 +34,6 @@ jobs:
 
       - name: Build rygex wheels
         run: cibuildwheel --output-dir wheelhouse .
-      - name: Build rygex_ext wheels 
-        run: maturin build --release -o wheelhouse
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
