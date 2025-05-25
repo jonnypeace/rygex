@@ -19,8 +19,16 @@
         "ms-azuretools.vscode-docker"
       ],
         "settings": {
-            "terminal.integrated.shell.linux": "/bin/bash"
-        }
+            // 1) Define a "bash" profile
+            "terminal.integrated.profiles.linux": {
+              "bash": {
+                "path": "/bin/bash",
+                "args": ["-l"]         // make it a login shell if you like
+              }
+            },
+            // 2) Use that profile by default
+            "terminal.integrated.defaultProfile.linux": "bash"
+          }
       // To remove an extension, prefix with a minus, e.g. "-ms-vscode.git"
     }
   }
