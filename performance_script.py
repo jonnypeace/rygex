@@ -96,13 +96,13 @@ NEW_TOOLS = [
 ]
 
 REGEX_TOOLS_LIMITED = [
-    ("ripgrep (-Nocr $1 $2 | sort | uniq -c)","rg --no-unicode -No {pat} ssh_failures_rand_sample.log -r '$1 $2 $3' | sort | uniq -c"),
+    ("ripgrep (-Nocr $1 $2 $3 | sort | uniq -c)","rg --no-unicode -No {pat} ssh_failures_rand_sample.log -r '$1 $2 $3' | sort | uniq -c"),
     ("rygex (-g -Sc)",                        "rygex -g {pat} '1 2 3' -Sc -f ssh_failures_rand_sample.log"),
     ("rygex (-g -Scm)",                       "rygex -g {pat} '1 2 3' -Scm -f ssh_failures_rand_sample.log"),
     ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1 2 3' -Sc -f ssh_failures_rand_sample.log"),
     ("rygex (-p -Scm)",                       "rygex -p {pat} '1 2 3' -Scm -f ssh_failures_rand_sample.log"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1 2 3' -Scm -f ssh_failures_rand_sample.log"),
-    ("perl (-nE 2 grp)",                      r"""perl -nE '++$c{"$1 $2 $3"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ssh_failures_rand_sample.log"""),
+    ("perl (-nE 3 grp)",                      r"""perl -nE '++$c{"$1 $2 $3"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ssh_failures_rand_sample.log"""),
 ]
 
 
