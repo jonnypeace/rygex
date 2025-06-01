@@ -11,6 +11,309 @@ use std::collections::HashMap;
 use pyo3::exceptions::PyIOError;
 use memchr::memmem::Finder;
 use pyo3::exceptions::PyValueError;
+use pyo3::types::{PyIterator, PyTuple};
+use std::collections::VecDeque;
+use pyo3::types::PyString;
+use std::io::Error as IOError;
+
+/// A PyO3‐backed iterator that memory‐maps the given file and then yields
+/// exactly one Python string each time the Rust regex finds a capture group.
+/// No Python objects are created for non‐matching parts of the file, so memory
+/// stays tiny when there are few matches.
+///
+/// Python usage:
+///
+///     gen = FileRegexGen("pattern", "ufw.test1")
+///     for match_str in gen:
+///         print(match_str)
+///
+/// `match_str` will be the substring of the capture (group 1 by default).
+// #[pyclass]
+// pub struct FileRegexGen {
+//     /// The compiled Rust regex (group 1 must exist).
+//     inner: RustRegex,
+
+//     /// We keep the Mmap here so it does not get dropped/unmapped.
+//     mmap: Mmap,
+
+//     /// Leaked, `'static` string containing the entire file’s contents.
+//     haystack: &'static str,
+
+//     /// Current byte‐offset into `haystack`. We search from haystack[pos..].
+//     pos: usize,
+// }
+
+#[pyclass]
+pub struct FileRegexGen {
+    inner:    RustRegex,    // the compiled regex (with at least one capture group)
+    mmap:     Mmap,         // the OS memory‐map of the entire file (kept alive)
+    haystack: &'static str, // a `'static` &str pointing directly into the mmap’s bytes
+    start:    usize,        // the byte offset at which we begin searching
+    end:      usize,        // the byte offset at which we must stop searching
+    pos:      usize,        // the next byte offset from which we attempt to find a match
+}
+
+
+#[pymethods]
+impl FileRegexGen {
+    /// __new__(cls, pattern: str, filename: str) -> FileRegexGen
+    #[new]
+    fn new(pattern: &str, filename: &str) -> PyResult<Self> {
+        // 1) Compile the regex
+        let re = RustRegex::new(pattern)
+            .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
+
+        // 2) Open & mmap the file
+        let file = File::open(filename)
+            .map_err(|e: IOError| exceptions::PyIOError::new_err(e.to_string()))?;
+        let mmap = unsafe {
+            Mmap::map(&file)
+                .map_err(|e| exceptions::PyIOError::new_err(e.to_string()))?
+        };
+
+        // 3) Convert to &str (error if any invalid UTF-8)
+        let s: &str = std::str::from_utf8(&mmap)
+            .map_err(|e| exceptions::PyUnicodeDecodeError::new_err(e.to_string()))?;
+
+        // 4) Transmute to 'static &str
+        let static_str: &'static str = unsafe { std::mem::transmute::<&str, &'static str>(s) };
+
+        let len = static_str.len();
+        Ok(FileRegexGen {
+            inner:    re,
+            mmap,                    // keep the mapping alive
+            haystack: static_str,    // pointer to map’s UTF-8 bytes
+            start:    0,             // we begin at byte 0
+            end:      len,           // and end at haystack.len()
+            pos:      0,             // cursor starts at 0 as well
+        })
+    }
+
+
+    /// __iter__(self) -> self
+    fn __iter__(slf: Py<FileRegexGen>) -> Py<FileRegexGen> {
+        slf
+    }
+
+    /// __next__(self) -> Optional[Tuple[str, ...]]
+    ///
+    /// Each time this is called, we look at `haystack[pos..]`, run captures on it,
+    /// build a Python tuple of (full_match, cap1, cap2, …), advance pos past the end
+    /// of the full match, and return that tuple.  If no more matches remain, returns None.
+    fn __next__(mut slf: PyRefMut<Self>, py: Python<'_>) -> PyResult<Option<PyObject>> {
+        // 1) If pos has moved past `end`, we’re done.
+        if slf.pos >= slf.end {
+            return Ok(None);
+        }
+
+        // 2) Build a &str slice that only runs from pos..end
+        let slice = &slf.haystack[slf.pos..slf.end];
+
+        // 3) Attempt to find the next match in that slice
+        if let Some(caps) = slf.inner.captures(slice) {
+            // `caps.iter()` yields an iterator over Option<Match> for group0, group1, ...
+            let mut py_items: Vec<PyObject> = Vec::new();
+            for m_opt in caps.iter() {
+                if let Some(mat) = m_opt {
+                    // mat.as_str() is a borrowed &str for this group
+                    py_items.push(PyString::new(py, mat.as_str()).to_object(py));
+                } else {
+                    // That group didn’t participate in this match → push None
+                    py_items.push(py.None());
+                }
+            }
+
+            // 4) Advance pos by the length (in bytes) of the full match (group 0)
+            if let Some(m0) = caps.get(0) {
+                // m0.end() is the end‐index **relative to `slice`**, so we add slf.pos
+                slf.pos += m0.end();
+            } else if let Some(m1) = caps.get(1) {
+                // Fallback (rare): advance by group1’s end if group0 is absent
+                slf.pos += m1.end();
+            } else {
+                // No match at all (shouldn’t happen if captures() returned Some)
+                return Ok(None);
+            }
+
+            // 5) Pack all the captured strings (and Nones) into a Python tuple
+            let tup = PyTuple::new(py, py_items);
+            return Ok(Some(tup.to_object(py)));
+        }
+
+        // 6) If captures() returned None, we found no more matches in slice → StopIteration
+        Ok(None)
+    }
+
+}
+
+
+#[pyfunction]
+fn from_file_range(
+    py: Python<'_>,
+    pattern: &str,
+    filename: &str,
+    start: usize,
+    end: usize
+) -> PyResult<FileRegexGen> {
+    // 1) Compile the regex
+    let re = RustRegex::new(pattern)
+        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
+
+    // 2) Open & mmap the file, exactly like above
+    let file = File::open(filename)
+        .map_err(|e: IOError| exceptions::PyIOError::new_err(e.to_string()))?;
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| exceptions::PyIOError::new_err(e.to_string()))?
+    };
+
+    // 3) Convert &[u8] → &str
+    let s: &str = std::str::from_utf8(&mmap)
+        .map_err(|e| exceptions::PyUnicodeDecodeError::new_err(e.to_string()))?;
+    let static_str: &'static str = unsafe { std::mem::transmute::<&str, &'static str>(s) };
+
+    // 4) Clip the user‐supplied byte offsets into [0..haystack.len()]
+    let haylen = static_str.len();
+    let s_off = start.min(haylen);
+    let e_off = end.min(haylen);
+
+    // 5) Initialize pos = s_off, and set start=s_off, end=e_off
+    Ok(FileRegexGen {
+        inner:    re,
+        mmap,                     // keep the mapping alive 
+        haystack: static_str,     // pointer into mapping
+        start:    s_off,
+        end:      e_off,
+        pos:      s_off,          // we begin scanning at s_off
+    })
+}
+
+
+
+/// A Python class that, when iterated, yields one Vec<Option<String>> per regex match,
+/// across all the input strings supplied at construction time.
+///
+/// Example usage in Python:
+///   it = regexgen.RustRegexGen(r"(\d+)-(\d+)", ["123-456 foo", "no match", "42-99"])
+///   for match_vec in it:
+///       print(match_vec[0], match_vec[1], match_vec[2])
+#[pyclass]
+pub struct RustRegexGen {
+    inner: RustRegex,                 // the compiled Rust regex
+    py_iter: Py<PyIterator>,          // Python iterator over the input strings
+    pending: VecDeque<Vec<Option<String>>>, // queue of matches not yet yielded
+}
+
+#[pymethods]
+impl RustRegexGen {
+    #[new]
+    fn new(pattern: &str, iterable: &PyAny) -> PyResult<Self> {
+        let inner = RustRegex::new(pattern)
+            .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
+
+        let py = iterable.py();
+        let py_iter = PyIterator::from_object(py, iterable).map_err(|_| {
+            exceptions::PyTypeError::new_err("Second argument must be an iterable of strings")
+        })?;
+
+        Ok(RustRegexGen {
+            inner,
+            py_iter: py_iter.into(),
+            pending: VecDeque::new(),
+        })
+    }
+
+    fn __iter__(slf: Py<RustRegexGen>) -> Py<RustRegexGen> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<PyObject>> {
+        // Acquire GIL once and store `py` so that we never call `slf.py()`.
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        // 1) If there's already a queued match, pop and return it immediately.
+        if let Some(group_vec) = slf.pending.pop_front() {
+            // Build a Python tuple from `group_vec`.
+            let py_items: Vec<PyObject> = group_vec
+                .into_iter()
+                .map(|opt_s| match opt_s {
+                    Some(s) => s.to_object(py),
+                    None => py.None(),
+                })
+                .collect();
+            let tup = PyTuple::new(py, py_items);
+            return Ok(Some(tup.to_object(py)));
+        }
+
+        // 2) Otherwise, keep pulling lines until we find a real capture or exhaust.
+        loop {
+            // 2a) Grab the next item from the Python iterator.
+            let next_obj: PyObject = {
+                // We only borrow `slf` mutably here to call `slf.py_iter.as_ref(py)`.
+                let mut it_ref: &PyIterator = slf.py_iter.as_ref(py);
+                match it_ref.next() {
+                    Some(Ok(obj_any)) => obj_any.to_object(py),
+                    Some(Err(err_py)) => {
+                        // Propagate the Python exception.
+                        return Err(err_py.clone_ref(py));
+                    }
+                    None => return Ok(None), // StopIteration
+                }
+            };
+
+            // 2b) Convert that PyObject into &str (error if not a string)
+            let text: &str = match next_obj.extract(py) {
+                Ok(s) => s,
+                Err(_) => {
+                    return Err(exceptions::PyTypeError::new_err(
+                        "All items in the iterable must be strings",
+                    ))
+                }
+            };
+
+            // 2c) Run captures_iter on `text`. Collect all capture‐groups from this line.
+            let mut any_captured = false;
+            let mut new_items_for_line: Vec<Vec<Option<String>>> = Vec::new();
+
+            for caps in slf.inner.captures_iter(text) {
+                any_captured = true;
+
+                let mut group_vec: Vec<Option<String>> = Vec::new();
+                for m_opt in caps.iter() {
+                    group_vec.push(m_opt.map(|m| m.as_str().to_string()));
+                }
+                new_items_for_line.push(group_vec);
+            }
+
+            // 2d) If there was at least one capture, queue them in `pending`.
+            if any_captured {
+                for gv in new_items_for_line {
+                    slf.pending.push_back(gv);
+                }
+                // Pop & return the first queued match:
+                if let Some(first_match) = slf.pending.pop_front() {
+                    let py_items: Vec<PyObject> = first_match
+                        .into_iter()
+                        .map(|opt_s| match opt_s {
+                            Some(s) => s.to_object(py),
+                            None => py.None(),
+                        })
+                        .collect();
+                    let tup = PyTuple::new(py, py_items);
+                    return Ok(Some(tup.to_object(py)));
+                }
+            }
+
+            // 2e) If no captures on this line, loop again to fetch the next line.
+            //     We never allocate any Python tuple or string here for non‐matches.
+        }
+    }
+}
+
+
+
+
 
 #[pyclass]
 struct Regex {
@@ -892,5 +1195,8 @@ fn rygex_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(extract_fixed_lines_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(total_count, m)?)?;
     m.add_function(wrap_pyfunction!(total_count_fixed_str, m)?)?;
+    m.add_function(wrap_pyfunction!(from_file_range, m)?)?;
+    m.add_class::<RustRegexGen>()?;
+    m.add_class::<FileRegexGen>()?;
     Ok(())
 }

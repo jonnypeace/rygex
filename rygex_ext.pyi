@@ -1,5 +1,5 @@
 # regex.pyi
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Iterable, Iterator, Sequence, TypeVar
 
 class Regex:
     def __init__(self, pattern: str) -> None: ...
@@ -33,3 +33,31 @@ def extract_fixed_lines(file_path: str, pattern: str, case_insensitive: bool) ->
 def extract_fixed_lines_parallel(file_path: str, pattern: str, case_insensitive: bool) -> list[str]: ...
 def total_count(pattern: str, file_path: str, parallel: bool) -> list[str]: ...
 def total_count_fixed_str(pattern: str, file_path: str, parallel: bool, case_insensitive: bool) -> list[str]: ...
+
+
+class RustRegexGen:
+    """
+    RustRegexGen(pattern: str, iterable_of_strings: Iterable[str])
+
+    A generator that yields one match (as a list of Optional[str]) at a time,
+    across all input strings. Index 0 is the full match; index 1.. are capture groups.
+    """
+
+    def __init__(self, pattern: str, iterable_of_strings: Iterable[str]) -> None: ...
+    def __iter__(self) -> Iterator[List[Optional[str]]]: ...
+    def __next__(self) -> List[Optional[str]]: ...
+
+
+class FileRegexGen(Iterator[str]):
+    """
+    FileRegexGen(pattern: str, filename: str) -> FileRegexGen
+
+    Memory‐maps `filename` and yields exactly the group-1 capture (as `str`)
+    for each match of `pattern`.  Raises StopIteration when done.
+    """
+
+    def __init__(self, pattern: str, filename: str) -> None: ...
+    def __iter__(self) -> FileRegexGen: ...
+    def __next__(self) -> str: ...
+
+def from_file_range(pattern: str, filename: str, start: int, end: int) -> FileRegexGen: ...

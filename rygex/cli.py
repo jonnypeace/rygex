@@ -63,11 +63,11 @@ from dataclasses import dataclass
 import rygex_ext as regex
 from collections.abc import Sequence
 import importlib.metadata 
-
+from collections import Counter
 
 from functools import partial
 from itertools import islice
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Callable
 
 
 # (1) Define your package version in one place, e.g. in pyproject.toml / setup.cfg
@@ -95,8 +95,8 @@ def sense_check(args,
         print_err('Requires stdin from somewhere, either from --file or pipe')
 
     # Removed the required field for start, with the intention to use either start or pyreg, and build a pyreg function
-    if not args.start and not args.pyreg and not args.rpyreg and not args.fixed_string:
-        print_err('This programme requires the --start or --pyreg or -rp or - F flag to work properly')
+    if not args.start and not args.pyreg and not args.rpyreg and not args.fixed_string and not args.gen:
+        print_err('This programme requires the (--start --end) or -p or -rp or - F flag to pattern match properly')
 
     if args.pyreg and len(args.pyreg) > 2:
         print_err('--pyreg can only have 2 args... search pattern and option')
@@ -118,7 +118,9 @@ def sense_check(args,
     
     if args.start:
         if not len(args.start) > 1 and ( args.omitall or args.omitfirst or args.omitlast):
-            print_err('error, --start requires numerical index or "all" with --omitfirst or --omitlast or --omitall')
+            print_err('error, --start requires numerical index with --omitfirst or --omitlast or --omitall')
+        if not args.end:
+            print_err('error, --start requires --end ')
 
     if args.file and not args.file.is_file():
         print_err(f'error, --file {args.file} does not exist')
@@ -270,7 +272,7 @@ def rygex_search(args=None, func_search: Iterable[str] = None,
                 parsed.pyreg_last_list.append(line)
 
     elif parsed.pygen_length == 2:
-        if args.pyreg[1] == 'all':
+        if args.pyreg[1] == '0':
             if parsed.group_num > 1:
                 parsed.pyreg_last_list = grouped_iter(file_data=func_search, test_reg=parsed.test_reg)
             if parsed.group_num == 1:
@@ -329,25 +331,25 @@ def format_counts(counts: Sequence[tuple[str,int]], args) -> list[str]:
     --sort/--rev/--lines logic and return lines like:
       "{key:<{padding}}Line-Counts = {count}"
     """
-    # 1) Determine padding
+    # Determine padding
     padding = max(len(k) for k, _ in counts) + 4
 
-    # 2) Start with Rust’s sorted list
+    # Start with Rust’s sorted list
     items = list(counts)
 
-    # 3) Python-side sort flag (if you still want Python sort)
+    # Python-side sort flag (if you still want Python sort)
     if args.sort:
         items.sort(key=lambda kv: kv[1], reverse=True)
 
-    # 4) Reverse if requested
+    # Reverse if requested
     if args.rev:
         items = list(reversed(items))
 
-    # 5) Apply --lines filtering if requested
+    # Apply --lines filtering if requested
     if args.lines != slice(None, None, None):
         items = items[args.lines[0]]
 
-    # 6) Format
+    # Format
     return [f"{k:{padding}}Line-Counts = {v}" for k, v in items]
 
 
@@ -517,6 +519,14 @@ def get_args():
         help="show program’s version number and exit"
     )
     
+    pk.add_argument(
+        '-g', '--gen',
+        metavar=('PATTERN', 'INDEX'),
+        help='python regular expression, use with -g "pattern" and follow up with a numerical value for a capture group (optional) Uses Generators',
+        type=str,
+        nargs='+',
+        required=False
+    )
     args = pk.parse_args()
 
     return args
@@ -696,6 +706,9 @@ def unified_input_reader(file_path: str = None) -> Iterable[str]:
         if not sys.stdin.isatty():
             for line in sys.stdin:
                 yield line.strip()
+
+            
+
 
 
 # def multi_cpu(pos_val, args, n_cores=2, file_path: str = None)-> Iterable:
@@ -905,6 +918,136 @@ def rust_args_parser(args:argparse) -> RustParsed:
     # now call with keyword-args
     return call_args
 
+def counter(pattern_search, args):
+    from collections import Counter
+    pattern_search_dict = Counter(pattern_search)
+    pattern_search_list = []
+    for grp_tuple, cnt in pattern_search_dict.items():
+        joined = ' '.join(grp_tuple)
+        pattern_search_list.append((joined, cnt))
+    if pattern_search_list:
+        return format_counts(pattern_search_list, args=args)
+    else:
+        return ['0']
+
+
+def gen_keys(func: Callable, pattern: str, file: str, split_int: list[int], *args):
+    for m in func(pattern, file, *args):
+        # Start with the first group
+        t = m[split_int[0]]
+        # For each subsequent group, prefix with a space
+        for idx in split_int[1:]:
+            t = t + " " + m[idx]
+        yield t
+
+def getting_slice(args_field: list[str]):
+    try:
+        split_str: list = args_field[1].split(' ')
+    # IndexError occurs when entire lines are required
+    except IndexError:
+        split_str = ['0']
+    split_int = [int(i) for i in split_str]
+    return split_int
+
+
+
+def _chunk_worker(pattern: list, filename: str, start: int, end: int) -> dict[str, int]:
+    # gen = regex.from_file_range(pattern, filename, start, end)
+    c = Counter()
+    # for m in gen:
+
+    split_int = getting_slice(pattern)
+    c.update(gen_keys(regex.from_file_range, pattern[0], filename, split_int, start, end))
+
+        # c[m[1]] += 1   # increment count for first capture group
+    return dict(c)
+
+
+def wrapper(args):
+    return _chunk_worker(*args)
+
+
+def make_byte_ranges(filename: str, n_workers: int) -> List[tuple[int,int]]:
+    """
+    Return a list of `n_workers` (start_byte, end_byte) pairs, covering
+    [0 .. file_size) without gaps or overlaps, each chunk beginning
+    immediately after a '\n' (except chunk 0 at byte 0) and ending
+    immediately after a '\n' (except the final chunk which ends at EOF).
+    """
+    total = os.path.getsize(filename)
+    base, rem = divmod(total, n_workers)
+
+    # 1) Build nominal bounds [0, b1, b2, ..., b_N=total]
+    nominal_bounds = [0]
+    for i in range(n_workers):
+        size = base + (1 if i < rem else 0)
+        nominal_bounds.append(nominal_bounds[-1] + size)
+    # Now nominal_bounds = [0, b1, b2, ..., b_N]; b₀=0, b_N=total
+
+    # 2) Align every internal bound forward to the next newline
+    aligned_bounds = [0] * (n_workers + 1)
+    aligned_bounds[0] = 0
+    aligned_bounds[-1] = total
+
+    with open(filename, "rb") as f:
+        for k in range(1, n_workers):
+            start = nominal_bounds[k]
+            if start >= total:
+                aligned_bounds[k] = total
+                continue
+
+            f.seek(start)
+            offset = 0
+            while True:
+                chunk = f.read(8192)
+                if not chunk:
+                    # EOF reached before any newline
+                    aligned_bounds[k] = total
+                    break
+
+                idx = chunk.find(b"\n")
+                if idx != -1:
+                    # Found a newline at byte (start + offset + idx)
+                    aligned_bounds[k] = start + offset + idx + 1
+                    break
+
+                offset += len(chunk)
+                # Loop again until next newline or EOF
+
+    # 3) Build the final (start, end) pairs
+    ranges: List[Tuple[int,int]] = []
+    for i in range(n_workers):
+        s = aligned_bounds[i]
+        e = aligned_bounds[i+1]
+        if s < e:
+            ranges.append((s, e))
+        else:
+            # If s >= e, that means this worker has nothing to do
+            ranges.append((s, s))
+
+    return ranges
+
+
+
+
+def parallel_bytewise_count(pattern: str, filename: str, n_workers: int = None) -> Counter:
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    if n_workers is None:
+        n_workers = os.cpu_count()
+
+    specs = []
+    for (start, end) in make_byte_ranges(filename, n_workers):
+        specs.append((pattern, filename, start, end))
+    final = Counter()
+    with ProcessPoolExecutor(max_workers=n_workers) as exe:
+        # “exe.map” only accepts a function and N iterables of arguments
+        # We have a list of 4‐tuples, so we use a small lambda to unpack them:
+        for partial_dict in exe.map(wrapper, specs):
+            final.update(partial_dict)
+
+    return final
+
+
 
 def main_seq(python_args_bool=False, args=None):
     '''main sequence for arguments to run'''
@@ -917,6 +1060,18 @@ def main_seq(python_args_bool=False, args=None):
     # Initial case-insensitivity check
     # checkFirst, checkLast = omit_check(args=args)
     rp = rust_args_parser(args)
+    if args.gen:
+        if args.multi:
+            counts = parallel_bytewise_count(args.gen, str(args.file), 16)
+            return format_counts(list(counts.items()), args)
+        else:
+            count_dict = Counter()
+            # if args.counts:
+            split_int = getting_slice(args.gen)
+            count_dict.update(gen_keys(regex.FileRegexGen, args.gen[0], str(args.file), split_int))
+            pattern_search_list = list(count_dict.items())
+            return format_counts(pattern_search_list, args)
+
     if args.start:
 
         if args.multi:
@@ -962,7 +1117,7 @@ def main_seq(python_args_bool=False, args=None):
         try:
             pos_val = args.pyreg[1]
         except IndexError: # only if no group arg is added on commandline
-            pos_val = 0
+            pos_val = '0'
         if args.multi:
             import itertools
             pattern_search = itertools.chain.from_iterable(multi_cpu(args=args, file_path=args.file, pos_val=pos_val, n_cores=args.multi))
@@ -1010,7 +1165,7 @@ def main_seq(python_args_bool=False, args=None):
                 pattern_search.sort(reverse=True)
     # counts search
     if args.counts:
-        from collections import Counter
+        # from collections import Counter
         pattern_search_tuple = tuple(Counter(pattern_search).items())
         return format_counts(pattern_search_tuple, args=args)
     if args.totalcounts:
@@ -1031,7 +1186,9 @@ def main_seq(python_args_bool=False, args=None):
 
 def main():
     try:
-        print('\n'.join(main_seq()))
+        for line in main_seq():
+            print(line)
+        # print('\n'.join(main_seq()))
     except KeyboardInterrupt:
         sys.exit(1)
 
