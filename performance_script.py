@@ -137,7 +137,7 @@ def run_free_m(stop_event, out_q: Queue):
 
 
 # ─── MEASUREMENT ────────────────────────────────────────────────────────────────
-def measure(cmd: str) -> Tuple[float, float, float, str, float]:
+def measure(cmd: str, console: Console) -> Tuple[float, float, float, str, float]:
     resource.setrlimit(resource.RLIMIT_AS, (-1, -1))
     stop_event = Event()
     out_q      = Queue()
@@ -150,8 +150,8 @@ def measure(cmd: str) -> Tuple[float, float, float, str, float]:
     grep_v = subprocess.run(['grep', '--version'], stdout=subprocess.PIPE)
     pearl_v = subprocess.run(['perl', '--version'], stdout=subprocess.PIPE)
     for stdout in (rg_v, rygex_v, grep_v, pearl_v):
-        print(stdout.args)
-        print(stdout.stdout.decode())
+        console.print(stdout.args)
+        console.print(stdout.stdout.decode())
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
@@ -230,7 +230,7 @@ def run_benchmark(key: str, pattern: str, literal: bool, one: bool, two: bool, t
                 cmd = tmpl.replace("{pat}", sub)
                 gc.collect()
                 console.print(cmd)
-                real, user, sys_, out, memory_increase = measure(cmd)
+                real, user, sys_, out, memory_increase = measure(cmd, console)
                 results.append((name, real, user, sys_, out, memory_increase))
 
             # Build and print a Rich table sorted by real time
