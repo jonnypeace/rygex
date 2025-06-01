@@ -56,7 +56,7 @@ REGEX_TOOLS_TOTALS_2 = [
     ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
     ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2' -t -f ufw.test1"),
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2' -tm -f ufw.test1"),
-    ("perl (-nE totals 2grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ufw.test1""")
+    ("perl (-nE totals 2grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total / 2 }' ufw.test1""")
 ]
 
 REGEX_TOOLS_COUNTS_1 = [
@@ -118,7 +118,7 @@ REGEX_TOOLS_LIMITED_2 = [
     ("grep (-coP total only)",                "grep -coP {pat} ssh_failures_rand_sample.log"),
     ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2 3' -t -f ssh_failures_rand_sample.log"),
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2 3' -tm -f ssh_failures_rand_sample.log"),
-    ("perl (-nE totals)",                     r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ssh_failures_rand_sample.log""")
+    ("perl (-nE totals)",                     r"""perl -nE '$total += () = /{pat}/g; END { say $total / 3 }' ssh_failures_rand_sample.log""")
 ]
 
 def run_free_m(stop_event, out_q: Queue):
