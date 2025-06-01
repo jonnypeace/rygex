@@ -1062,7 +1062,7 @@ def main_seq(python_args_bool=False, args=None):
     rp = rust_args_parser(args)
     if args.gen:
         if args.multi:
-            counts = parallel_bytewise_count(args.gen, str(args.file), 16)
+            counts = parallel_bytewise_count(args.gen, str(args.file), args.multi)
             return format_counts(list(counts.items()), args)
         else:
             count_dict = Counter()
