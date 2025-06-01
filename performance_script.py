@@ -19,7 +19,7 @@ from multiprocessing import Process, Event, Queue
 
 # ─── PATTERNS ──────────────────────────────────────────────────────────────────
 PATTERNS = [
-    ('ssh 3grp',      r'(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)', False, False, False, True),
+    ('ssh 3grp 10GB file',      r'(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)', False, False, False, True),
     ("1 ip 1grp",     r"(124\.\d+\.124\.\d+)",               False, True, False, False),
     ('rygex -s -e',   r"-s 'DST=' 1 -e ' LEN' 1 -O -Scm",    False, False, False, False),
     (r"dst 1grp",     r"\sDST=([\d\.]+)\s",                  False, True, False, False),
