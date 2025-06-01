@@ -16,6 +16,7 @@ from multiprocessing import Process, Event, Queue
 
 ### Required Pip install Rich
 
+console = Console()
 
 # ─── PATTERNS ──────────────────────────────────────────────────────────────────
 PATTERNS = [
@@ -145,13 +146,6 @@ def measure(cmd: str, console: Console) -> Tuple[float, float, float, str, float
     free_m_proc.start()
     w0 = time.perf_counter()
     u0 = resource.getrusage(resource.RUSAGE_CHILDREN)
-    rg_v = subprocess.run(['rg', '--version'], stdout=subprocess.PIPE)
-    rygex_v = subprocess.run(['rygex', '--version'], stdout=subprocess.PIPE)
-    grep_v = subprocess.run(['grep', '--version'], stdout=subprocess.PIPE)
-    pearl_v = subprocess.run(['perl', '--version'], stdout=subprocess.PIPE)
-    for stdout in (rg_v, rygex_v, grep_v, pearl_v):
-        console.print(stdout.args)
-        console.print(stdout.stdout.decode())
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
@@ -181,7 +175,6 @@ def measure(cmd: str, console: Console) -> Tuple[float, float, float, str, float
 
 # ─── BENCHMARK + RICH DISPLAY ───────────────────────────────────────────────────
 def run_benchmark(key: str, pattern: str, literal: bool, one: bool, two: bool, three: bool):
-    console = Console()
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     console.rule(f"[bold]Pattern[/] {key!r} {pattern!r} @ {ts}")
 
@@ -256,5 +249,12 @@ def run_benchmark(key: str, pattern: str, literal: bool, one: bool, two: bool, t
 
 # ─── ENTRY POINT ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    rg_v = subprocess.run(['rg', '--version'], stdout=subprocess.PIPE)
+    rygex_v = subprocess.run(['rygex', '--version'], stdout=subprocess.PIPE)
+    grep_v = subprocess.run(['grep', '--version'], stdout=subprocess.PIPE)
+    pearl_v = subprocess.run(['perl', '--version'], stdout=subprocess.PIPE)
+    for stdout in (rg_v, rygex_v, grep_v, pearl_v):
+        console.print(stdout.args)
+        console.print(stdout.stdout.decode())
     for key, pat, lit, one, two, three in PATTERNS:
         run_benchmark(key, pat, lit, one, two, three)
