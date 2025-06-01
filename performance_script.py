@@ -253,7 +253,8 @@ if __name__ == "__main__":
     rygex_v = subprocess.run(['rygex', '--version'], stdout=subprocess.PIPE)
     grep_v = subprocess.run(['grep', '--version'], stdout=subprocess.PIPE)
     pearl_v = subprocess.run(['perl', '--version'], stdout=subprocess.PIPE)
-    for stdout in (rg_v, rygex_v, grep_v, pearl_v):
+    py_v = subprocess.run(['python3', '--version'], stdout=subprocess.PIPE)
+    for stdout in (rg_v, py_v, rygex_v, grep_v, pearl_v):
         console.print(stdout.args)
         console.print(stdout.stdout.decode())
     for key, pat, lit, one, two, three in PATTERNS:
