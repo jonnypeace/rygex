@@ -145,6 +145,13 @@ def measure(cmd: str) -> Tuple[float, float, float, str, float]:
     free_m_proc.start()
     w0 = time.perf_counter()
     u0 = resource.getrusage(resource.RUSAGE_CHILDREN)
+    rg_v = subprocess.run(['rg', '--version'], stdout=subprocess.PIPE)
+    rygex_v = subprocess.run(['rygex', '--version'], stdout=subprocess.PIPE)
+    grep_v = subprocess.run(['grep', '--version'], stdout=subprocess.PIPE)
+    pearl_v = subprocess.run(['perl', '--version'], stdout=subprocess.PIPE)
+    for stdout in (rg_v, rygex_v, grep_v, pearl_v):
+        print(stdout.args)
+        print(stdout.stdout.decode())
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
