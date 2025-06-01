@@ -105,6 +105,20 @@ REGEX_TOOLS_LIMITED = [
     ("perl (-nE 3 grp)",                      r"""perl -nE '++$c{"$1 $2 $3"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ssh_failures_rand_sample.log"""),
 ]
 
+REGEX_TOOLS_LIMITED_2 = [
+    # (
+    #     "gawk (2grp)",
+    #     r"""gawk 'match($0,/{pat}/,a){c[a[1]" "a[2]]++}"""
+    #     r"""END{PROCINFO["sorted_in"]="@val_num_desc";"""
+    #     r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
+    # ),
+    # ("sed (2grp) sort | uniq -c",             r"""sed -nE 's/.*{pat}.*/\1 \2/p' ufw.test1 | sort | uniq -c"""),
+    ("ripgrep (-Nocr $1 $2 $3 total only)",   "rg --no-unicode -No {pat} ssh_failures_rand_sample.log -cr '$1 $2 $3'"),
+    ("grep (-coP total only)",                "grep -coP {pat} ssh_failures_rand_sample.log"),
+    ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2 3' -t -f ssh_failures_rand_sample.log"),
+    ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2 3' -tm -f ssh_failures_rand_sample.log"),
+    ("perl (-nE totals)",                     r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ssh_failures_rand_sample.log""")
+]
 
 def run_free_m(stop_event, out_q: Queue):
     mem_list = []
@@ -171,7 +185,7 @@ def run_benchmark(key: str, pattern: str, literal: bool, one: bool, two: bool, t
     elif two:
         tools = [REGEX_TOOLS_TOTALS_2, REGEX_TOOLS_COUNTS_2]
     elif three:
-        tools = [REGEX_TOOLS_LIMITED]
+        tools = [REGEX_TOOLS_LIMITED, REGEX_TOOLS_LIMITED_2]
     else:
         tools = [NEW_TOOLS]
 
