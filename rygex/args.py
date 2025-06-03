@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 import argparse
 import importlib.metadata
 import os
-import sys
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, Union
