@@ -1,11 +1,10 @@
 from typing import Iterable, Literal, TypedDict, Any
 import re, mmap, os, math, sys, gc
 from pathlib import Path
-from rygex.printer import print_err
 from dataclasses import dataclass
 from rygex.args import PythonArgs
 from functools import partial
-from rygex.utils import getting_slice
+from rygex.utils import getting_slice, print_err
 
 
 def grouped_iter(file_data: Iterable[str],test_reg: re.Pattern, int_list=None):
