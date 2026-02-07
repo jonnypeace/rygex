@@ -4,11 +4,11 @@ build-backend = "maturin"
 
 [project]
 name = "rygex"
-version = "0.1.8"
+version = "0.1.9"
 description = "A fast grep tool using a Rust-powered regex extension"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 authors = [
   { name = "JP", email = "jonnypeace@outlook.com" },
 ]
