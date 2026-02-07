@@ -137,6 +137,8 @@ rygex -p 'User: (\w+)' '1' -f users.log
 - [ ] Refactor into stable 1.0 branch  
 - [ ] Add more benchmarks and CI tests  
 - [ ] Docker container for easy deployment  
+- [ ] Recursive Search through directories, with excludes
+- [ ] Improve Match, compile, search and Iterables (not just lists) using rust
 
 ---
 
