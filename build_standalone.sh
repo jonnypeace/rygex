@@ -63,8 +63,9 @@ echo "Creating static binary with staticx..."
 # staticx bundles all shared library dependencies including libc
 staticx dist/rygex dist/rygex-static
 
-# Cleanup temporary .so
+# Cleanup temporary files
 rm ./rygex_ext.so
+rm ./rygex.spec
 
 echo "Build complete!"
 echo "Standalone binary: dist/rygex"
