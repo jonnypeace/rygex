@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from typing import Generator
-from rygex.printer import print_err
+from .utils import print_err
 
 
 # Old code to get these functions started
