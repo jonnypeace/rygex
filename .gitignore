@@ -9,3 +9,6 @@ ufw.log.1
 target/
 Cargo.lock
 __pycache__
+build/
+dist/
+cli.dist/

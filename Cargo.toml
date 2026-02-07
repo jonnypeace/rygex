@@ -1,12 +1,12 @@
 [package]
 name = "rygex"
-version = "0.1.8"
+version = "0.1.11"
 edition = "2024"
 
 [dependencies]
-pyo3 = { version = "0.18", features = ["extension-module"] }
-regex = "1.7"
-rayon = "1.6"
+pyo3 = { version = "0.28", features = ["extension-module"] }
+regex = "1.11.1"
+rayon = "1.10.0"
 memmap2 = "0.5"
 memchr = "2.5"
 
