@@ -1,224 +1,135 @@
 use pyo3::prelude::*;
-use pyo3::exceptions;
-use pyo3::wrap_pyfunction;
-use pyo3::types::PyDict;
+use pyo3::exceptions::{PyIOError, PyValueError, PyUnicodeDecodeError, PyTypeError};
+use pyo3::types::{PyDict, PyModule, PyString, PyTuple, PyIterator, PyList};
 use ::regex::Regex as RustRegex;
 use ::regex::bytes::Regex as RustRegexBytes;
 use memmap2::Mmap;
 use std::fs::File;
 use rayon::prelude::*;
-use std::collections::HashMap;
-use pyo3::exceptions::PyIOError;
+use std::collections::{HashMap, VecDeque};
 use memchr::memmem::Finder;
-use pyo3::exceptions::PyValueError;
-use pyo3::types::{PyIterator, PyTuple};
-use std::collections::VecDeque;
-use pyo3::types::PyString;
 use std::io::Error as IOError;
-
-/// A PyO3‐backed iterator that memory‐maps the given file and then yields
-/// exactly one Python string each time the Rust regex finds a capture group.
-/// No Python objects are created for non‐matching parts of the file, so memory
-/// stays tiny when there are few matches.
-///
-/// Python usage:
-///
-///     gen = FileRegexGen("pattern", "ufw.test1")
-///     for match_str in gen:
-///         print(match_str)
-///
-/// `match_str` will be the substring of the capture (group 1 by default).
-// #[pyclass]
-// pub struct FileRegexGen {
-//     /// The compiled Rust regex (group 1 must exist).
-//     inner: RustRegex,
-
-//     /// We keep the Mmap here so it does not get dropped/unmapped.
-//     mmap: Mmap,
-
-//     /// Leaked, `'static` string containing the entire file’s contents.
-//     haystack: &'static str,
-
-//     /// Current byte‐offset into `haystack`. We search from haystack[pos..].
-//     pos: usize,
-// }
 
 #[pyclass]
 pub struct FileRegexGen {
-    inner:    RustRegex,    // the compiled regex (with at least one capture group)
-    mmap:     Mmap,         // the OS memory‐map of the entire file (kept alive)
-    haystack: &'static str, // a `'static` &str pointing directly into the mmap’s bytes
-    start:    usize,        // the byte offset at which we begin searching
-    end:      usize,        // the byte offset at which we must stop searching
-    pos:      usize,        // the next byte offset from which we attempt to find a match
+    inner: RustRegex,
+    mmap: Mmap,
+    haystack: &'static str,
+    start: usize,
+    end: usize,
+    pos: usize,
 }
-
 
 #[pymethods]
 impl FileRegexGen {
-    /// __new__(cls, pattern: str, filename: str) -> FileRegexGen
     #[new]
     fn new(pattern: &str, filename: &str) -> PyResult<Self> {
-        // 1) Compile the regex
         let re = RustRegex::new(pattern)
-            .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-
-        // 2) Open & mmap the file
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
         let file = File::open(filename)
-            .map_err(|e: IOError| exceptions::PyIOError::new_err(e.to_string()))?;
+            .map_err(|e: IOError| PyIOError::new_err(e.to_string()))?;
         let mmap = unsafe {
             Mmap::map(&file)
-                .map_err(|e| exceptions::PyIOError::new_err(e.to_string()))?
+                .map_err(|e| PyIOError::new_err(e.to_string()))?
         };
-
-        // 3) Convert to &str (error if any invalid UTF-8)
         let s: &str = std::str::from_utf8(&mmap)
-            .map_err(|e| exceptions::PyUnicodeDecodeError::new_err(e.to_string()))?;
-
-        // 4) Transmute to 'static &str
+            .map_err(|e| PyUnicodeDecodeError::new_err(e.to_string()))?;
         let static_str: &'static str = unsafe { std::mem::transmute::<&str, &'static str>(s) };
-
         let len = static_str.len();
         Ok(FileRegexGen {
-            inner:    re,
-            mmap,                    // keep the mapping alive
-            haystack: static_str,    // pointer to map’s UTF-8 bytes
-            start:    0,             // we begin at byte 0
-            end:      len,           // and end at haystack.len()
-            pos:      0,             // cursor starts at 0 as well
+            inner: re,
+            mmap,
+            haystack: static_str,
+            start: 0,
+            end: len,
+            pos: 0,
         })
     }
 
-
-    /// __iter__(self) -> self
     fn __iter__(slf: Py<FileRegexGen>) -> Py<FileRegexGen> {
         slf
     }
 
-    /// __next__(self) -> Optional[Tuple[str, ...]]
-    ///
-    /// Each time this is called, we look at `haystack[pos..]`, run captures on it,
-    /// build a Python tuple of (full_match, cap1, cap2, …), advance pos past the end
-    /// of the full match, and return that tuple.  If no more matches remain, returns None.
-    fn __next__(mut slf: PyRefMut<Self>, py: Python<'_>) -> PyResult<Option<PyObject>> {
-        // 1) If pos has moved past `end`, we’re done.
+    fn __next__<'py>(mut slf: PyRefMut<'_, Self>, py: Python<'py>) -> PyResult<Option<Bound<'py, PyTuple>>> {
         if slf.pos >= slf.end {
             return Ok(None);
         }
-
-        // 2) Build a &str slice that only runs from pos..end
         let slice = &slf.haystack[slf.pos..slf.end];
-
-        // 3) Attempt to find the next match in that slice
         if let Some(caps) = slf.inner.captures(slice) {
-            // `caps.iter()` yields an iterator over Option<Match> for group0, group1, ...
-            let mut py_items: Vec<PyObject> = Vec::new();
+            let mut py_items = Vec::new();
             for m_opt in caps.iter() {
                 if let Some(mat) = m_opt {
-                    // mat.as_str() is a borrowed &str for this group
-                    py_items.push(PyString::new(py, mat.as_str()).to_object(py));
+                    py_items.push(PyString::new(py, mat.as_str()).into_any());
                 } else {
-                    // That group didn’t participate in this match → push None
-                    py_items.push(py.None());
+                    py_items.push(py.None().into_bound(py).into_any());
                 }
             }
-
-            // 4) Advance pos by the length (in bytes) of the full match (group 0)
             if let Some(m0) = caps.get(0) {
-                // m0.end() is the end‐index **relative to `slice`**, so we add slf.pos
                 slf.pos += m0.end();
             } else if let Some(m1) = caps.get(1) {
-                // Fallback (rare): advance by group1’s end if group0 is absent
                 slf.pos += m1.end();
             } else {
-                // No match at all (shouldn’t happen if captures() returned Some)
                 return Ok(None);
             }
-
-            // 5) Pack all the captured strings (and Nones) into a Python tuple
-            let tup = PyTuple::new(py, py_items);
-            return Ok(Some(tup.to_object(py)));
+            let tup = PyTuple::new(py, py_items)?;
+            return Ok(Some(tup));
         }
-
-        // 6) If captures() returned None, we found no more matches in slice → StopIteration
         Ok(None)
     }
-
 }
-
 
 #[pyfunction]
 fn from_file_range(
-    py: Python<'_>,
     pattern: &str,
     filename: &str,
     start: usize,
     end: usize
 ) -> PyResult<FileRegexGen> {
-    // 1) Compile the regex
     let re = RustRegex::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-
-    // 2) Open & mmap the file, exactly like above
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let file = File::open(filename)
-        .map_err(|e: IOError| exceptions::PyIOError::new_err(e.to_string()))?;
+        .map_err(|e: IOError| PyIOError::new_err(e.to_string()))?;
     let mmap = unsafe {
         Mmap::map(&file)
-            .map_err(|e| exceptions::PyIOError::new_err(e.to_string()))?
+            .map_err(|e| PyIOError::new_err(e.to_string()))?
     };
-
-    // 3) Convert &[u8] → &str
     let s: &str = std::str::from_utf8(&mmap)
-        .map_err(|e| exceptions::PyUnicodeDecodeError::new_err(e.to_string()))?;
+        .map_err(|e| PyUnicodeDecodeError::new_err(e.to_string()))?;
     let static_str: &'static str = unsafe { std::mem::transmute::<&str, &'static str>(s) };
-
-    // 4) Clip the user‐supplied byte offsets into [0..haystack.len()]
     let haylen = static_str.len();
     let s_off = start.min(haylen);
     let e_off = end.min(haylen);
-
-    // 5) Initialize pos = s_off, and set start=s_off, end=e_off
     Ok(FileRegexGen {
-        inner:    re,
-        mmap,                     // keep the mapping alive 
-        haystack: static_str,     // pointer into mapping
-        start:    s_off,
-        end:      e_off,
-        pos:      s_off,          // we begin scanning at s_off
+        inner: re,
+        mmap,
+        haystack: static_str,
+        start: s_off,
+        end: e_off,
+        pos: s_off,
     })
 }
 
-
-
-/// A Python class that, when iterated, yields one Vec<Option<String>> per regex match,
-/// across all the input strings supplied at construction time.
-///
-/// Example usage in Python:
-///   it = regexgen.RustRegexGen(r"(\d+)-(\d+)", ["123-456 foo", "no match", "42-99"])
-///   for match_vec in it:
-///       print(match_vec[0], match_vec[1], match_vec[2])
 #[pyclass]
 pub struct RustRegexGen {
-    inner: RustRegex,                 // the compiled Rust regex
-    py_iter: Py<PyIterator>,          // Python iterator over the input strings
-    pending: VecDeque<Vec<Option<String>>>, // queue of matches not yet yielded
+    inner: RustRegex,
+    py_iter: Py<PyIterator>,
+    pending: VecDeque<Vec<Option<String>>>,
 }
 
 #[pymethods]
 impl RustRegexGen {
     #[new]
-    fn new(pattern: &str, iterable: &PyAny) -> PyResult<Self> {
+    fn new(pattern: &str, iterable: Bound<'_, PyAny>) -> PyResult<Self> {
         let inner = RustRegex::new(pattern)
-            .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-
-        let py = iterable.py();
-        let py_iter = PyIterator::from_object(py, iterable).map_err(|_| {
-            exceptions::PyTypeError::new_err("Second argument must be an iterable of strings")
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        
+        let py_iter = iterable.try_iter().map_err(|_| {
+            PyTypeError::new_err("Second argument must be an iterable")
         })?;
 
         Ok(RustRegexGen {
             inner,
-            py_iter: py_iter.into(),
+            py_iter: py_iter.unbind(),
             pending: VecDeque::new(),
         })
     }
@@ -227,93 +138,63 @@ impl RustRegexGen {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<PyObject>> {
-        // Acquire GIL once and store `py` so that we never call `slf.py()`.
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        // 1) If there's already a queued match, pop and return it immediately.
+    fn __next__<'py>(mut slf: PyRefMut<'_, Self>, py: Python<'py>) -> PyResult<Option<Bound<'py, PyTuple>>> {
+        // 1) If there's already a queued match, return it.
         if let Some(group_vec) = slf.pending.pop_front() {
-            // Build a Python tuple from `group_vec`.
-            let py_items: Vec<PyObject> = group_vec
-                .into_iter()
-                .map(|opt_s| match opt_s {
-                    Some(s) => s.to_object(py),
-                    None => py.None(),
-                })
-                .collect();
-            let tup = PyTuple::new(py, py_items);
-            return Ok(Some(tup.to_object(py)));
+            let mut py_items = Vec::new();
+            for opt_s in group_vec {
+                match opt_s {
+                    Some(s) => py_items.push(PyString::new(py, &s).into_any()),
+                    None => py_items.push(py.None().into_bound(py).into_any()),
+                }
+            }
+            return Ok(Some(PyTuple::new(py, py_items)?));
         }
 
-        // 2) Otherwise, keep pulling lines until we find a real capture or exhaust.
+        // 2) Keep pulling lines until we find a match or exhaust.
+        // We clone the iterator handle to avoid a borrow conflict with slf.pending
+        let it_handle = slf.py_iter.clone_ref(py);
+        let mut it_bound = it_handle.into_bound(py);
+
         loop {
-            // 2a) Grab the next item from the Python iterator.
-            let next_obj: PyObject = {
-                // We only borrow `slf` mutably here to call `slf.py_iter.as_ref(py)`.
-                let mut it_ref: &PyIterator = slf.py_iter.as_ref(py);
-                match it_ref.next() {
-                    Some(Ok(obj_any)) => obj_any.to_object(py),
-                    Some(Err(err_py)) => {
-                        // Propagate the Python exception.
-                        return Err(err_py.clone_ref(py));
-                    }
-                    None => return Ok(None), // StopIteration
-                }
+            let next_obj = match it_bound.next() {
+                Some(Ok(obj)) => obj,
+                Some(Err(e)) => return Err(e),
+                None => return Ok(None),
             };
 
-            // 2b) Convert that PyObject into &str (error if not a string)
-            let text: &str = match next_obj.extract(py) {
-                Ok(s) => s,
-                Err(_) => {
-                    return Err(exceptions::PyTypeError::new_err(
-                        "All items in the iterable must be strings",
-                    ))
-                }
-            };
-
-            // 2c) Run captures_iter on `text`. Collect all capture‐groups from this line.
+            let text: String = next_obj.extract()?;
             let mut any_captured = false;
-            let mut new_items_for_line: Vec<Vec<Option<String>>> = Vec::new();
+            let mut new_items_for_line = Vec::new();
 
-            for caps in slf.inner.captures_iter(text) {
+            for caps in slf.inner.captures_iter(&text) {
                 any_captured = true;
-
-                let mut group_vec: Vec<Option<String>> = Vec::new();
+                let mut group_vec = Vec::new();
                 for m_opt in caps.iter() {
                     group_vec.push(m_opt.map(|m| m.as_str().to_string()));
                 }
                 new_items_for_line.push(group_vec);
             }
 
-            // 2d) If there was at least one capture, queue them in `pending`.
             if any_captured {
                 for gv in new_items_for_line {
                     slf.pending.push_back(gv);
                 }
-                // Pop & return the first queued match:
+                
                 if let Some(first_match) = slf.pending.pop_front() {
-                    let py_items: Vec<PyObject> = first_match
-                        .into_iter()
-                        .map(|opt_s| match opt_s {
-                            Some(s) => s.to_object(py),
-                            None => py.None(),
-                        })
-                        .collect();
-                    let tup = PyTuple::new(py, py_items);
-                    return Ok(Some(tup.to_object(py)));
+                    let mut py_items = Vec::new();
+                    for opt_s in first_match {
+                        match opt_s {
+                            Some(s) => py_items.push(PyString::new(py, &s).into_any()),
+                            None => py_items.push(py.None().into_bound(py).into_any()),
+                        }
+                    }
+                    return Ok(Some(PyTuple::new(py, py_items)?));
                 }
             }
-
-            // 2e) If no captures on this line, loop again to fetch the next line.
-            //     We never allocate any Python tuple or string here for non‐matches.
         }
     }
 }
-
-
-
-
 
 #[pyclass]
 struct Regex {
@@ -326,11 +207,10 @@ impl Regex {
     fn new(pattern: &str) -> PyResult<Self> {
         match RustRegex::new(pattern) {
             Ok(inner) => Ok(Regex { inner }),
-            Err(e) => Err(exceptions::PyValueError::new_err(e.to_string())),
+            Err(e) => Err(PyValueError::new_err(e.to_string())),
         }
     }
 
-    /// Returns the first match in the text.
     fn search(&self, text: &str) -> Option<Match> {
         self.inner.find(text).map(|m| Match {
             start: m.start() as isize,
@@ -361,12 +241,10 @@ fn search(pattern: &str, text: &str) -> PyResult<Option<Match>> {
     Ok(regex.search(text))
 }
 
-/// Process a single string and return all capture groups as a list of lists.
-/// Each inner list is a vector of Option<String> for group 0 (full match) and numbered groups.
 #[pyfunction]
 fn findall_captures_str(pattern: &str, text: &str) -> PyResult<Vec<Vec<Option<String>>>> {
     let regex = RustRegex::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let results: Vec<Vec<Option<String>>> = regex.captures_iter(text)
         .map(|caps| {
             caps.iter().map(|m| m.map(|mat| mat.as_str().to_string())).collect()
@@ -375,40 +253,14 @@ fn findall_captures_str(pattern: &str, text: &str) -> PyResult<Vec<Vec<Option<St
     Ok(results)
 }
 
-
-/// Single-threaded version
 #[pyfunction]
-fn findall_captures_list(pattern: &str, texts: Vec<&str>) -> PyResult<Vec<Vec<Vec<Option<String>>>>> {
+fn findall_captures_list(pattern: &str, texts: Vec<String>) -> PyResult<Vec<Vec<Vec<Option<String>>>>> {
     let regex = RustRegex::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-
-    // Process texts sequentially
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let results: Vec<Vec<Vec<Option<String>>>> = texts
         .into_iter()
         .map(|text| {
-            regex
-                .captures_iter(text)
-                .map(|caps| {
-                    caps.iter()
-                        .map(|m| m.map(|mat| mat.as_str().to_string()))
-                        .collect()
-                })
-                .collect()
-        })
-        .collect();
-    Ok(results)
-}
-
-
-/// Process a list of texts in parallel and return for each text all capture groups as a list of lists.
-#[pyfunction]
-fn findall_captures_list_parallel(pattern: &str, texts: Vec<&str>) -> PyResult<Vec<Vec<Vec<Option<String>>>>> {
-    use rayon::prelude::*;
-    let regex = RustRegex::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-    let results: Vec<Vec<Vec<Option<String>>>> = texts.into_par_iter()
-        .map(|text| {
-            regex.captures_iter(text)
+            regex.captures_iter(&text)
                 .map(|caps| {
                     caps.iter().map(|m| m.map(|mat| mat.as_str().to_string())).collect()
                 })
@@ -418,17 +270,27 @@ fn findall_captures_list_parallel(pattern: &str, texts: Vec<&str>) -> PyResult<V
     Ok(results)
 }
 
-/// Process a single string and return all capture groups as dictionaries with names.
-/// Each dictionary contains:
-///  - "full": full match,
-///  - numeric keys ("1", "2", …) for numbered groups,
-///  - named keys for any named capture groups.
 #[pyfunction]
-fn findall_captures_named_str(pattern: &str, text: &str, py: Python) -> PyResult<PyObject> {
+fn findall_captures_list_parallel(pattern: &str, texts: Vec<String>) -> PyResult<Vec<Vec<Vec<Option<String>>>>> {
     let regex = RustRegex::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-    let mut results = Vec::new();
-    // Precompute mapping from group names to their indices.
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let results: Vec<Vec<Vec<Option<String>>>> = texts.into_par_iter()
+        .map(|text| {
+            regex.captures_iter(&text)
+                .map(|caps| {
+                    caps.iter().map(|m| m.map(|mat| mat.as_str().to_string())).collect()
+                })
+                .collect()
+        })
+        .collect();
+    Ok(results)
+}
+
+#[pyfunction]
+fn findall_captures_named_str<'py>(pattern: &str, text: &str, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+    let regex = RustRegex::new(pattern)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let results = PyList::empty(py);
     let name_to_index: Vec<(String, usize)> = regex.capture_names()
         .enumerate()
         .filter_map(|(i, name)| name.map(|n| (n.to_string(), i)))
@@ -448,40 +310,36 @@ fn findall_captures_named_str(pattern: &str, text: &str, py: Python) -> PyResult
             let value = caps.get(*idx).map(|m| m.as_str());
             dict.set_item(name, value)?;
         }
-        results.push(dict.to_object(py));
+        results.append(dict)?;
     }
-    Ok(results.to_object(py))
+    Ok(results)
 }
 
-/// Process a list of texts in parallel and return for each text all capture groups as dictionaries with names.
-/// Returns a nested list (one list per input text) of dictionaries (one dictionary per match).
 #[pyfunction]
-fn findall_captures_named_list_parallel(pattern: &str, texts: Vec<&str>, py: Python) -> PyResult<PyObject> {
-    use rayon::prelude::*;
+fn findall_captures_named_list_parallel<'py>(pattern: &str, texts: Vec<String>, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
     let regex = RustRegex::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(e.to_string()))?;
-    // Precompute mapping from group names to indices.
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let name_to_index: Vec<(String, usize)> = regex.capture_names()
         .enumerate()
         .filter_map(|(i, name)| name.map(|n| (n.to_string(), i)))
         .collect();
-    // Process texts in parallel, but only compute raw capture results (Vec<Vec<Option<String>>>)
+
     let raw_results: Vec<Vec<Vec<Option<String>>>> = texts.into_par_iter()
         .map(|text| {
-            regex.captures_iter(text)
+            regex.captures_iter(&text)
                 .map(|caps| {
                     caps.iter().map(|m| m.map(|mat| mat.as_str().to_string())).collect()
                 })
                 .collect()
         })
         .collect();
-    // Now, on the main thread (holding the GIL), convert raw results to a Vec<Vec<PyObject>>.
-    let mut py_results = Vec::with_capacity(raw_results.len());
+
+    let py_results = PyList::empty(py);
     for matches in raw_results {
-        let mut text_matches = Vec::with_capacity(matches.len());
+        let text_matches = PyList::empty(py);
         for caps in matches {
             let dict = PyDict::new(py);
-            if let Some(full_match) = caps.get(0) {
+            if let Some(full_match) = caps.get(0).and_then(|x| x.as_ref()) {
                 dict.set_item("full", full_match)?;
             }
             for (i, cap) in caps.iter().enumerate().skip(1) {
@@ -490,14 +348,14 @@ fn findall_captures_named_list_parallel(pattern: &str, texts: Vec<&str>, py: Pyt
             }
             for (name, idx) in &name_to_index {
                 if *idx == 0 { continue; }
-                let value = caps.get(*idx).cloned().unwrap_or(None);
+                let value = caps.get(*idx).cloned().flatten();
                 dict.set_item(name, value)?;
             }
-            text_matches.push(dict.to_object(py));
+            text_matches.append(dict)?;
         }
-        py_results.push(text_matches);
+        py_results.append(text_matches)?;
     }
-    Ok(py_results.to_object(py))
+    Ok(py_results)
 }
 
 #[pyfunction]
@@ -506,32 +364,17 @@ fn find_joined_matches_in_file_by_line_bytes_parallel(
     file_path: &str,
     groups: Option<Vec<usize>>,
 ) -> PyResult<Vec<String>> {
-    use rayon::prelude::*;
-    use ::regex::bytes::Regex as RustRegexBytes;
-    use memmap2::Mmap;
-    use std::fs::File;
-    use pyo3::exceptions;
-
-    // Open the file.
     let file = File::open(file_path)
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to open file: {}", e)))?;
-    // Memory-map the file.
+        .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe { Mmap::map(&file) }
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
+        .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
     let bytes = &mmap[..];
-
-    // Split the file into lines by b'\n'
     let lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').collect();
-
-    // Compile the regex pattern using the bytes API.
     let regex = RustRegexBytes::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(format!("Regex compile error: {}", e)))?;
-
-    // Process each line in parallel.
+        .map_err(|e| PyValueError::new_err(format!("Regex compile error: {}", e)))?;
     let results: Vec<String> = lines.par_iter()
         .flat_map(|line| {
             if let Some(ref indices) = groups {
-                // For each match in the line, join the specified capture groups.
                 regex.captures_iter(line)
                     .map(|caps| {
                         let mut parts = Vec::new();
@@ -545,7 +388,6 @@ fn find_joined_matches_in_file_by_line_bytes_parallel(
                     })
                     .collect::<Vec<String>>()
             } else {
-                // If no group indices provided, return the entire line if it matches.
                 if regex.is_match(line) {
                     vec![String::from_utf8_lossy(line).into_owned()]
                 } else {
@@ -554,10 +396,8 @@ fn find_joined_matches_in_file_by_line_bytes_parallel(
             }
         })
         .collect();
-
     Ok(results)
 }
-
 
 #[pyfunction]
 fn find_joined_matches_in_file_by_line_bytes(
@@ -565,31 +405,17 @@ fn find_joined_matches_in_file_by_line_bytes(
     file_path: &str,
     groups: Option<Vec<usize>>,
 ) -> PyResult<Vec<String>> {
-    use ::regex::bytes::Regex as RustRegexBytes;
-    use memmap2::Mmap;
-    use std::fs::File;
-    use pyo3::exceptions;
-
-    // Open the file.
     let file = File::open(file_path)
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to open file: {}", e)))?;
-    // Memory-map the file.
+        .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe { Mmap::map(&file) }
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
+        .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
     let bytes = &mmap[..];
-
-    // Split the file into lines by b'\n'
     let lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').collect();
-
-    // Compile the regex pattern using the bytes API.
     let regex = RustRegexBytes::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(format!("Regex compile error: {}", e)))?;
-
+        .map_err(|e| PyValueError::new_err(format!("Regex compile error: {}", e)))?;
     let mut results = Vec::new();
-    // Process each line sequentially.
     for line in lines {
         if let Some(ref indices) = groups {
-            // For each match in the line, join the specified capture groups.
             for caps in regex.captures_iter(line) {
                 let mut parts = Vec::new();
                 for &idx in indices {
@@ -603,17 +429,13 @@ fn find_joined_matches_in_file_by_line_bytes(
                 }
             }
         } else {
-            // If no group indices provided, return the entire line if it matches.
             if regex.is_match(line) {
                 results.push(String::from_utf8_lossy(line).into_owned());
             }
         }
     }
-
     Ok(results)
 }
-
-
 
 #[pyfunction]
 fn find_joined_matches_in_file(
@@ -621,27 +443,17 @@ fn find_joined_matches_in_file(
     file_path: &str,
     groups: Option<Vec<usize>>,
 ) -> PyResult<Vec<String>> {
-    // Open the file.
     let file = File::open(file_path)
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to open file: {}", e)))?;
-    // Memory-map the file.
+        .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe { Mmap::map(&file) }
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
+        .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
     let bytes = &mmap[..];
-
-    // Split the file by newline (b'\n') into lines (without copying).
     let lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').collect();
-
-    // Compile the regex pattern using the bytes API.
     let regex = RustRegexBytes::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(format!("Regex compile error: {}", e)))?;
-
+        .map_err(|e| PyValueError::new_err(format!("Regex compile error: {}", e)))?;
     let mut results = Vec::new();
-
-    // Process each line sequentially.
     for line in lines {
         if let Some(ref indices) = groups {
-            // For each match in the line, join the specified capture groups.
             for caps in regex.captures_iter(line) {
                 let mut parts = Vec::new();
                 for &idx in indices {
@@ -650,22 +462,18 @@ fn find_joined_matches_in_file(
                         parts.push(s);
                     }
                 }
-                // Only add if there is at least one non-empty part.
                 if !parts.is_empty() {
                     results.push(parts.join(" "));
                 }
             }
         } else {
-            // If no group indices provided, return the entire line if it matches.
             if regex.is_match(line) {
                 results.push(String::from_utf8_lossy(line).into_owned());
             }
         }
     }
-    
     Ok(results)
 }
-
 
 fn compute_ranges(data: &[u8], n_threads: usize, target_chunks_per_thread: usize) 
     -> Vec<(usize, usize)> 
@@ -675,21 +483,17 @@ fn compute_ranges(data: &[u8], n_threads: usize, target_chunks_per_thread: usize
     let mut ranges = Vec::with_capacity(total_chunks);
     let mut start = 0;
     let chunk_bytes = (size + total_chunks - 1) / total_chunks;
-
     while start < size {
         let mut end = (start + chunk_bytes).min(size);
-        // advance to next newline
         while end < size && data[end] != b'\n' {
             end += 1;
         }
-        if end < size { end += 1; } // include the '\n'
+        if end < size { end += 1; }
         ranges.push((start, end));
         start = end;
     }
     ranges
 }
-
-
 
 #[pyfunction]
 fn find_joined_matches_in_file_by_line_parallel(
@@ -697,26 +501,14 @@ fn find_joined_matches_in_file_by_line_parallel(
     file_path: &str,
     groups: Option<Vec<usize>>,
 ) -> PyResult<Vec<String>> {
-    // Open the file.
     let file = File::open(file_path)
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to open file: {}", e)))?;
-    // Memory-map the file.
+        .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe { Mmap::map(&file) }
-        .map_err(|e| exceptions::PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
-
-    // // Split the file into lines by newline byte (b'\n') without copying.
-    // let lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').collect();
-
-    // Compile the regex pattern using the bytes API.
+        .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?;
     let regex = RustRegexBytes::new(pattern)
-        .map_err(|e| exceptions::PyValueError::new_err(format!("Regex compile error: {}", e)))?;
-
-    // Process each line in parallel.
-    // If groups is provided, for each match in the line join the specified groups.
-    // If groups is None, then if the line matches the regex, return the entire line.
+        .map_err(|e| PyValueError::new_err(format!("Regex compile error: {}", e)))?;
     let data: &[u8] = &mmap;
     let ranges = compute_ranges(data, rayon::current_num_threads(), 4);
-
     let results: Vec<String> = ranges.par_iter()
         .flat_map(|&(s,e)| {
             let slice = &data[s..e];
@@ -731,11 +523,9 @@ fn find_joined_matches_in_file_by_line_parallel(
                     })
                     .collect::<Vec<_>>()
             } else {
-                // split the chunk into lines, test each line
                 slice.split(|&b| b == b'\n')
                     .filter_map(|slice| {
                         if regex.is_match(slice) {
-                            // emit exactly that one matching slice
                             Some(String::from_utf8_lossy(slice).into_owned())
                         } else {
                             None
@@ -745,13 +535,9 @@ fn find_joined_matches_in_file_by_line_parallel(
             }
         })
         .collect();
-
-
     Ok(results)
 }
 
-
-/// find the nth occurrence of `needle` in `haystack`
 fn nth_index(haystack: &str, needle: &str, n: usize) -> Option<usize> {
     let mut pos = 0;
     for _ in 0..n {
@@ -788,7 +574,6 @@ fn extract_fixed_spans(
 ) -> PyResult<Vec<String>> {
     let file = File::open(file_path).map_err(|e| PyIOError::new_err(e.to_string()))?;
     let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
-
     let s_key = if case_insensitive {
         start_delim.to_ascii_lowercase()
     } else {
@@ -797,11 +582,8 @@ fn extract_fixed_spans(
     let e_key = end_delim.map(|ed| {
         if case_insensitive { ed.to_ascii_lowercase() } else { ed.to_string() }
     });
-
-    // simple: 0 when None, or whatever Python handed over
     let omit_f = omit_first.unwrap_or(0);
     let omit_l = omit_last.unwrap_or(0);
-
     let mut out = Vec::new();
     for chunk in mmap.split(|&b| b == b'\n') {
         let line = std::str::from_utf8(chunk).unwrap_or("");
@@ -810,14 +592,12 @@ fn extract_fixed_spans(
         } else {
             line.to_string()
         };
-
         if let Some(s_pos) = nth_index(&hay, &s_key, start_index) {
             if let Some(ref ed) = e_key {
                 if let Some(e_start) = nth_index(&hay, ed, end_index) {
                     let e_pos = e_start + ed.len();
                     if e_pos > s_pos {
                         let mut slice = &line[s_pos .. e_pos];
-                        // strip exactly omit_f / omit_l
                         if omit_f < slice.len() { slice = &slice[omit_f ..]; }
                         if omit_l < slice.len() {
                             slice = &slice[.. slice.len() - omit_l];
@@ -858,7 +638,6 @@ fn extract_fixed_spans_parallel(
     print_line_on_match: bool,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
-    // memory-map the file
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(e.to_string()))?;
     let mmap = unsafe {
@@ -866,8 +645,6 @@ fn extract_fixed_spans_parallel(
             .map_err(|e| PyIOError::new_err(e.to_string()))?
     };
     let data = &mmap[..];
-
-    // normalize delimiters
     let s_key = if case_insensitive {
         start_delim.to_ascii_lowercase()
     } else {
@@ -876,17 +653,10 @@ fn extract_fixed_spans_parallel(
     let e_key = end_delim.map(|ed| {
         if case_insensitive { ed.to_ascii_lowercase() } else { ed.to_string() }
     });
-
     let omit_f = omit_first.unwrap_or(0);
     let omit_l = omit_last.unwrap_or(0);
-
-    // determine number of threads
     let threads = rayon::current_num_threads();
-
-    // compute newline-aligned ranges (1 chunk per thread)
     let ranges = compute_ranges(data, threads, 1);
-
-    // process each range in parallel
     let results: Vec<String> = ranges
         .into_par_iter()
         .flat_map(|(start, end)| {
@@ -900,7 +670,6 @@ fn extract_fixed_spans_parallel(
                     } else {
                         line.to_string()
                     };
-
                     nth_index(&hay, &s_key, start_index).and_then(|s_pos| {
                         if let Some(ref ed) = e_key {
                             nth_index(&hay, ed, end_index).and_then(|e_start| {
@@ -928,13 +697,9 @@ fn extract_fixed_spans_parallel(
                 .collect::<Vec<_>>()
         })
         .collect();
-
     Ok(results)
 }
 
-
-
-/// Standalone counter: takes a Vec<String>, returns Vec<(String, usize)> sorted desc.
 #[pyfunction]
 fn count_string_occurrences(items: Vec<String>) -> PyResult<Vec<(String, usize)>> {
     let mut map = HashMap::new();
@@ -946,8 +711,6 @@ fn count_string_occurrences(items: Vec<String>) -> PyResult<Vec<(String, usize)>
     Ok(sorted)
 }
 
-
-// Single‐threaded fixed‐string → full‐line extractor
 #[pyfunction]
 #[pyo3(signature=(
     file_path,
@@ -962,27 +725,21 @@ fn extract_fixed_lines(
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(e.to_string()))?;
     let mmap = unsafe { Mmap::map(&file).map_err(|e| PyIOError::new_err(e.to_string()))? };
-
-    // Precompute the finder on the pattern (lowercased if needed)
     let pat_bytes = if case_insensitive {
         pattern.to_ascii_lowercase().into_bytes()
     } else {
         pattern.as_bytes().to_vec()
     };
     let finder = Finder::new(&pat_bytes);
-
     let mut out = Vec::new();
     for chunk in mmap.split(|&b| b == b'\n') {
         if case_insensitive {
-            // only allocate lowercase when needed
             let hay = String::from_utf8_lossy(chunk).to_ascii_lowercase();
             if finder.find(hay.as_bytes()).is_some() {
                 out.push(String::from_utf8_lossy(chunk).into_owned());
             }
         } else {
-            // zero allocation: search raw bytes
             if finder.find(chunk).is_some() {
-                // only now convert to UTF-8 string once
                 out.push(std::str::from_utf8(chunk).unwrap_or("").to_string());
             }
         }
@@ -990,7 +747,6 @@ fn extract_fixed_lines(
     Ok(out)
 }
 
-// Parallel fixed‐string → full‐line extractor (same logic)
 #[pyfunction]
 #[pyo3(signature=(
     file_path,
@@ -1002,7 +758,6 @@ fn extract_fixed_lines_parallel(
     pattern: &str,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
-    // 1) Open & mmap the file
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe {
@@ -1010,43 +765,30 @@ fn extract_fixed_lines_parallel(
             .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?
     };
     let data: &[u8] = &mmap;
-
-    // 2) Prepare the Finder (byte-based)
     let pat_bytes = if case_insensitive {
         pattern.to_ascii_lowercase().into_bytes()
     } else {
         pattern.as_bytes().to_vec()
     };
     let finder = Finder::new(&pat_bytes);
-
-    // 3) Compute balanced, newline-aligned ranges
     let n_threads = rayon::current_num_threads();
     let ranges = compute_ranges(data, n_threads, 4);
-
-    // 4) Parallel extract matching lines
     let results: Vec<String> = ranges.par_iter()
         .flat_map(|&(start, end)| {
-            // For each chunk, split into individual lines
             let slice = &data[start..end];
             slice.split(|&b| b == b'\n')
                  .filter_map(|line| {
                      if line.is_empty() {
                          return None;
                      }
-
-                     // For case-insensitive, lowercase the line before searching
                      let hay = if case_insensitive {
-                         // decode lossily, lowercase, re-encode as bytes
                          String::from_utf8_lossy(line)
                              .to_ascii_lowercase()
                              .into_bytes()
                      } else {
                          line.to_vec()
                      };
-
-                     // If found, return the original line as a String
                      if finder.find(&hay).is_some() {
-                         // decode original (not lowercased) line for output
                          Some(String::from_utf8_lossy(line).into_owned())
                      } else {
                          None
@@ -1055,20 +797,15 @@ fn extract_fixed_lines_parallel(
                  .collect::<Vec<String>>()
         })
         .collect();
-
     Ok(results)
 }
 
-
-/// Count total number of matches (across all lines) for the given regex.
-/// Returns a one‐element Vec<String> containing the numeric total.
 #[pyfunction]
 fn total_count(
     pattern: &str,
     file_path: &str,
     parallel: bool,
 ) -> PyResult<Vec<String>> {
-    // Open & mmap
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(format!("open error: {}", e)))?;
     let mmap = unsafe {
@@ -1076,21 +813,14 @@ fn total_count(
             .map_err(|e| PyIOError::new_err(format!("mmap error: {}", e)))?
     };
     let data: &[u8] = &mmap;
-
-    // Compile regex (UTF-8 API)
     let regex = RustRegex::new(pattern)
         .map_err(|e| PyValueError::new_err(format!("regex error: {}", e)))?;
-
-    // Compute chunks (4 per thread)
     let n_threads = rayon::current_num_threads();
     let ranges = compute_ranges(data, n_threads, 4);
-
-    // Count matches across chunks
     let total: usize = if parallel {
         ranges.par_iter()
             .map(|&(s, e)| {
                 let slice = &data[s..e];
-                // SAFETY: slicing at newline boundaries; any invalid UTF-8 yields 0 matches
                 let text = std::str::from_utf8(slice).unwrap_or("");
                 regex.find_iter(text).count()
             })
@@ -1104,7 +834,6 @@ fn total_count(
             })
             .sum()
     };
-
     Ok(vec![ total.to_string() ])
 }
 
@@ -1115,7 +844,6 @@ fn total_count_fixed_str(
     parallel: bool,
     case_insensitive: bool,
 ) -> PyResult<Vec<String>> {
-    // Open & mmap file
     let file = File::open(file_path)
         .map_err(|e| PyIOError::new_err(format!("Failed to open file: {}", e)))?;
     let mmap = unsafe {
@@ -1123,25 +851,18 @@ fn total_count_fixed_str(
             .map_err(|e| PyIOError::new_err(format!("Failed to mmap file: {}", e)))?
     };
     let data: &[u8] = &mmap;
-
-    // Prepare byte-pattern (lowercased if needed)
     let pat_bytes = if case_insensitive {
         pattern.to_ascii_lowercase().into_bytes()
     } else {
         pattern.as_bytes().to_vec()
     };
     let finder = Finder::new(&pat_bytes);
-
-    // Compute balanced, newline-aligned ranges
     let n_threads = rayon::current_num_threads();
     let ranges = compute_ranges(data, n_threads, 4);
-
-    // Count matches per chunk
     let total: usize = if parallel {
         ranges.par_iter()
             .map(|&(s, e)| {
                 let slice = &data[s..e];
-                // For case-insensitive, lowercase the slice first
                 if case_insensitive {
                     let lower = slice.iter()
                         .map(|&b| (b as char).to_ascii_lowercase() as u8)
@@ -1167,16 +888,15 @@ fn total_count_fixed_str(
             })
             .sum()
     };
-
     Ok(vec![ total.to_string() ])
 }
 
-
-
 #[pymodule]
-fn rygex_ext(_py: Python, m: &PyModule) -> PyResult<()> {
+fn rygex_ext(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Regex>()?;
     m.add_class::<Match>()?;
+    m.add_class::<RustRegexGen>()?;
+    m.add_class::<FileRegexGen>()?;
     m.add_function(wrap_pyfunction!(compile, m)?)?;
     m.add_function(wrap_pyfunction!(search, m)?)?;
     m.add_function(wrap_pyfunction!(findall_captures_str, m)?)?;
@@ -1196,7 +916,5 @@ fn rygex_ext(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(total_count, m)?)?;
     m.add_function(wrap_pyfunction!(total_count_fixed_str, m)?)?;
     m.add_function(wrap_pyfunction!(from_file_range, m)?)?;
-    m.add_class::<RustRegexGen>()?;
-    m.add_class::<FileRegexGen>()?;
     Ok(())
 }
