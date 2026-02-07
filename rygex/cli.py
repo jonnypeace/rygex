@@ -60,6 +60,7 @@ import re, sys, gc
 from typing import Generator
 import rygex_ext as regex
 from collections import Counter
+import multiprocessing
 
 from rygex.args import get_args
 from rygex.python_regex import multi_cpu, rygex_mmap
@@ -140,7 +141,7 @@ def main_seq():
     gc.collect()
     if not pattern_search:
         print('No Pattern Found')
-        exit(0)
+        sys.exit(0)
     # unique search
     if args.unique:
         pattern_search = list(dict.fromkeys(pattern_search))
@@ -181,6 +182,7 @@ def main_seq():
 
 
 def main():
+    multiprocessing.freeze_support()
     try:
         for line in main_seq():
             print(line)
