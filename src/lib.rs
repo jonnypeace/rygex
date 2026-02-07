@@ -13,11 +13,15 @@ use std::io::Error as IOError;
 #[pyclass]
 pub struct FileRegexGen {
     inner: RustRegex,
+    #[allow(dead_code)]
     mmap: Mmap,
     haystack: &'static str,
-    start: usize,
-    end: usize,
-    pos: usize,
+    #[pyo3(get)]
+    pub start: usize,
+    #[pyo3(get)]
+    pub end: usize,
+    #[pyo3(get)]
+    pub pos: usize,
 }
 
 #[pymethods]
