@@ -4,13 +4,41 @@
 
 ---
 
-## 🚀 Why RYGEX?
+## Alpha - Testing Release
 
-Tools like `grep`, `sed`, `awk`, `tail`, `head` are amazing—but often you find yourself piping one into another to get exactly what you need. **RYGEX** combines many of their capabilities in a single command-line tool, with optional Rust under-the-hood acceleration for best-in-class performance.
+This repository contains the alpha (testing) version of the regex_ext library and its accompanying regex cli command‑line interface.
+
+* What's here
+  * A core **regex_ext** library written in rust
+  * A prototype **regex** command‑line tool which demonstrates functionality.
+* Current State
+  * The library is functional but not yet production‑ready.
+  * Some CLI commands may behave unexpectedly.
+* Why Alpha Release
+  * Gather feedback from early users and contributors.
+  * Identify bugs and usability issues before a stable release.
+  * I still have a use case for this library in it's current state.
+* What to expect
+  * Documentation/README may be incomplete and change as we refine the user experience.
+  * Occasional breaking changes while we experiment with design choices.
+  * Frequent updates as we stabilize APIs and fix regressions.
+
+
+## Why RYGEX?
+
+Tools like `grep`, `sed`, `awk`, `tail`, `head` are amazing—but often you find yourself piping one into another to get exactly what you need. **rygex** combines many of their capabilities in a single command-line tool, with an optional regex_ext python library written in rust to improve performance of parsing large amounts of text.
 
 ---
 
-## 🛠️ Installation
+## Installation
+
+### Easy
+
+1. Using PyPi
+  ```bash
+  pip install rygex
+  ```
+### Build from source
 
 1. Clone the repo and enter
    ```bash
@@ -42,12 +70,12 @@ _Tested on **Python 3.12+** (Ubuntu 24.04, Arch Linux). Other platforms may work
 
 ---
 
-## 💡 Features
+## Features
 
-- **String search** (`-s`/`--start`, `-e`/`--end`, Rust-accelerated)  
-- **Fixed-string grep** (`-F`/`--fixed-string`, Rust)  
-- **Python regex** (`-p`/`--pyreg`) and **Rust regex** (`-rp`/`--rpyreg`)  
-- **Omit characters** before/after matches (`-of`, `-ol`, `-O`)  
+- **String search** (`-s`/`--start`, `-e`/`--end`, Rust-accelerated) - under development after using rust
+- **Fixed-string grep** (`-F`/`--fixed-string`, Rust) - Under Development
+- **Python regex** (`-p`/`--pyreg`) and **Rust regex** (`-rp`/`--rpyreg`) 
+- **Omit characters** before/after matches (`-of`, `-ol`, `-O`)
 - **Line slicing** (`-l`/`--lines`) as `start:stop[:step]`  
 - **Case-insensitive** search (`-i`/`--insensitive`)  
 - **Unique**, **sorted**, **reverse** output (`-u`, `-S`, `-r`)  
@@ -57,7 +85,7 @@ _Tested on **Python 3.12+** (Ubuntu 24.04, Arch Linux). Other platforms may work
 
 ---
 
-## 📝 Usage
+## Usage
 
 ```bash
 rygex [OPTIONS] -f <FILE>
@@ -80,19 +108,19 @@ You must supply **one** of:
 
 - **Start + End**  
   ```bash
-  rygex -s foo 2 --end bar 1 -f logfile.txt
+  rygex --start foo 2 --end bar 1 -f logfile.txt
   ```
   Finds the 2nd occurrence of `foo` up to the 1st `bar`.
 
 - **Omit first/last chars**  
   ```bash
-  rygex -s "(" 1 --end ")" 1 -of 0 -ol 0 -f logfile.txt
+  rygex --start "(" 1 --end ")" 1 -of 0 -ol 0 -f logfile.txt
   ```
   Strips the outer parentheses from the match.
 
 - **Omit all**  
   ```bash
-  rygex -s foo --end bar -O -f logfile.txt
+  rygex --start foo --end bar -O -f logfile.txt
   ```
   Removes both `foo` and `bar` from the ends of each match.
 
@@ -131,7 +159,7 @@ rygex -p 'User: (\w+)' '1' -f users.log
 
 ---
 
-## 🔧 Roadmap
+## Roadmap
 
 - [ ] Improve and expand docstrings  
 - [ ] Refactor into stable 1.0 branch  
@@ -142,6 +170,6 @@ rygex -p 'User: (\w+)' '1' -f users.log
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
