@@ -1,7 +1,6 @@
-from typing import Iterable, Literal, TypedDict, Any
+from typing import Iterable, Literal, TypedDict, Any, NamedTuple
 import re, mmap, os, math, sys, gc
 from pathlib import Path
-from dataclasses import dataclass
 from rygex.args import PythonArgs
 from functools import partial
 from rygex.utils import getting_slice, print_err
@@ -73,8 +72,7 @@ def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'm
                 case _:
                     print_err('Internal error with criteria matching')
 
-@dataclass
-class ParserPyReg:
+class ParserPyReg(NamedTuple):
     test_reg: re.Pattern
     pygen_length: int
     group_num: int

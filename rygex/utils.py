@@ -6,7 +6,7 @@ def print_err(msg):
     '''
     colours = {'fail': '\033[91m', 'end': '\033[0m'}
     print(f'{colours["fail"]}{msg}{colours["end"]}', file=sys.stderr)
-    exit(1)
+    sys.exit(1)
 
 def getting_slice(args_field: list[str]):
     try:
