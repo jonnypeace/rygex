@@ -1,36 +1,35 @@
-#!/usr/bin/env python3
 import argparse
-import importlib.metadata
+# import importlib.metadata
+# from dataclasses import dataclass
 import os
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Union, NamedTuple
+from .version import __version__
+
+# __version__ = importlib.metadata.version("rygex")
 
 
-__version__ = importlib.metadata.version("rygex")
-
-
-@dataclass
-class PythonArgs:
-    start:        Optional[list[str]]       = None
-    end:          Optional[list[str]]       = None
-    fixed_string: Optional[str]             = None
-    file:         Optional[Path]            = None
-    insensitive:  bool                      = False
-    omitfirst:    Optional[int]             = None
-    omitlast:     Optional[int]             = None
-    omitall:      bool                      = False
-    pyreg:        Optional[list[str]]       = None
-    rpyreg:       Optional[list[str]]       = None
+# @dataclass
+class PythonArgs(NamedTuple):
+    start:        Optional[list[str]]         = None
+    end:          Optional[list[str]]         = None
+    fixed_string: Optional[str]               = None
+    file:         Optional[Path]              = None
+    insensitive:  bool                        = False
+    omitfirst:    Optional[int]               = None
+    omitlast:     Optional[int]               = None
+    omitall:      bool                        = False
+    pyreg:        Optional[list[str]]         = None
+    rpyreg:       Optional[list[str]]         = None
     lines:        Optional[Union[int, slice]] = None
-    sort:         bool                      = False
-    rev:          bool                      = False
-    unique:       bool                      = False
-    counts:       bool                      = False
-    totalcounts:  bool                      = False
-    multi:        Optional[int]             = None
-    gen:          Optional[list[str]]       = None
-    # Note: we do NOT store “version” here, because we're using argparse’s built‐in
+    sort:         bool                        = False
+    rev:          bool                        = False
+    unique:       bool                        = False
+    counts:       bool                        = False
+    totalcounts:  bool                        = False
+    multi:        Optional[int]               = None
+    gen:          Optional[list[str]]         = None
+    # Note: we do NOT store “version” here, because we're using argparse’s built-in
     #       action="version" (which never puts a “version” attribute in the Namespace).
 
 
@@ -69,7 +68,7 @@ class NoEllipsisFormatter(argparse.HelpFormatter):
 
 def get_args() -> PythonArgs:
     """
-    Parse command‐line args and always return a PythonArgs. If `-v/--version`
+    Parse command-line args and always return a PythonArgs. If `-v/--version`
     is passed, argparse will do its own print+exit, so we never “fall off the end.”
     """
     pk = argparse.ArgumentParser(
@@ -121,7 +120,7 @@ def get_args() -> PythonArgs:
 
     pk.add_argument(
         "-i", "--insensitive",
-        help="Case‐insensitive matching",
+        help="Case-insensitive matching",
         action="store_true",
         required=False,
     )
@@ -247,23 +246,4 @@ def get_args() -> PythonArgs:
 
     args = pk.parse_args()
 
-    return PythonArgs(
-        start        = args.start,
-        end          = args.end,
-        fixed_string = args.fixed_string,
-        file         = args.file,
-        insensitive  = args.insensitive,
-        omitfirst    = args.omitfirst,
-        omitlast     = args.omitlast,
-        omitall      = args.omitall,
-        pyreg        = args.pyreg,
-        rpyreg       = args.rpyreg,
-        lines        = args.lines,
-        sort         = args.sort,
-        rev          = args.rev,
-        unique       = args.unique,
-        counts       = args.counts,
-        totalcounts  = args.totalcounts,
-        multi        = args.multi,
-        gen          = args.gen,
-    )
+    return PythonArgs(**vars(args))
