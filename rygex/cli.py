@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 r"""
 rygex - Python string and regex search
 =======================================
@@ -60,8 +58,6 @@ import re, sys, gc
 from typing import Generator
 import rygex_ext as regex
 from collections import Counter
-import multiprocessing
-
 from rygex.args import get_args
 from rygex.python_regex import multi_cpu, rygex_mmap
 from rygex.utils import getting_slice
@@ -182,7 +178,6 @@ def main_seq():
 
 
 def main():
-    multiprocessing.freeze_support()
     try:
         for line in main_seq():
             print(line)
