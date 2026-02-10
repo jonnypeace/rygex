@@ -1,4 +1,4 @@
-from typing import Iterable, Literal, TypedDict, Any
+from typing import Iterable, Literal, TypedDict, Any, Generator
 import re, mmap, os, math, sys, gc
 from pathlib import Path
 from rygex.args import PythonArgs
@@ -44,7 +44,8 @@ def rygex_search(args: PythonArgs, func_search: Iterable[str] = None)-> list:
 
 
 
-def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'match'], insensitive: bool = False): # single threaded
+def mmap_reader(file_path: str, regex_pattern: str,
+                criteria: Literal['line', 'match'], insensitive: bool = False) -> Generator[Any, tuple[bytes]]: # single threaded
 
     with open(file_path, 'rb', buffering=0) as file:
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
@@ -58,15 +59,14 @@ def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'm
                         end = mm.find(b'\n', match.end())
                         if end == -1:
                             end = len(mm)  # Handle case where the match is in the last line
-                        # Append the whole line as a decoded string
-                        yield mm[start:end].decode('utf-8')
+                        # Append the whole line encoded as a tuple to match generator return type.
+                        yield mm[start:end], 
                 case 'match':
                     for match in pattern.finditer(mm):
                         yield match.groups()
                 
                 case _:
                     print_err('Internal error with criteria matching')
-
 
 @dataclass
 class ParserPyReg:
@@ -110,32 +110,20 @@ def rygex_mmap(args: PythonArgs, file_path): # single threaded
     '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
     parsed = rygex_parser(args)
     reader_args: ReaderArgs = reader_args_parser(file_path, args)
-    line: list[bytes]
-    match parsed.pygen_length:
-        case 1: # defaults to printing full line if regular expression matches
-            reader_args['criteria'] = 'line'
-            for line in mmap_reader(**reader_args):
-                parsed.pyreg_last_list.append(line)
-        case 2:
-            if len(parsed.split_int) == 1:
-                if parsed.split_int[0] == 0:
-                    reader_args['criteria'] = 'line'
-                    for line in mmap_reader(**reader_args):
-                        parsed.pyreg_last_list.append(line)
-                else:
-                    for line in mmap_reader(**reader_args):
-                        parsed.pyreg_last_list.append(line[parsed.split_int[0]-1].decode())
-
-            elif len(parsed.split_int) > 1:
-                for line in mmap_reader(**reader_args):
-                    all_group = ''
-                    try:
-                        for i in parsed.split_int:
-                            all_group = all_group + ' ' + line[i - 1].decode()
-                        parsed.pyreg_last_list.append(all_group[1:])
-                    # Indexerror due to incorrect index
-                    except IndexError:
-                        print_err(f'Error. Index chosen {parsed.split_int} is out of range. Check capture groups')
+    
+    if parsed.pygen_length == 1:
+        reader_args['criteria'] = 'line'
+    
+    if 0 not in parsed.split_int and parsed.pygen_length > 1:
+        for line in mmap_reader(**reader_args):
+            parsed.pyreg_last_list.append(
+                ' '.join(
+                    [found.decode() for num, found in enumerate(line, 1)
+                     if num in parsed.split_int and isinstance(found, bytes)])
+                    )
+    else:
+        for line in mmap_reader(**reader_args):
+            parsed.pyreg_last_list.append(' '.join(found.decode() for found in line if isinstance(found, bytes)))
 
     return parsed.pyreg_last_list
 
