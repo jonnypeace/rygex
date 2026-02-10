@@ -78,6 +78,8 @@ jobs:
     environment:
       name: owner-env
       url: https://pypi.org/p/rygex
+    # -> Skip the whole job when the tag is exactly "latest"
+    if: ${{ github.ref_name != 'latest' }}
     steps:
       - uses: actions/download-artifact@v4
         with:

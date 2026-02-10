@@ -14,12 +14,12 @@ if [[ ! "$1" =~ ^v[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}$ ]]; then
 fi
 
 # Add new version tag and push
-echo "🏷  Tagging version: $1"
+echo "Tagging version: $1"
 git tag "$1"
 git push origin "$1"
 
 # Force update 'latest' tag
-echo "🔄 Updating 'latest' tag"
+echo "Updating 'latest' tag"
 git tag -f latest
 git push origin latest --follow-tags --force
 
