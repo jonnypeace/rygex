@@ -159,8 +159,8 @@ def main_seq():
     # counts search
     if args.counts:
         # from collections import Counter
-        pattern_search_tuple = tuple(Counter(pattern_search).items())
-        return format_counts(pattern_search_tuple, args=args)
+        pattern_search_list = list(Counter(pattern_search).items())
+        return format_counts(pattern_search_list, args=args)
     if args.totalcounts:
         if isinstance(pattern_search, Generator):
             pattern_search = list(pattern_search)
