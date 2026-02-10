@@ -34,7 +34,11 @@ def rygex_search(args: PythonArgs, func_search: Iterable[str] = None)-> list:
                 if reg_match:
                     parsed.pyreg_last_list.append(line)
         case 2:
-            parsed.pyreg_last_list = grouped_iter(file_data=func_search, test_reg=parsed.test_reg, int_list=parsed.split_int)
+            parsed.pyreg_last_list = grouped_iter(
+                file_data=func_search,
+                test_reg=parsed.test_reg,
+                int_list=parsed.split_int
+                )
 
     return parsed.pyreg_last_list
 
