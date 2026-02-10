@@ -81,7 +81,6 @@ def main_seq():
             return format_counts(list(counts.items()), args)
         else:
             count_dict = Counter()
-            # if args.counts:
             split_int = getting_slice(args.gen)
             count_dict.update(gen_keys(regex.FileRegexGen, args.gen[0], str(args.file), split_int))
             pattern_search_list = list(count_dict.items())
@@ -124,7 +123,7 @@ def main_seq():
             cg_list = cg_str.split(' ')
             cg_list = [int(x) for x in cg_list]
         else:
-            cg_list = [0]
+            cg_list = None
 
         if args.totalcounts:
             return regex.total_count(args.rpyreg[0], str(args.file), multi)

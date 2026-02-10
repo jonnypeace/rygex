@@ -36,7 +36,6 @@ def format_counts(counts: Sequence[tuple[str,int]], args: PythonArgs) -> list[st
     return [f"{k:{padding}}Line-Counts = {v}" for k, v in items]
 
 def counter(pattern_search, args: PythonArgs):
-    from collections import Counter
     pattern_search_dict = Counter(pattern_search)
     pattern_search_list = []
     for grp_tuple, cnt in pattern_search_dict.items():

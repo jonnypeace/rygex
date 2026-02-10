@@ -1,25 +1,28 @@
-from typing import Iterable, Literal, TypedDict, Any, NamedTuple
+from typing import Iterable, Literal, TypedDict, Any, Generator
 import re, mmap, os, math, sys, gc
 from pathlib import Path
 from rygex.args import PythonArgs
 from functools import partial
 from rygex.utils import getting_slice, print_err
+from dataclasses import dataclass
 
 
-def grouped_iter(file_data: Iterable[str],test_reg: re.Pattern, int_list=None):
+def grouped_iter(file_data: Iterable[str],test_reg: re.Pattern, int_list: list):
     temp_list: list = []
     for line in file_data:
         reg_match = test_reg.findall(line)
-        if reg_match:
-            all_group = ''
-            if int_list:
-                for i in int_list:
-                    all_group = all_group + ' ' + reg_match[0][i-1]
-            else:
-                for i in reg_match[0]:
-                    all_group = all_group + ' ' + i
-            temp_list.append(all_group[1:])
+        if not reg_match:
+            continue
+        if isinstance(reg_match[0], tuple):
+            reg_match = reg_match[0]
+
+        if 0 in int_list:
+            temp_list.append(' '.join(reg_match))
+        else:
+            temp_list.append(' '.join([found for num, found in enumerate(reg_match, 1) if num in int_list]))
+
     return temp_list
+
 
 def rygex_search(args: PythonArgs, func_search: Iterable[str] = None)-> list:
     '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
@@ -31,25 +34,18 @@ def rygex_search(args: PythonArgs, func_search: Iterable[str] = None)-> list:
                 if reg_match:
                     parsed.pyreg_last_list.append(line)
         case 2:
-            if len(parsed.split_int) == 1:
-                if parsed.split_int[0] == 0:
-                    for line in func_search:
-                        reg_match = parsed.test_reg.findall(line)
-                        if reg_match:
-                            parsed.pyreg_last_list.append(line)
-                else:
-                    for line in func_search:
-                        reg_match = parsed.test_reg.findall(line)
-                        if reg_match:
-                            parsed.pyreg_last_list.append(reg_match[0][parsed.split_int[0]-1])
-            else:
-                parsed.pyreg_last_list = grouped_iter(file_data=func_search, test_reg=parsed.test_reg)
+            parsed.pyreg_last_list = grouped_iter(
+                file_data=func_search,
+                test_reg=parsed.test_reg,
+                int_list=parsed.split_int
+                )
 
     return parsed.pyreg_last_list
 
 
 
-def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'match'], insensitive: bool = False): # single threaded
+def mmap_reader(file_path: str, regex_pattern: str,
+                criteria: Literal['line', 'match'], insensitive: bool = False) -> Generator[Any, tuple[bytes]]: # single threaded
 
     with open(file_path, 'rb', buffering=0) as file:
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
@@ -63,8 +59,8 @@ def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'm
                         end = mm.find(b'\n', match.end())
                         if end == -1:
                             end = len(mm)  # Handle case where the match is in the last line
-                        # Append the whole line as a decoded string
-                        yield mm[start:end].decode('utf-8')
+                        # Append the whole line encoded as a tuple to match generator return type.
+                        yield mm[start:end], 
                 case 'match':
                     for match in pattern.finditer(mm):
                         yield match.groups()
@@ -72,12 +68,14 @@ def mmap_reader(file_path: str, regex_pattern: str, criteria: Literal['line', 'm
                 case _:
                     print_err('Internal error with criteria matching')
 
-class ParserPyReg(NamedTuple):
+@dataclass
+class ParserPyReg:
     test_reg: re.Pattern
     pygen_length: int
     group_num: int
     split_int: list[int]
     pyreg_last_list: list
+
 
 def rygex_parser(args: PythonArgs):
 
@@ -112,32 +110,20 @@ def rygex_mmap(args: PythonArgs, file_path): # single threaded
     '''Python regex search using --pyreg, can be either case sensitive or insensitive'''
     parsed = rygex_parser(args)
     reader_args: ReaderArgs = reader_args_parser(file_path, args)
-    line: list[bytes]
-    match parsed.pygen_length:
-        case 1: # defaults to printing full line if regular expression matches
-            reader_args['criteria'] = 'line'
-            for line in mmap_reader(**reader_args):
-                parsed.pyreg_last_list.append(line)
-        case 2:
-            if len(parsed.split_int) == 1:
-                if parsed.split_int[0] == 0:
-                    reader_args['criteria'] = 'line'
-                    for line in mmap_reader(**reader_args):
-                        parsed.pyreg_last_list.append(line)
-                else:
-                    for line in mmap_reader(**reader_args):
-                        parsed.pyreg_last_list.append(line[parsed.split_int[0]-1].decode())
-
-            elif len(parsed.split_int) > 1:
-                for line in mmap_reader(**reader_args):
-                    all_group = ''
-                    try:
-                        for i in parsed.split_int:
-                            all_group = all_group + ' ' + line[i - 1].decode()
-                        parsed.pyreg_last_list.append(all_group[1:])
-                    # Indexerror due to incorrect index
-                    except IndexError:
-                        print_err(f'Error. Index chosen {parsed.split_int} is out of range. Check capture groups')
+    
+    if parsed.pygen_length == 1:
+        reader_args['criteria'] = 'line'
+    
+    if 0 not in parsed.split_int and parsed.pygen_length > 1:
+        for line in mmap_reader(**reader_args):
+            parsed.pyreg_last_list.append(
+                ' '.join(
+                    [found.decode() for num, found in enumerate(line, 1)
+                     if num in parsed.split_int and isinstance(found, bytes)])
+                    )
+    else:
+        for line in mmap_reader(**reader_args):
+            parsed.pyreg_last_list.append(' '.join(found.decode() for found in line if isinstance(found, bytes)))
 
     return parsed.pyreg_last_list
 
@@ -161,7 +147,7 @@ def _rygex_worker_range(args: Any, byte_range: tuple[int,int]) -> list[Any]:
     return rygex_search(args=args, func_search=lines)
 
 def _compute_byte_ranges(file_path: str, chunk_size_bytes: int) -> list[tuple[int,int]]:
-    """Split the file into newline‐aligned byte ranges ~chunk_size_bytes."""
+    """Split the file into newline-aligned byte ranges ~chunk_size_bytes."""
     size = os.path.getsize(file_path)
     ranges: list[tuple[int,int]] = []
     with open(file_path, 'rb') as f, \
@@ -176,7 +162,7 @@ def _compute_byte_ranges(file_path: str, chunk_size_bytes: int) -> list[tuple[in
             offset = end
     return ranges
 
-# ——— Pure line‐based chunk reader (fallback) ——————
+# ——— Pure line-based chunk reader (fallback) ——————
 def chunked_line_reader(
     chunk_size: int,
     file_path: str | None = None,
@@ -204,15 +190,15 @@ def multi_cpu(
     args: PythonArgs,
     n_cores: int | None = 8,
     file_path: str | None = None,
-    # for line‐reader
+    # for line-reader
     chunk_size: int = 10_000,
     # for mmap reader
     chunk_size_bytes: int = 100 * 1024 * 1024
 ) -> Iterable[Any]:
     """
     Parallel regex over either:
-     - mmap‐sliced byte‐ranges if file_path is a real file
-     - or line‐based chunks otherwise.
+     - mmap-sliced byte-ranges if file_path is a real file
+     - or line-based chunks otherwise.
     """
     
     # importing here to shave off some mseconds from import time if multi not used
@@ -228,7 +214,7 @@ def multi_cpu(
 
 
     if use_mmap:
-        # Prepare byte‐ranges & mmap‐worker
+        # Prepare byte-ranges & mmap-worker
         ranges = _compute_byte_ranges(file_path, chunk_size_bytes)
         worker_fn = partial(_rygex_worker_range, args)
         executor_kwargs = {
@@ -237,7 +223,7 @@ def multi_cpu(
         }
         tasks = ranges
     else:
-        # Prepare line‐reader & line‐worker
+        # Prepare line-reader & line-worker
         reader = partial(chunked_line_reader,
                          chunk_size,
                          file_path,

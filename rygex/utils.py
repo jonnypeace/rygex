@@ -13,6 +13,6 @@ def getting_slice(args_field: list[str]):
         split_str: list = args_field[1].split(' ')
     # IndexError occurs when entire lines are required
     except IndexError:
-        split_str = ['0']
+        split_str = []
     split_int = [int(i) for i in split_str]
     return split_int
