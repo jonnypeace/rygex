@@ -45,7 +45,7 @@ def rygex_search(args: PythonArgs, func_search: Iterable[str] = None)-> list:
 
 
 def mmap_reader(file_path: str, regex_pattern: str,
-                criteria: Literal['line', 'match'], insensitive: bool = False) -> Generator[Any, tuple[bytes]]: # single threaded
+                criteria: Literal['line', 'match'], insensitive: bool = False) -> Generator[tuple[bytes], Any, Any]: # single threaded
 
     with open(file_path, 'rb', buffering=0) as file:
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
@@ -63,7 +63,7 @@ def mmap_reader(file_path: str, regex_pattern: str,
                         yield mm[start:end], 
                 case 'match':
                     for match in pattern.finditer(mm):
-                        yield match.groups()
+                        yield match.groups() # type: ignore match.groups is returning tuple[bytes, Any]
                 
                 case _:
                     print_err('Internal error with criteria matching')

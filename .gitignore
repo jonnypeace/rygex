@@ -12,3 +12,8 @@ __pycache__
 build/
 dist/
 cli.dist/
+*.log
+*.txt
+*.gz
+!performance_results.txt
+build_nuitka.sh

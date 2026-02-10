@@ -1,8 +1,8 @@
-from typing import Sequence, Callable
+from typing import Callable
 from collections import Counter
 from rygex.args import PythonArgs
 
-def format_counts(counts: Sequence[tuple[str,int]], args: PythonArgs) -> list[str]:
+def format_counts(counts: list[tuple[str,int]], args: PythonArgs) -> list[str]:
     """
     Given a list of (key, count) tuples from Rust, apply your
     --sort/--rev/--lines logic and return lines like:
@@ -14,26 +14,23 @@ def format_counts(counts: Sequence[tuple[str,int]], args: PythonArgs) -> list[st
     # Determine padding
     padding = max(len(k) for k, _ in counts) + 4
 
-    # Start with Rust’s sorted list
-    items = list(counts)
-
     # Python-side sort flag (if you still want Python sort)
-    if args.sort:
-        items.sort(key=lambda kv: kv[1], reverse=True)
-
-    # Reverse if requested
-    if args.rev:
-        items = list(reversed(items))
+    if args.sort and args.rev:
+        counts.sort(key=lambda kv: kv[1], reverse=True)
+    elif args.sort:
+        counts.sort(key=lambda kv: kv[1])
+    elif args.rev:
+        counts = list(reversed(counts))
 
     # Apply --lines filtering if requested
     if isinstance(args.lines, slice) or isinstance(args.lines, int):
-        items = items[args.lines]
+        counts = counts[args.lines] # type: ignore converted back to list below in case becomes tuple.
     
-    if not isinstance(items, list):
-        items = [items]
+    if not isinstance(counts, list):
+        counts = [counts]
 
     # Format
-    return [f"{k:{padding}}Line-Counts = {v}" for k, v in items]
+    return [f"{k:{padding}}Line-Counts = {v}" for k, v in counts]
 
 def counter(pattern_search, args: PythonArgs):
     pattern_search_dict = Counter(pattern_search)
