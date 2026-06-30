@@ -13,10 +13,17 @@ from rich.progress import (
 import subprocess, time, gc, datetime, shlex, resource
 from typing import Tuple
 from multiprocessing import Process, Event, Queue
+from pathlib import Path
 
 ### Required Pip install Rich
 
 console = Console()
+
+HOME = Path.home()
+GIT = f'{HOME}/git'
+C_RUST_PATH = f'{GIT}/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex'
+PURE_RUST = f'{GIT}/rustex/target/release/rustex'
+PERL_PATH = f'{GIT}/rygex/perl_counter.pl'
 
 # ─── PATTERNS ──────────────────────────────────────────────────────────────────
 PATTERNS = [
@@ -38,11 +45,12 @@ REGEX_TOOLS_TOTALS_1 = [
     #     r"""for(k in c)printf "%8d %s\n",c[k],k}' ufw.test1"""
     # ),
     # ("sed (1grp) sort | uniq -c",             r"sed -nE 's/.*{pat}.*/\1/p' ufw.test1 | sort | uniq -c"),
+    ("C# + Rust MultiCPU",                    f"{C_RUST_PATH} -r {{pat}} -t --file ufw.test1"),
     ("ripgrep (-Nocr $1 total only)",         "rg --no-unicode -No {pat} ufw.test1 -cr '$1'"),
     ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
     ("rygex (-rp -t total only)",             "rygex -rp {pat} '1' -t -f ufw.test1"),
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1' -tm -f ufw.test1"),
-    ("perl (-nE totals 1grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ufw.test1""")
+    ("perl (-nE totals 1grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total }' ufw.test1"""),
 ]
 REGEX_TOOLS_TOTALS_2 = [
     # (
@@ -56,11 +64,14 @@ REGEX_TOOLS_TOTALS_2 = [
     ("grep (-coP total only)",                "grep -coP {pat} ufw.test1"),
     ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2' -t -f ufw.test1"),
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2' -tm -f ufw.test1"),
-    ("perl (-nE totals 2grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total / 2 }' ufw.test1""")
+    ("perl (-nE totals 2grp)",                r"""perl -nE '$total += () = /{pat}/g; END { say $total / 2 }' ufw.test1"""),
+    ("C# + Rust MultiCPU",                    f"{C_RUST_PATH} -r {{pat}} -t --file ufw.test1")
 ]
 
 REGEX_TOOLS_COUNTS_1 = [
     ("ripgrep (-Nocr $1 | sort | uniq -c)",   "rg --no-unicode -No {pat} ufw.test1 -r '$1' | sort | uniq -c"),
+    ("perl MultiCPU",                         f"{PERL_PATH} ufw.test1 '{{pat}}' 1 16"),
+    ("Pure Rust Parallel",                    f"{PURE_RUST} -r {{pat}} -mc 1 ufw.test1"),
     ("rygex (-p -Sc)",                        "rygex -p {pat} '1' -Sc -f ufw.test1"),
     ("rygex (-g -Sc)",                        "rygex -g {pat} '1' -Sc -f ufw.test1"),
     ("rygex (-g -Scm)",                       "rygex -g {pat} '1' -Scm -f ufw.test1"),
@@ -68,10 +79,13 @@ REGEX_TOOLS_COUNTS_1 = [
     ("rygex (-p -Scm)",                       "rygex -p {pat} '1' -Sc -m -f ufw.test1"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1' -Sc -m -f ufw.test1"),
     ("perl (-nE 1 grp)",                      r"""perl -nE '++$c{$1} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
+    ("C# + Rust MultiCPU",                    f"{C_RUST_PATH} -r {{pat}} -c '1' --file ufw.test1")
 ]
 
 REGEX_TOOLS_COUNTS_2 = [
     ("ripgrep (-Nocr $1 $2 | sort | uniq -c)","rg --no-unicode -No {pat} ufw.test1 -r '$1 $2' | sort | uniq -c"),
+    ("perl MultiCPU",                         f"{PERL_PATH} ufw.test1 '{{pat}}' 1,2 16"),
+    ("Pure Rust Parallel",                    f"{PURE_RUST} -r {{pat}} -mc 1,2 ufw.test1"),
     ("rygex (-p -Sc)",                        "rygex -p {pat} '1 2' -Sc -f ufw.test1"),
     ("rygex (-g -Sc)",                        "rygex -g {pat} '1 2' -Sc -f ufw.test1"),
     ("rygex (-g -Scm)",                       "rygex -g {pat} '1 2' -Scm -f ufw.test1"),
@@ -79,6 +93,7 @@ REGEX_TOOLS_COUNTS_2 = [
     ("rygex (-p -Scm)",                       "rygex -p {pat} '1 2' -Scm -f ufw.test1"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1 2' -Scm -f ufw.test1"),
     ("perl (-nE 2 grp)",                      r"""perl -nE '++$c{"$1 $2"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1"""),
+    ("C# + Rust MultiCPU",                    f"{C_RUST_PATH} -r {{pat}} -c '1 2' --file ufw.test1")
 ]
 
 
@@ -97,13 +112,16 @@ NEW_TOOLS = [
 ]
 
 REGEX_TOOLS_LIMITED = [
+    ("perl MultiCPU",                         fr"""{PERL_PATH} ssh_failures_rand_sample.log '{{pat}}' 1,2,3 16"""),
     ("ripgrep (-Nocr $1 $2 $3 | sort | uniq -c)","rg --no-unicode -No {pat} ssh_failures_rand_sample.log -r '$1 $2 $3' | sort | uniq -c"),
+    ("Pure Rust Parallel",                    f"{PURE_RUST} -r {{pat}} -mc 1,2,3 ssh_failures_rand_sample.log"),
     ("rygex (-g -Sc)",                        "rygex -g {pat} '1 2 3' -Sc -f ssh_failures_rand_sample.log"),
     ("rygex (-g -Scm)",                       "rygex -g {pat} '1 2 3' -Scm -f ssh_failures_rand_sample.log"),
     ("rygex (-rp -Sc)",                       "rygex -rp {pat} '1 2 3' -Sc -f ssh_failures_rand_sample.log"),
     ("rygex (-p -Scm)",                       "rygex -p {pat} '1 2 3' -Scm -f ssh_failures_rand_sample.log"),
     ("rygex (-rp -Scm)",                      "rygex -rp {pat} '1 2 3' -Scm -f ssh_failures_rand_sample.log"),
     ("perl (-nE 3 grp)",                      r"""perl -nE '++$c{"$1 $2 $3"} if /{pat}/; END{ say "$_\t$c{$_}" for sort keys %c }' ssh_failures_rand_sample.log"""),
+    ("C# + Rust MultiCPU",                    f"{C_RUST_PATH} -r {{pat}} -c '1 2 3' --file ssh_failures_rand_sample.log")
 ]
 
 REGEX_TOOLS_LIMITED_2 = [
@@ -118,7 +136,8 @@ REGEX_TOOLS_LIMITED_2 = [
     ("grep (-coP total only)",                "grep -coP {pat} ssh_failures_rand_sample.log"),
     ("rygex (-rp -t total only)",             "rygex -rp {pat} '1 2 3' -t -f ssh_failures_rand_sample.log"),
     ("rygex (-rp -tm total only)",            "rygex -rp {pat} '1 2 3' -tm -f ssh_failures_rand_sample.log"),
-    ("perl (-nE totals)",                     r"""perl -nE '$total += () = /{pat}/g; END { say $total / 3 }' ssh_failures_rand_sample.log""")
+    ("perl (-nE totals)",                     r"""perl -nE '$total += () = /{pat}/g; END { say $total / 3 }' ssh_failures_rand_sample.log"""),
+    ("C# + Rust MultiCPU",                    f"{C_RUST_PATH} -r {{pat}} -t --file ssh_failures_rand_sample.log")
 ]
 
 def run_free_m(stop_event, out_q: Queue):
