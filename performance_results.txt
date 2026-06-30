@@ -1,219 +1,514 @@
-──────────────────────────────────────────────────── Pattern '1 ip 1grp' '(124\\.\\d+\\.124\\.\\d+)' @ 2025-05-18 22:58:40 ────────────────────────────────────────────────────
+(.venv) .venv[jonny@jp-arch rygex]$ ./performance_script.py 
+['rg', '--version']
+ripgrep 14.1.1
+
+features:+pcre2
+simd(compile):+SSE2,-SSSE3,-AVX2
+simd(runtime):+SSE2,+SSSE3,+AVX2
+
+PCRE2 10.43 is available (JIT is available)
+
+['python3', '--version']
+Python 3.13.3
+
+['rygex', '--version']
+rygex 0.1.8
+
+['grep', '--version']
+grep (GNU grep) 3.12-modified
+Copyright (C) 2025 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Mike Haertel and others; see
+<https://git.savannah.gnu.org/cgit/grep.git/tree/AUTHORS>.
+
+grep -P uses PCRE2 10.45 2025-02-05
+
+['perl', '--version']
+
+This is perl 5, version 40, subversion 2 (v5.40.2) built for x86_64-linux-thread-multi
+
+Copyright 1987-2025, Larry Wall
+
+Perl may be copied only under the terms of either the Artistic License or the
+GNU General Public License, which may be found in the Perl 5 source kit.
+
+Complete documentation for Perl, including FAQ lists, should be found on
+this system using "man perl" or "perldoc perl".  If you have access to the
+Internet, point your browser at https://www.perl.org/, the Perl Home Page.
+
+
+─────────────────────────────────── Pattern 'ssh 3grp 10GB file' '(\\w+\\s+\\d+\\s+[\\d:]+).*?Invalid.*?from\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s+(.*)' @ 2025-06-14 00:21:14 ────────────────────────────────────
+/home/jonny/git/rygex/perl_counter.pl ssh_failures_rand_sample.log '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' 1,2,3 16
+rg --no-unicode -No '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' ssh_failures_rand_sample.log -r '$1 $2 $3' | sort | uniq -c
+/home/jonny/git/rustex/target/release/rustex -r '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' -mc 1,2,3 ssh_failures_rand_sample.log
+rygex -g '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -Sc -f ssh_failures_rand_sample.log
+rygex -g '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -Scm -f ssh_failures_rand_sample.log
+rygex -rp '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -Sc -f ssh_failures_rand_sample.log
+rygex -p '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -Scm -f ssh_failures_rand_sample.log
+rygex -rp '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -Scm -f ssh_failures_rand_sample.log
+perl -nE '++$c{"$1 $2 $3"} if /(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)/; END{ say "$_\t$c{$_}" for sort keys %c }' ssh_failures_rand_sample.log
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' -c '1 2 3' --file ssh_failures_rand_sample.log
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Tool                                      ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                                                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Pure Rust Parallel                        │    5.027 │   59.463 │   8.467 │               159.99 │  2795298        Jan  1 00:00:00 192.0.2.42      ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2733862        Jan  1 00:00:00 45.33.32.156    ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2580274        Jan  1 00:00:00 54.85.132.14    ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2549549        Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure                │
+│                                           │          │          │         │                      │  2518835        Jan  1 00:00:00 192.168.1.1     ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2508604        Jan  1 00:00:00 172.16.0.12     ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2477871        Jan  1 00:00:00 203.0.113.7     ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2457399        Jan  1 00:00:00 10.0.0.5        ssh2: Authentication failure        │
+│                                           │          │          │         │                      │  2426701        Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure                │
+│                                           │          │          │         │                      │  2344771        Jan  1 00:00:00 198.51.100.23   ssh2: Authentication failure        │
+│                                           │          │          │         │                      │                                                                                     │
+│ C# + Rust MultiCPU                        │    7.924 │   63.649 │   4.021 │                89.55 │ Jan  1 00:00:00 192.0.2.42    ssh2: Authentication failure Line-Counts = 2795298    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156  ssh2: Authentication failure Line-Counts = 2733862    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14  ssh2: Authentication failure Line-Counts = 2580274    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4       ssh2: Authentication failure Line-Counts = 2549549    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1   ssh2: Authentication failure Line-Counts = 2518835    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12   ssh2: Authentication failure Line-Counts = 2508604    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7   ssh2: Authentication failure Line-Counts = 2477871    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 10.0.0.5      ssh2: Authentication failure Line-Counts = 2457399    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8       ssh2: Authentication failure Line-Counts = 2426701    │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure Line-Counts = 2344771    │
+│                                           │          │          │         │                      │                                                                                     │
+│ rygex (-rp -Scm)                          │   11.547 │   72.037 │  11.617 │              5727.81 │ Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure       Line-Counts = 2795298 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure     Line-Counts = 2733862 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure     Line-Counts = 2580274 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure          Line-Counts = 2549549 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure      Line-Counts = 2518835 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure      Line-Counts = 2508604 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure      Line-Counts = 2477871 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure         Line-Counts = 2457399 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure          Line-Counts = 2426701 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure    Line-Counts = 2344771 │
+│                                           │          │          │         │                      │                                                                                     │
+│ rygex (-g -Scm)                           │   16.006 │  107.255 │  54.476 │               460.25 │ Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure       Line-Counts = 2795298 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure     Line-Counts = 2733862 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure     Line-Counts = 2580274 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure          Line-Counts = 2549549 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure      Line-Counts = 2518835 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure      Line-Counts = 2508604 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure      Line-Counts = 2477871 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure         Line-Counts = 2457399 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure          Line-Counts = 2426701 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure    Line-Counts = 2344771 │
+│                                           │          │          │         │                      │                                                                                     │
+│ perl MultiCPU                             │   39.092 │  559.292 │  34.954 │               177.84 │ Jan  1 00:00:00,10.0.0.5,ssh2: Authentication failure   2457399                     │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,172.16.0.12,ssh2: Authentication failure        2508604             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,192.0.2.42,ssh2: Authentication failure 2795298                     │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,192.168.1.1,ssh2: Authentication failure        2518835             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,198.51.100.23,ssh2: Authentication failure      2344771             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,203.0.113.7,ssh2: Authentication failure        2477871             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,45.33.32.156,ssh2: Authentication failure       2733862             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,54.85.132.14,ssh2: Authentication failure       2580274             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,8.8.4.4,ssh2: Authentication failure    2549549                     │
+│                                           │          │          │         │                      │ Jan  1 00:00:00,8.8.8.8,ssh2: Authentication failure    2426701                     │
+│                                           │          │          │         │                      │                                                                                     │
+│ perl (-nE 3 grp)                          │   42.811 │   38.524 │   4.498 │               130.91 │ Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure   2457399                     │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure        2508604             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure 2795298                     │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure        2518835             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure      2344771             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure        2477871             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure       2733862             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure       2580274             │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure    2549549                     │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure    2426701                     │
+│                                           │          │          │         │                      │                                                                                     │
+│ rygex (-rp -Sc)                           │   53.351 │   43.780 │   9.158 │              4922.47 │ Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure       Line-Counts = 2795298 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure     Line-Counts = 2733862 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure     Line-Counts = 2580274 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure          Line-Counts = 2549549 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure      Line-Counts = 2518835 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure      Line-Counts = 2508604 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure      Line-Counts = 2477871 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure         Line-Counts = 2457399 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure          Line-Counts = 2426701 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure    Line-Counts = 2344771 │
+│                                           │          │          │         │                      │                                                                                     │
+│ rygex (-g -Sc)                            │   55.290 │   51.685 │   3.258 │               102.07 │ Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure       Line-Counts = 2795298 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure     Line-Counts = 2733862 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure     Line-Counts = 2580274 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure          Line-Counts = 2549549 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure      Line-Counts = 2518835 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure      Line-Counts = 2508604 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure      Line-Counts = 2477871 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure         Line-Counts = 2457399 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure          Line-Counts = 2426701 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure    Line-Counts = 2344771 │
+│                                           │          │          │         │                      │                                                                                     │
+│ ripgrep (-Nocr $1 $2 $3 | sort | uniq -c) │   83.510 │   77.297 │   9.198 │              2417.69 │ 2457399 Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure                       │
+│                                           │          │          │         │                      │ 2508604 Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure                    │
+│                                           │          │          │         │                      │ 2795298 Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure                     │
+│                                           │          │          │         │                      │ 2518835 Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure                    │
+│                                           │          │          │         │                      │ 2344771 Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure                  │
+│                                           │          │          │         │                      │ 2477871 Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure                    │
+│                                           │          │          │         │                      │ 2733862 Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure                   │
+│                                           │          │          │         │                      │ 2580274 Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure                   │
+│                                           │          │          │         │                      │ 2549549 Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure                        │
+│                                           │          │          │         │                      │ 2426701 Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure                        │
+│                                           │          │          │         │                      │                                                                                     │
+│ rygex (-p -Scm)                           │  281.156 │ 4256.660 │  44.428 │              4386.29 │ Jan  1 00:00:00 192.0.2.42 ssh2: Authentication failure       Line-Counts = 2795298 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 45.33.32.156 ssh2: Authentication failure     Line-Counts = 2733862 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 54.85.132.14 ssh2: Authentication failure     Line-Counts = 2580274 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.4.4 ssh2: Authentication failure          Line-Counts = 2549549 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 192.168.1.1 ssh2: Authentication failure      Line-Counts = 2518835 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 172.16.0.12 ssh2: Authentication failure      Line-Counts = 2508604 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 203.0.113.7 ssh2: Authentication failure      Line-Counts = 2477871 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 10.0.0.5 ssh2: Authentication failure         Line-Counts = 2457399 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 8.8.8.8 ssh2: Authentication failure          Line-Counts = 2426701 │
+│                                           │          │          │         │                      │ Jan  1 00:00:00 198.51.100.23 ssh2: Authentication failure    Line-Counts = 2344771 │
+│                                           │          │          │         │                      │                                                                                     │
+└───────────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴─────────────────────────────────────────────────────────────────────────────────────┘
+rg --no-unicode -No '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' ssh_failures_rand_sample.log -cr '$1 $2 $3'
+grep -coP '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' ssh_failures_rand_sample.log
+rygex -rp '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -t -f ssh_failures_rand_sample.log
+rygex -rp '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' '1 2 3' -tm -f ssh_failures_rand_sample.log
+perl -nE '$total += () = /(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)/g; END { say $total / 3 }' ssh_failures_rand_sample.log
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '(\w+\s+\d+\s+[\d:]+).*?Invalid.*?from\s+(\d+\.\d+\.\d+\.\d+)\s+(.*)' -t --file ssh_failures_rand_sample.log
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Tool                                ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output           ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ rygex (-rp -tm total only)          │    2.774 │   16.214 │   7.137 │               107.14 │ 25393164         │
+│                                     │          │          │         │                      │                  │
+│ C# + Rust MultiCPU                  │    8.296 │   58.839 │   4.702 │               117.45 │ Totals: 25393164 │
+│                                     │          │          │         │                      │                  │
+│ rygex (-rp -t total only)           │   11.015 │    8.016 │   2.786 │                91.22 │ 25393164         │
+│                                     │          │          │         │                      │                  │
+│ ripgrep (-Nocr $1 $2 $3 total only) │   13.915 │   11.929 │   1.863 │               172.05 │ 25393164         │
+│                                     │          │          │         │                      │                  │
+│ perl (-nE totals)                   │   36.858 │   33.795 │   3.171 │                56.26 │ 25393164         │
+│                                     │          │          │         │                      │                  │
+│ grep (-coP total only)              │   99.637 │   97.958 │   2.448 │                66.30 │ 25393164         │
+│                                     │          │          │         │                      │                  │
+└─────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴──────────────────┘
+──────────────────────────────────────────────────────────────────── Pattern '1 ip 1grp' '(124\\.\\d+\\.124\\.\\d+)' @ 2025-06-14 00:34:03 ────────────────────────────────────────────────────────────────────
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '(124\.\d+\.124\.\d+)' -t --file ufw.test1
 rg --no-unicode -No '(124\.\d+\.124\.\d+)' ufw.test1 -cr '$1'
-rg --no-unicode -No '(124\.\d+\.124\.\d+)' ufw.test1 -r '$1' | sort | uniq -c
 grep -coP '(124\.\d+\.124\.\d+)' ufw.test1
 rygex -rp '(124\.\d+\.124\.\d+)' '1' -t -f ufw.test1
 rygex -rp '(124\.\d+\.124\.\d+)' '1' -tm -f ufw.test1
+perl -nE '$total += () = /(124\.\d+\.124\.\d+)/g; END { say $total }' ufw.test1
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Tool                          ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ rygex (-rp -tm total only)    │    0.404 │    2.941 │   0.586 │                12.07 │ 1         │
+│                               │          │          │         │                      │           │
+│ rygex (-rp -t total only)     │    0.744 │    0.424 │   0.291 │                18.98 │ 1         │
+│                               │          │          │         │                      │           │
+│ ripgrep (-Nocr $1 total only) │    0.766 │    0.297 │   0.307 │                14.49 │ 1         │
+│                               │          │          │         │                      │           │
+│ grep (-coP total only)        │    1.079 │    0.788 │   0.307 │                 5.76 │ 1         │
+│                               │          │          │         │                      │           │
+│ perl (-nE totals 1grp)        │    2.372 │    1.935 │   0.462 │                20.43 │ 1         │
+│                               │          │          │         │                      │           │
+│ C# + Rust MultiCPU            │    2.788 │    0.772 │   4.545 │                80.00 │ Totals: 1 │
+│                               │          │          │         │                      │           │
+└───────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴───────────┘
+rg --no-unicode -No '(124\.\d+\.124\.\d+)' ufw.test1 -r '$1' | sort | uniq -c
+/home/jonny/git/rygex/perl_counter.pl ufw.test1 '(124\.\d+\.124\.\d+)' 1 16
+/home/jonny/git/rustex/target/release/rustex -r '(124\.\d+\.124\.\d+)' -mc 1 ufw.test1
 rygex -p '(124\.\d+\.124\.\d+)' '1' -Sc -f ufw.test1
+rygex -g '(124\.\d+\.124\.\d+)' '1' -Sc -f ufw.test1
+rygex -g '(124\.\d+\.124\.\d+)' '1' -Scm -f ufw.test1
 rygex -rp '(124\.\d+\.124\.\d+)' '1' -Sc -f ufw.test1
 rygex -p '(124\.\d+\.124\.\d+)' '1' -Sc -m -f ufw.test1
 rygex -rp '(124\.\d+\.124\.\d+)' '1' -Sc -m -f ufw.test1
 perl -nE '++$c{$1} if /(124\.\d+\.124\.\d+)/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1
-perl -nE '$total += () = /(124\.\d+\.124\.\d+)/g; END { say $total }' ufw.test1
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '(124\.\d+\.124\.\d+)' -c '1' --file ufw.test1
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Tool                                ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                           ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ rygex (-rp -Scm)                    │    0.245 │    1.451 │   0.452 │                 0.73 │ 124.14.124.14    Line-Counts = 1 │
+│ Pure Rust Parallel                  │    0.228 │    1.270 │   0.454 │                 5.94 │        1        124.14.124.14    │
 │                                     │          │          │         │                      │                                  │
-│ rygex (-rp -tm total only)          │    0.368 │    3.273 │   0.478 │                11.11 │ 1                                │
+│ rygex (-rp -Scm)                    │    0.279 │    1.343 │   0.514 │                10.45 │ 124.14.124.14    Line-Counts = 1 │
 │                                     │          │          │         │                      │                                  │
-│ ripgrep (-Nocr $1 | sort | uniq -c) │    0.448 │    0.255 │   0.207 │                 6.33 │       1 124.14.124.14            │
+│ ripgrep (-Nocr $1 | sort | uniq -c) │    0.520 │    0.267 │   0.265 │                17.07 │       1 124.14.124.14            │
 │                                     │          │          │         │                      │                                  │
-│ ripgrep (-Nocr $1 total only)       │    0.449 │    0.271 │   0.188 │                 9.23 │ 1                                │
+│ C# + Rust MultiCPU                  │    0.525 │    1.847 │   0.266 │                12.49 │ 124.14.124.14 Line-Counts = 1    │
 │                                     │          │          │         │                      │                                  │
-│ rygex (-rp -t total only)           │    0.603 │    0.410 │   0.206 │                12.35 │ 1                                │
+│ rygex (-g -Sc)                      │    0.685 │    0.456 │   0.242 │                10.03 │ 124.14.124.14    Line-Counts = 1 │
 │                                     │          │          │         │                      │                                  │
-│ grep (-coP total only)              │    0.957 │    0.743 │   0.230 │                 4.05 │ 1                                │
+│ rygex (-g -Scm)                     │    0.842 │    4.367 │   6.086 │               196.47 │ 124.14.124.14    Line-Counts = 1 │
 │                                     │          │          │         │                      │                                  │
-│ rygex (-p -Sc)                      │    1.580 │    1.413 │   0.190 │                 8.82 │ 124.14.124.14    Line-Counts = 1 │
+│ rygex (-p -Sc)                      │    1.694 │    1.427 │   0.294 │                21.62 │ 124.14.124.14    Line-Counts = 1 │
 │                                     │          │          │         │                      │                                  │
-│ rygex (-rp -Sc)                     │    1.770 │    1.570 │   0.228 │               183.26 │ 124.14.124.14    Line-Counts = 1 │
+│ rygex (-rp -Sc)                     │    1.974 │    1.639 │   0.362 │               151.21 │ 124.14.124.14    Line-Counts = 1 │
 │                                     │          │          │         │                      │                                  │
-│ perl (-nE 1 grp)                    │    2.033 │    1.663 │   0.400 │                34.21 │ 124.14.124.14   1                │
+│ rygex (-p -Scm)                     │    2.167 │   18.566 │  11.348 │               506.98 │ 1    Line-Counts = 1             │
 │                                     │          │          │         │                      │                                  │
-│ rygex (-p -Scm)                     │    2.070 │   19.710 │  11.005 │               559.19 │ 124.14.124.14    Line-Counts = 1 │
+│ perl (-nE 1 grp)                    │    2.192 │    1.756 │   0.471 │                93.24 │ 124.14.124.14   1                │
 │                                     │          │          │         │                      │                                  │
-│ perl (-nE totals 1grp)              │    2.237 │    1.880 │   0.389 │                58.11 │ 1                                │
+│ perl MultiCPU                       │    3.905 │   49.676 │   9.533 │                36.72 │ 124.14.124.14   1                │
 │                                     │          │          │         │                      │                                  │
 └─────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴──────────────────────────────────┘
-──────────────────────────────────────────────── Pattern 'rygex -s -e' "-s 'DST=' 1 -e ' LEN' 1 -O -Scm" @ 2025-05-18 22:58:53 ────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────── Pattern 'rygex -s -e' "-s 'DST=' 1 -e ' LEN' 1 -O -Scm" @ 2025-06-14 00:34:28 ────────────────────────────────────────────────────────────────
 rygex -s 'DST=' 1 -e ' LEN' 1 -O -Scm -f ufw.test1
 rygex -s 'DST=' 1 -e ' LEN' 1 -O -Sc -f ufw.test1
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Tool                               ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                  ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ rygen --start --end --omitall -Scm │    1.968 │    5.994 │   1.484 │              1544.05 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex --start --end --omitall -Scm │    2.347 │    5.890 │   1.963 │              1448.00 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                    │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                    │          │          │         │                      │                                         │
-│ rygen --start --end --omitall -Sc  │    3.894 │    3.267 │   0.687 │              1258.39 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex --start --end --omitall -Sc  │    4.020 │    3.246 │   0.830 │              1267.74 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                    │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                    │          │          │         │                      │                                         │
 └────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴─────────────────────────────────────────┘
-────────────────────────────────────────────────────── Pattern 'dst 1grp' '\\sDST=([\\d\\.]+)\\s' @ 2025-05-18 22:58:59 ───────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────── Pattern 'dst 1grp' '\\sDST=([\\d\\.]+)\\s' @ 2025-06-14 00:34:34 ───────────────────────────────────────────────────────────────────────
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '\sDST=([\d\.]+)\s' -t --file ufw.test1
 rg --no-unicode -No '\sDST=([\d\.]+)\s' ufw.test1 -cr '$1'
-rg --no-unicode -No '\sDST=([\d\.]+)\s' ufw.test1 -r '$1' | sort | uniq -c
 grep -coP '\sDST=([\d\.]+)\s' ufw.test1
 rygex -rp '\sDST=([\d\.]+)\s' '1' -t -f ufw.test1
 rygex -rp '\sDST=([\d\.]+)\s' '1' -tm -f ufw.test1
+perl -nE '$total += () = /\sDST=([\d\.]+)\s/g; END { say $total }' ufw.test1
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Tool                          ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output           ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ rygex (-rp -tm total only)    │    0.393 │    2.857 │   0.612 │                 8.81 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ C# + Rust MultiCPU            │    1.117 │   11.332 │   0.271 │                18.55 │ Totals: 11129400 │
+│                               │          │          │         │                      │                  │
+│ rygex (-rp -t total only)     │    1.182 │    0.945 │   0.257 │                13.63 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ ripgrep (-Nocr $1 total only) │    3.486 │    3.248 │   0.261 │                24.23 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ grep (-coP total only)        │    5.776 │    5.453 │   0.376 │                43.86 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ perl (-nE totals 1grp)        │    6.801 │    6.304 │   0.585 │                39.64 │ 11129400         │
+│                               │          │          │         │                      │                  │
+└───────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴──────────────────┘
+rg --no-unicode -No '\sDST=([\d\.]+)\s' ufw.test1 -r '$1' | sort | uniq -c
+/home/jonny/git/rygex/perl_counter.pl ufw.test1 '\sDST=([\d\.]+)\s' 1 16
+/home/jonny/git/rustex/target/release/rustex -r '\sDST=([\d\.]+)\s' -mc 1 ufw.test1
 rygex -p '\sDST=([\d\.]+)\s' '1' -Sc -f ufw.test1
+rygex -g '\sDST=([\d\.]+)\s' '1' -Sc -f ufw.test1
+rygex -g '\sDST=([\d\.]+)\s' '1' -Scm -f ufw.test1
 rygex -rp '\sDST=([\d\.]+)\s' '1' -Sc -f ufw.test1
 rygex -p '\sDST=([\d\.]+)\s' '1' -Sc -m -f ufw.test1
 rygex -rp '\sDST=([\d\.]+)\s' '1' -Sc -m -f ufw.test1
 perl -nE '++$c{$1} if /\sDST=([\d\.]+)\s/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1
-perl -nE '$total += () = /\sDST=([\d\.]+)\s/g; END { say $total }' ufw.test1
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '\sDST=([\d\.]+)\s' -c '1' --file ufw.test1
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Tool                                ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                  ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ rygex (-rp -tm total only)          │    0.352 │    2.985 │   0.448 │                 7.88 │ 11129400                                │
+│ C# + Rust MultiCPU                  │    0.819 │    6.574 │   0.276 │                 9.60 │ 123.12.123.12 Line-Counts = 11129399    │
+│                                     │          │          │         │                      │ 124.14.124.14 Line-Counts = 1           │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-rp -t total only)           │    1.090 │    0.886 │   0.227 │                14.76 │ 11129400                                │
+│ Pure Rust Parallel                  │    0.931 │   12.399 │   0.289 │                11.03 │ 11129399        123.12.123.12           │
+│                                     │          │          │         │                      │        1        124.14.124.14           │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-rp -Scm)                    │    2.098 │    8.015 │   1.175 │              1246.46 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-g -Scm)                     │    1.600 │   16.974 │   5.801 │               129.18 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
-│ ripgrep (-Nocr $1 total only)       │    3.265 │    3.111 │   0.197 │                30.86 │ 11129400                                │
-│                                     │          │          │         │                      │                                         │
-│ rygex (-p -Scm)                     │    3.624 │   41.906 │   6.384 │              1341.25 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-rp -Scm)                    │    2.524 │   13.177 │   1.103 │              1262.07 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
-│ grep (-coP total only)              │    5.534 │    5.312 │   0.284 │                71.96 │ 11129400                                │
+│ rygex (-p -Scm)                     │    3.698 │   42.325 │   6.460 │               588.98 │ 1    Line-Counts = 11129400             │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-rp -Sc)                     │    5.803 │    5.166 │   0.721 │              1308.05 │ 123.12.123.12    Line-Counts = 11129399 │
-│                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
-│                                     │          │          │         │                      │                                         │
-│ perl (-nE 1 grp)                    │    6.132 │    5.592 │   0.612 │                 8.73 │ 123.12.123.12   11129399                │
+│ perl MultiCPU                       │    4.884 │   64.429 │   9.764 │                57.66 │ 123.12.123.12   11129399                │
 │                                     │          │          │         │                      │ 124.14.124.14   1                       │
 │                                     │          │          │         │                      │                                         │
-│ perl (-nE totals 1grp)              │    6.782 │    6.228 │   0.635 │                28.17 │ 11129400                                │
+│ perl (-nE 1 grp)                    │    6.249 │    5.751 │   0.588 │                87.96 │ 123.12.123.12   11129399                │
+│                                     │          │          │         │                      │ 124.14.124.14   1                       │
 │                                     │          │          │         │                      │                                         │
-│ ripgrep (-Nocr $1 | sort | uniq -c) │    7.775 │    7.942 │   0.627 │               103.48 │ 11129399 123.12.123.12                  │
+│ rygex (-rp -Sc)                     │    6.260 │    5.488 │   0.830 │              1224.14 │ 123.12.123.12    Line-Counts = 11129399 │
+│                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
+│                                     │          │          │         │                      │                                         │
+│ rygex (-g -Sc)                      │    7.614 │    7.382 │   0.316 │                66.98 │ 123.12.123.12    Line-Counts = 11129399 │
+│                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
+│                                     │          │          │         │                      │                                         │
+│ ripgrep (-Nocr $1 | sort | uniq -c) │    8.104 │    8.162 │   0.721 │               181.55 │ 11129399 123.12.123.12                  │
 │                                     │          │          │         │                      │       1 124.14.124.14                   │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-p -Sc)                      │   18.605 │   18.134 │   0.691 │               742.27 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-p -Sc)                      │   18.384 │   17.787 │   0.789 │               807.16 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
 └─────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴─────────────────────────────────────────┘
-─────────────────────────────────────────────── Pattern 'src spt 2grp' 'SRC=([\\d\\.]+).*SPT=([\\d\\.]+)' @ 2025-05-18 23:00:01 ───────────────────────────────────────────────
+─────────────────────────────────────────────────────────────── Pattern 'src spt 2grp' 'SRC=([\\d\\.]+).*SPT=([\\d\\.]+)' @ 2025-06-14 00:35:55 ───────────────────────────────────────────────────────────────
 rg --no-unicode -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' ufw.test1 -cr '$1 $2'
-rg --no-unicode -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' ufw.test1 -r '$1 $2' | sort | uniq -c
 grep -coP 'SRC=([\d\.]+).*SPT=([\d\.]+)' ufw.test1
 rygex -rp 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -t -f ufw.test1
 rygex -rp 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -tm -f ufw.test1
+perl -nE '$total += () = /SRC=([\d\.]+).*SPT=([\d\.]+)/g; END { say $total / 2 }' ufw.test1
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r 'SRC=([\d\.]+).*SPT=([\d\.]+)' -t --file ufw.test1
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Tool                             ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output           ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ rygex (-rp -tm total only)       │    0.468 │    4.220 │   0.493 │                12.29 │ 11129400         │
+│                                  │          │          │         │                      │                  │
+│ C# + Rust MultiCPU               │    1.838 │   22.782 │   0.282 │                10.76 │ Totals: 11129400 │
+│                                  │          │          │         │                      │                  │
+│ grep (-coP total only)           │    2.215 │    1.918 │   0.325 │                 7.25 │ 11129400         │
+│                                  │          │          │         │                      │                  │
+│ rygex (-rp -t total only)        │    3.001 │    2.752 │   0.290 │                23.73 │ 11129400         │
+│                                  │          │          │         │                      │                  │
+│ ripgrep (-Nocr $1 $2 total only) │    8.384 │    8.147 │   0.352 │                65.14 │ 11129400         │
+│                                  │          │          │         │                      │                  │
+│ perl (-nE totals 2grp)           │    9.169 │    8.638 │   0.641 │                21.20 │ 11129400         │
+│                                  │          │          │         │                      │                  │
+└──────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴──────────────────┘
+rg --no-unicode -No 'SRC=([\d\.]+).*SPT=([\d\.]+)' ufw.test1 -r '$1 $2' | sort | uniq -c
+/home/jonny/git/rygex/perl_counter.pl ufw.test1 'SRC=([\d\.]+).*SPT=([\d\.]+)' 1,2 16
+/home/jonny/git/rustex/target/release/rustex -r 'SRC=([\d\.]+).*SPT=([\d\.]+)' -mc 1,2 ufw.test1
 rygex -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Sc -f ufw.test1
+rygex -g 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Sc -f ufw.test1
+rygex -g 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Scm -f ufw.test1
 rygex -rp 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Sc -f ufw.test1
 rygex -p 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Scm -f ufw.test1
 rygex -rp 'SRC=([\d\.]+).*SPT=([\d\.]+)' '1 2' -Scm -f ufw.test1
 perl -nE '++$c{"$1 $2"} if /SRC=([\d\.]+).*SPT=([\d\.]+)/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1
-perl -nE '$total += () = /SRC=([\d\.]+).*SPT=([\d\.]+)/g; END { say $total }' ufw.test1
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r 'SRC=([\d\.]+).*SPT=([\d\.]+)' -c '1 2' --file ufw.test1
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Tool                                   ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                        ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ rygex (-rp -tm total only)             │    0.436 │    4.361 │   0.421 │                 9.35 │ 11129400                                      │
+│ Pure Rust Parallel                     │    1.728 │   24.166 │   0.339 │                18.39 │ 10511100        79.124.59.134   44991         │
+│                                        │          │          │         │                      │   556470        157.240.225.34  443           │
+│                                        │          │          │         │                      │    61830        62.233.50.245   51914         │
 │                                        │          │          │         │                      │                                               │
-│ grep (-coP total only)                 │    2.027 │    1.832 │   0.215 │                11.80 │ 11129400                                      │
+│ C# + Rust MultiCPU                     │    2.037 │   24.802 │   0.286 │                23.68 │ 79.124.59.134  44991 Line-Counts = 10511100   │
+│                                        │          │          │         │                      │ 157.240.225.34 443   Line-Counts = 556470     │
+│                                        │          │          │         │                      │ 62.233.50.245  51914 Line-Counts = 61830      │
 │                                        │          │          │         │                      │                                               │
-│ rygex (-rp -t total only)              │    2.886 │    2.696 │   0.236 │                 4.04 │ 11129400                                      │
-│                                        │          │          │         │                      │                                               │
-│ rygex (-p -Scm)                        │    3.222 │   23.323 │   7.132 │              1519.80 │ 79.124.59.134 44991    Line-Counts = 10511100 │
+│ rygex (-g -Scm)                        │    3.056 │   39.308 │   6.087 │               151.08 │ 79.124.59.134 44991    Line-Counts = 10511100 │
 │                                        │          │          │         │                      │ 157.240.225.34 443     Line-Counts = 556470   │
 │                                        │          │          │         │                      │ 62.233.50.245 51914    Line-Counts = 61830    │
 │                                        │          │          │         │                      │                                               │
-│ rygex (-rp -Scm)                       │    3.315 │   26.319 │   1.041 │              1386.93 │ 79.124.59.134 44991    Line-Counts = 10511100 │
+│ rygex (-rp -Scm)                       │    3.489 │   26.672 │   1.178 │              1127.84 │ 79.124.59.134 44991    Line-Counts = 10511100 │
 │                                        │          │          │         │                      │ 157.240.225.34 443     Line-Counts = 556470   │
 │                                        │          │          │         │                      │ 62.233.50.245 51914    Line-Counts = 61830    │
 │                                        │          │          │         │                      │                                               │
-│ ripgrep (-Nocr $1 $2 total only)       │    8.160 │    7.992 │   0.269 │                18.25 │ 11129400                                      │
-│                                        │          │          │         │                      │                                               │
-│ perl (-nE totals 2grp)                 │    9.245 │    8.601 │   0.734 │                81.90 │ 22258800                                      │
-│                                        │          │          │         │                      │                                               │
-│ rygex (-p -Sc)                         │    9.319 │    8.805 │   0.614 │               766.41 │ 79.124.59.134 44991    Line-Counts = 10511100 │
+│ rygex (-p -Scm)                        │    4.037 │   32.043 │   9.319 │              1488.72 │ 79.124.59.134 44991    Line-Counts = 10511100 │
 │                                        │          │          │         │                      │ 157.240.225.34 443     Line-Counts = 556470   │
 │                                        │          │          │         │                      │ 62.233.50.245 51914    Line-Counts = 61830    │
 │                                        │          │          │         │                      │                                               │
-│ perl (-nE 2 grp)                       │   10.108 │    9.507 │   0.720 │               113.41 │ 157.240.225.34 443      556470                │
+│ perl MultiCPU                          │    5.857 │   77.561 │   9.824 │                72.18 │ 157.240.225.34,443      556470                │
+│                                        │          │          │         │                      │ 62.233.50.245,51914     61830                 │
+│                                        │          │          │         │                      │ 79.124.59.134,44991     10511100              │
+│                                        │          │          │         │                      │                                               │
+│ rygex (-p -Sc)                         │    9.666 │    9.095 │   0.696 │               792.05 │ 79.124.59.134 44991    Line-Counts = 10511100 │
+│                                        │          │          │         │                      │ 157.240.225.34 443     Line-Counts = 556470   │
+│                                        │          │          │         │                      │ 62.233.50.245 51914    Line-Counts = 61830    │
+│                                        │          │          │         │                      │                                               │
+│ perl (-nE 2 grp)                       │   10.440 │    9.846 │   0.721 │               162.51 │ 157.240.225.34 443      556470                │
 │                                        │          │          │         │                      │ 62.233.50.245 51914     61830                 │
 │                                        │          │          │         │                      │ 79.124.59.134 44991     10511100              │
 │                                        │          │          │         │                      │                                               │
-│ rygex (-rp -Sc)                        │   16.673 │   16.096 │   0.793 │              1315.07 │ 79.124.59.134 44991    Line-Counts = 10511100 │
+│ rygex (-rp -Sc)                        │   17.394 │   16.678 │   0.916 │              1210.58 │ 79.124.59.134 44991    Line-Counts = 10511100 │
 │                                        │          │          │         │                      │ 157.240.225.34 443     Line-Counts = 556470   │
 │                                        │          │          │         │                      │ 62.233.50.245 51914    Line-Counts = 61830    │
 │                                        │          │          │         │                      │                                               │
-│ ripgrep (-Nocr $1 $2 | sort | uniq -c) │   23.069 │   23.665 │   0.880 │               219.52 │  556470 157.240.225.34 443                    │
+│ rygex (-g -Sc)                         │   19.518 │   19.306 │   0.492 │                59.16 │ 79.124.59.134 44991    Line-Counts = 10511100 │
+│                                        │          │          │         │                      │ 157.240.225.34 443     Line-Counts = 556470   │
+│                                        │          │          │         │                      │ 62.233.50.245 51914    Line-Counts = 61830    │
+│                                        │          │          │         │                      │                                               │
+│ ripgrep (-Nocr $1 $2 | sort | uniq -c) │   23.791 │   24.179 │   1.117 │               236.50 │  556470 157.240.225.34 443                    │
 │                                        │          │          │         │                      │   61830 62.233.50.245 51914                   │
 │                                        │          │          │         │                      │ 10511100 79.124.59.134 44991                  │
 │                                        │          │          │         │                      │                                               │
 └────────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴───────────────────────────────────────────────┘
-────────────────────────────────────────────────────────── Pattern 'fixed str' '124.14.124.14' @ 2025-05-18 23:01:31 ──────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────── Pattern 'fixed str' '124.14.124.14' @ 2025-06-14 00:38:02 ──────────────────────────────────────────────────────────────────────────
 rg -F 124.14.124.14 ufw.test1
 grep -F 124.14.124.14 ufw.test1
 rygex -F 124.14.124.14 -f ufw.test1
 rygex -F 124.14.124.14 -m -f ufw.test1
 perl -lne 'print if index($_, "124.14.124.14") >= 0' ufw.test1
-┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Tool             ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                                                                            ┃
-┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ rygex (fixed -m) │    0.297 │    2.261 │   0.275 │                 5.67 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT=                            │
-│                  │          │          │         │                      │ MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00 SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 │
-│                  │          │          │         │                      │ PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 SYN URGP=0          │
-│                  │          │          │         │                      │                                                                                                   │
-│ ripgrep (fixed)  │    0.326 │    0.138 │   0.196 │                 6.75 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT=                            │
-│                  │          │          │         │                      │ MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00 SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 │
-│                  │          │          │         │                      │ PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 SYN URGP=0          │
-│                  │          │          │         │                      │                                                                                                   │
-│ grep (fixed)     │    0.860 │    0.662 │   0.214 │                 0.85 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT=                            │
-│                  │          │          │         │                      │ MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00 SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 │
-│                  │          │          │         │                      │ PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 SYN URGP=0          │
-│                  │          │          │         │                      │                                                                                                   │
-│ rygex (fixed)    │    1.132 │    0.940 │   0.213 │                 7.76 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT=                            │
-│                  │          │          │         │                      │ MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00 SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 │
-│                  │          │          │         │                      │ PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 SYN URGP=0          │
-│                  │          │          │         │                      │                                                                                                   │
-│ perl (fixed)     │    2.162 │    1.795 │   0.395 │                12.53 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT=                            │
-│                  │          │          │         │                      │ MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00 SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 │
-│                  │          │          │         │                      │ PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 SYN URGP=0          │
-│                  │          │          │         │                      │                                                                                                   │
-└──────────────────┴──────────┴──────────┴─────────┴──────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┘
-─────────────────────────────────────────────────── Pattern '1grp' '\\w+\\s+DST=([\\d\\.]+)\\s+\\w+' @ 2025-05-18 23:01:36 ────────────────────────────────────────────────────
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Tool             ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                                                                                                            ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ rygex (fixed -m) │    0.333 │    2.354 │   0.312 │                 8.54 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00              │
+│                  │          │          │         │                      │ SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 │
+│                  │          │          │         │                      │ SYN URGP=0                                                                                                                        │
+│                  │          │          │         │                      │                                                                                                                                   │
+│ ripgrep (fixed)  │    0.401 │    0.150 │   0.259 │                 3.65 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00              │
+│                  │          │          │         │                      │ SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 │
+│                  │          │          │         │                      │ SYN URGP=0                                                                                                                        │
+│                  │          │          │         │                      │                                                                                                                                   │
+│ grep (fixed)     │    0.954 │    0.683 │   0.283 │                10.94 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00              │
+│                  │          │          │         │                      │ SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 │
+│                  │          │          │         │                      │ SYN URGP=0                                                                                                                        │
+│                  │          │          │         │                      │                                                                                                                                   │
+│ rygex (fixed)    │    1.234 │    0.973 │   0.275 │                 4.63 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00              │
+│                  │          │          │         │                      │ SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 │
+│                  │          │          │         │                      │ SYN URGP=0                                                                                                                        │
+│                  │          │          │         │                      │                                                                                                                                   │
+│ perl (fixed)     │    2.346 │    1.882 │   0.498 │                11.15 │ Feb 19 10:39:46 proxy kernel: [852160.927134] [UFW BLOCK] IN=eth0 OUT= MAC=f2:3c:93:1c:e2:44:00:00:0c:9f:f0:01:08:00              │
+│                  │          │          │         │                      │ SRC=79.124.59.134 DST=124.14.124.14 LEN=40 TOS=0x00 PREC=0x00 TTL=245 ID=47185 PROTO=TCP SPT=44991 DPT=57422 WINDOW=1024 RES=0x00 │
+│                  │          │          │         │                      │ SYN URGP=0                                                                                                                        │
+│                  │          │          │         │                      │                                                                                                                                   │
+└──────────────────┴──────────┴──────────┴─────────┴──────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+─────────────────────────────────────────────────────────────────── Pattern '1grp' '\\w+\\s+DST=([\\d\\.]+)\\s+\\w+' @ 2025-06-14 00:38:08 ────────────────────────────────────────────────────────────────────
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '\w+\s+DST=([\d\.]+)\s+\w+' -t --file ufw.test1
 rg --no-unicode -No '\w+\s+DST=([\d\.]+)\s+\w+' ufw.test1 -cr '$1'
-rg --no-unicode -No '\w+\s+DST=([\d\.]+)\s+\w+' ufw.test1 -r '$1' | sort | uniq -c
 grep -coP '\w+\s+DST=([\d\.]+)\s+\w+' ufw.test1
 rygex -rp '\w+\s+DST=([\d\.]+)\s+\w+' '1' -t -f ufw.test1
 rygex -rp '\w+\s+DST=([\d\.]+)\s+\w+' '1' -tm -f ufw.test1
+perl -nE '$total += () = /\w+\s+DST=([\d\.]+)\s+\w+/g; END { say $total }' ufw.test1
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Tool                          ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output           ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ rygex (-rp -tm total only)    │    0.403 │    2.899 │   0.568 │                 5.95 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ C# + Rust MultiCPU            │    0.860 │    7.309 │   0.257 │                 9.69 │ Totals: 11129400 │
+│                               │          │          │         │                      │                  │
+│ rygex (-rp -t total only)     │    1.344 │    1.088 │   0.277 │                25.98 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ ripgrep (-Nocr $1 total only) │    3.054 │    2.795 │   0.299 │                20.12 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ grep (-coP total only)        │    4.599 │    4.305 │   0.361 │                13.58 │ 11129400         │
+│                               │          │          │         │                      │                  │
+│ perl (-nE totals 1grp)        │   48.894 │   48.454 │   1.104 │                43.21 │ 11129400         │
+│                               │          │          │         │                      │                  │
+└───────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴──────────────────┘
+rg --no-unicode -No '\w+\s+DST=([\d\.]+)\s+\w+' ufw.test1 -r '$1' | sort | uniq -c
+/home/jonny/git/rygex/perl_counter.pl ufw.test1 '\w+\s+DST=([\d\.]+)\s+\w+' 1 16
+/home/jonny/git/rustex/target/release/rustex -r '\w+\s+DST=([\d\.]+)\s+\w+' -mc 1 ufw.test1
 rygex -p '\w+\s+DST=([\d\.]+)\s+\w+' '1' -Sc -f ufw.test1
+rygex -g '\w+\s+DST=([\d\.]+)\s+\w+' '1' -Sc -f ufw.test1
+rygex -g '\w+\s+DST=([\d\.]+)\s+\w+' '1' -Scm -f ufw.test1
 rygex -rp '\w+\s+DST=([\d\.]+)\s+\w+' '1' -Sc -f ufw.test1
 rygex -p '\w+\s+DST=([\d\.]+)\s+\w+' '1' -Sc -m -f ufw.test1
 rygex -rp '\w+\s+DST=([\d\.]+)\s+\w+' '1' -Sc -m -f ufw.test1
 perl -nE '++$c{$1} if /\w+\s+DST=([\d\.]+)\s+\w+/; END{ say "$_\t$c{$_}" for sort keys %c }' ufw.test1
-perl -nE '$total += () = /\w+\s+DST=([\d\.]+)\s+\w+/g; END { say $total }' ufw.test1
+/home/jonny/git/c_sharp_regex/bin/Release/net9.0/linux-x64/publish/c_sharp_regex -r '\w+\s+DST=([\d\.]+)\s+\w+' -c '1' --file ufw.test1
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Tool                                ┃ Real (s) ┃ User (s) ┃ Sys (s) ┃ Memory Increase (MB) ┃ Output                                  ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ rygex (-rp -tm total only)          │    0.352 │    3.028 │   0.505 │                10.58 │ 11129400                                │
+│ Pure Rust Parallel                  │    0.663 │    8.051 │   0.348 │                15.14 │ 11129399        123.12.123.12           │
+│                                     │          │          │         │                      │        1        124.14.124.14           │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-rp -t total only)           │    1.241 │    1.071 │   0.196 │                 6.83 │ 11129400                                │
+│ C# + Rust MultiCPU                  │    0.942 │    8.317 │   0.282 │                11.89 │ 123.12.123.12 Line-Counts = 11129399    │
+│                                     │          │          │         │                      │ 124.14.124.14 Line-Counts = 1           │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-rp -Scm)                    │    2.202 │   10.200 │   1.140 │              1355.83 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-g -Scm)                     │    2.043 │   19.702 │   6.157 │               184.85 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
-│ ripgrep (-Nocr $1 total only)       │    2.901 │    2.726 │   0.214 │                14.16 │ 11129400                                │
-│                                     │          │          │         │                      │                                         │
-│ grep (-coP total only)              │    4.426 │    4.221 │   0.265 │                41.22 │ 11129400                                │
-│                                     │          │          │         │                      │                                         │
-│ rygex (-rp -Sc)                     │    6.723 │    6.057 │   0.753 │              1310.96 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-rp -Scm)                    │    2.486 │   10.405 │   1.279 │              1532.89 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
-│ ripgrep (-Nocr $1 | sort | uniq -c) │    7.372 │    7.555 │   0.589 │               194.58 │ 11129399 123.12.123.12                  │
+│ rygex (-rp -Sc)                     │    7.288 │    6.378 │   1.003 │              1178.06 │ 123.12.123.12    Line-Counts = 11129399 │
+│                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
+│                                     │          │          │         │                      │                                         │
+│ ripgrep (-Nocr $1 | sort | uniq -c) │    7.479 │    7.498 │   0.737 │               203.25 │ 11129399 123.12.123.12                  │
 │                                     │          │          │         │                      │       1 124.14.124.14                   │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-p -Scm)                     │   17.769 │  269.353 │   6.281 │              1235.81 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-g -Sc)                      │    8.349 │    8.106 │   0.362 │               223.34 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
-│ perl (-nE totals 1grp)              │   49.031 │   48.423 │   1.160 │                10.18 │ 11129400                                │
-│                                     │          │          │         │                      │                                         │
-│ perl (-nE 1 grp)                    │   49.234 │   48.706 │   1.061 │               163.61 │ 123.12.123.12   11129399                │
+│ perl MultiCPU                       │   11.306 │  163.855 │   9.653 │                77.15 │ 123.12.123.12   11129399                │
 │                                     │          │          │         │                      │ 124.14.124.14   1                       │
 │                                     │          │          │         │                      │                                         │
-│ rygex (-p -Sc)                      │   98.874 │   98.427 │   1.504 │               728.37 │ 123.12.123.12    Line-Counts = 11129399 │
+│ rygex (-p -Scm)                     │   18.626 │  274.740 │   6.301 │               599.60 │ 1    Line-Counts = 11129400             │
+│                                     │          │          │         │                      │                                         │
+│ perl (-nE 1 grp)                    │   49.772 │   49.308 │   1.129 │                82.21 │ 123.12.123.12   11129399                │
+│                                     │          │          │         │                      │ 124.14.124.14   1                       │
+│                                     │          │          │         │                      │                                         │
+│ rygex (-p -Sc)                      │  101.565 │  101.253 │   1.620 │               781.75 │ 123.12.123.12    Line-Counts = 11129399 │
 │                                     │          │          │         │                      │ 124.14.124.14    Line-Counts = 1        │
 │                                     │          │          │         │                      │                                         │
 └─────────────────────────────────────┴──────────┴──────────┴─────────┴──────────────────────┴─────────────────────────────────────────┘
