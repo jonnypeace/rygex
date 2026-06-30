@@ -60,6 +60,79 @@
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "005: -g -m small file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/irygex.py",
+            "args": [
+                "-g", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+", "0",
+                "-m", "8",
+                "-f", "ufw.test"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "006: -rp -m small file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/irygex.py",
+            "args": [
+                "-rp", "\\w+\\s+DST=(123.12.123.12)\\s+\\w+",  "1",
+                "-c",
+                "-m", "8",
+                "-f", "ufw.test"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "007: -p -m small file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/irygex.py",
+            "args": [
+                "-p", "SRC=([\\d\\.]+).*SPT=([\\d\\.]+)", "1 2",
+                "-m", "8", "-c",
+                "-f", "ufw.test"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "008: -p -m 1 group small file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/irygex.py",
+            "args": [
+                "-p", "(SRC)=", "1 2",
+                "-m2", "-c",
+                "-f", "ufw.test"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "009: -rp 2cg -m small file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/irygex.py",
+            "args": [
+                "-rp", "SRC=([\\d\\.]+).*SPT=([\\d\\.]+)", "1 2",
+                "-m", "2", "-c",
+                "-f", "ufw.test"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
         }
     ]
 }
