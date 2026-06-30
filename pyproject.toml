@@ -32,3 +32,6 @@ rygex = "rygex.cli:main"
 
 [project.urls]
 "Homepage" = "https://github.com/jonnypeace/rygex"
+
+[project.optional-dependencies]
+dev = ["pytest"]

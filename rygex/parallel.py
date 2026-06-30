@@ -84,8 +84,8 @@ def parallel_bytewise_count(pattern: list[str], filename: str, n_workers: int = 
     for (start, end) in make_byte_ranges(filename, n_workers):
         specs.append((pattern, filename, start, end))
     final = Counter()
-    from concurrent.futures import ProcessPoolExecutor
-    with ProcessPoolExecutor(max_workers=n_workers) as exe:
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=n_workers) as exe:
         for partial_dict in exe.map(start_worker, specs):
             final.update(partial_dict)
 

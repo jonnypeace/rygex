@@ -5,9 +5,9 @@ from rygex.args import PythonArgs
 from functools import partial
 from rygex.utils import getting_slice, print_err
 from dataclasses import dataclass
+import rygex_ext as rx
 
-
-def grouped_iter(file_data: Iterable[str],test_reg: re.Pattern, int_list: list):
+def grouped_iter(file_data: Iterable[str],test_reg: rx.PyPattern, int_list: list):
     temp_list: list = []
     for line in file_data:
         reg_match = test_reg.findall(line)
@@ -70,7 +70,7 @@ def mmap_reader(file_path: str, regex_pattern: str,
 
 @dataclass
 class ParserPyReg:
-    test_reg: re.Pattern
+    test_reg: rx.PyPattern
     pygen_length: int
     group_num: int
     split_int: list[int]
@@ -79,7 +79,7 @@ class ParserPyReg:
 
 def rygex_parser(args: PythonArgs):
 
-    test_reg: re.Pattern = re.compile(args.pyreg[0], re.IGNORECASE) if args.insensitive else re.compile(args.pyreg[0])
+    test_reg: rx.PyPattern = rx.compile_with_flags(args.pyreg[0], rx.IGNORECASE) if args.insensitive else rx.compile_with_flags(args.pyreg[0])
     # Splitting the arg for capture groups into a list
     split_int = getting_slice(args.pyreg)
 
@@ -202,7 +202,7 @@ def multi_cpu(
     """
     
     # importing here to shave off some mseconds from import time if multi not used
-    from concurrent.futures import ProcessPoolExecutor, as_completed
+    from concurrent.futures import as_completed, ThreadPoolExecutor
     # n_cores = n_cores or os.cpu_count() or 1
     use_mmap = bool(file_path and Path(file_path).is_file())
 
@@ -232,7 +232,7 @@ def multi_cpu(
         executor_kwargs = {}
         tasks = list(reader())
 
-    with ProcessPoolExecutor(max_workers=n_cores, **executor_kwargs) as executor:
+    with ThreadPoolExecutor(max_workers=n_cores, **executor_kwargs) as executor:
         futures = [executor.submit(worker_fn, t) for t in tasks]
         for fut in as_completed(futures):
             yield fut.result()
