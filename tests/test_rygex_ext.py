@@ -479,11 +479,11 @@ def test_from_file_range_basic():
 # ----------------------------------------------------------------------
 
 def test_compile_and_search():
-    """Test compile and search functions."""
+    """`compile` (re-compatible) returns a PyPattern whose .search yields a PyMatch."""
     pattern = regex.compile(r'\d+')
     match = pattern.search("test 123 value")
     assert match is not None
-    assert match.group == "123"
+    assert match.group(0) == "123"
 
 
 def test_compile_groups_count():
@@ -498,17 +498,24 @@ def test_compile_groups_count():
     assert two_groups.groups == 2
 
 
+def test_compile_accepts_flags():
+    """`compile(pattern, flags)` mirrors `re.compile(pattern, flags=0)`."""
+    pat = regex.compile(r'abc', regex.IGNORECASE)
+    assert pat.search("ABC") is not None
+    assert pat.search("abc") is not None
+
+
 def test_search_function():
-    """Test the search function directly."""
-    match = regex.search(r'\d+', "test 456 value")
+    """`search_re(pattern, string)` mirrors `re.search`."""
+    match = regex.search_re(r'\d+', "test 456 value")
     assert match is not None
-    assert match.group == "456"
+    assert match.group(0) == "456"
 
 
 def test_search_no_match():
-    """Test search when no match is found."""
-    match = regex.search(r'\d+', "no numbers here")
-    assert match is None
+    """Search when no match is found returns a null (falsy) PyMatch, mirroring `re.search` returning None."""
+    match = regex.search_re(r'\d+', "no numbers here")
+    assert not match
 
 
 # ----------------------------------------------------------------------
@@ -624,3 +631,163 @@ def test_rust_regex_gen_no_matches():
     gen = regex.RustRegexGen(pattern, texts)
     result = list(gen)
     assert result == []
+
+
+# ----------------------------------------------------------------------
+# Tests for the minimal bytes API (compile_bytes / PyBytesPattern).
+# Mirrors re.compile(bytes) over bytes-like haystacks (bytes, bytearray,
+# memoryview, mmap) without a UTF-8 -> str decode.
+# ----------------------------------------------------------------------
+
+import mmap as _mmap
+
+
+def test_compile_bytes_basic_attributes():
+    """compile_bytes returns a PyBytesPattern with str-style attrs."""
+    p = regex.compile_bytes(rb'(\w+)-(\d+)', regex.IGNORECASE)
+    assert type(p).__name__ == 'PyBytesPattern'
+    assert p.groups == 2
+    assert p.flags == regex.IGNORECASE
+    assert p.pattern == rb'(\w+)-(\d+)'
+    assert repr(p).startswith('re.compile(')
+
+
+def test_compile_bytes_invalid_pattern():
+    with pytest.raises(ValueError):
+        regex.compile_bytes(rb'(unclosed')
+
+
+def test_bytes_finditer_on_bytes():
+    p = regex.compile_bytes(rb'\d+')
+    res = [m.group(0) for m in p.finditer(b'abc 42 def 99')]
+    assert res == [b'42', b'99']
+
+
+def test_bytes_finditer_on_bytearray():
+    p = regex.compile_bytes(rb'\d+')
+    res = [m.group(0) for m in p.finditer(bytearray(b'abc 42 def 99'))]
+    assert res == [b'42', b'99']
+
+
+def test_bytes_finditer_on_memoryview():
+    p = regex.compile_bytes(rb'\d+')
+    res = [m.group(0) for m in p.finditer(memoryview(b'abc 42 def 99'))]
+    assert res == [b'42', b'99']
+
+
+def test_bytes_finditer_groups_and_span():
+    p = regex.compile_bytes(rb'(\w+)-(\d+)')
+    matches = list(p.finditer(b'Foo-42 BAR-99'))
+    assert len(matches) == 2
+    m = matches[0]
+    assert m.group(0) == b'Foo-42'
+    assert m.span() == (0, 6)
+    assert m.start() == 0 and m.end() == 6
+    assert m.groups() == (b'Foo', b'42')
+    assert m.group(1, 2) == (b'Foo', b'42')
+    assert m.group(-1) == b'42'  # negative indexing
+    assert m.start(1) == 0 and m.end(1) == 3
+    assert m.start(2) == 4 and m.end(2) == 6
+
+
+def test_bytes_finditer_optional_groups():
+    p = regex.compile_bytes(rb'(a)(b)?')
+    m = list(p.finditer(b'ab ac'))[0]
+    assert m.group(1) == b'a'
+    assert m.group(2) == b'b'
+    # second match: 'a' alone, group 2 unmatched
+    m2 = list(p.finditer(b'ab ac'))[1]
+    assert m2.group(1) == b'a'
+    assert m2.group(2) is None
+    assert m2.span(2) == (-1, -1)
+    assert m2.start(2) == -1 and m2.end(2) == -1
+    assert m2.groups(default=b'<missing>') == (b'a', b'<missing>')
+
+
+def test_bytes_search_hit_and_miss():
+    p = regex.compile_bytes(rb'\d+')
+    hit = p.search(b'abc 42 def')
+    assert bool(hit) is True
+    assert hit.group(0) == b'42'
+    miss = regex.compile_bytes(rb'xyz').search(b'abc')
+    assert bool(miss) is False
+    assert miss.span() == (-1, -1)
+    assert miss.start() == -1 and miss.end() == -1
+    assert repr(miss).startswith('<rygex.PyBytesMatch')
+
+
+def test_bytes_findall_captures():
+    p = regex.compile_bytes(rb'(\w+)=(\d+)')
+    rows = p.findall_captures(b'foo=1 bar=22')
+    assert rows == [(b'foo=1', b'foo', b'1'), (b'bar=22', b'bar', b'22')]
+
+
+def test_bytes_pattern_count_and_is_match():
+    p = regex.compile_bytes(rb'\d+')
+    assert p.count(b'12 34 56') == 3
+    assert p.is_match(b'no digits here') is False
+    assert p.is_match(b'yes 7 here') is True
+
+
+def test_bytes_finditer_on_mmap(tmp_path):
+    path = tmp_path / 'sample.txt'
+    path.write_bytes(b'line1\nline2 42\nline3 99 end\n')
+    with open(path, 'rb') as fh:
+        with _mmap.mmap(fh.fileno(), 0, access=_mmap.ACCESS_READ) as mm:
+            p = regex.compile_bytes(rb'\d+')
+            results = [(m.start(), m.end(), m.group(0)) for m in p.finditer(mm)]
+    assert results == [
+        (4, 5, b'1'), (10, 11, b'2'), (12, 14, b'42'),
+        (19, 20, b'3'), (21, 23, b'99'),
+    ]
+
+
+def test_bytes_finditer_on_mmap_ignorecase(tmp_path):
+    """mmap_reader-style line scan using rfind on the mmap."""
+    path = tmp_path / 'sample.txt'
+    path.write_bytes(b'Hello\nworld ORDER 42\nbye\n')
+    with open(path, 'rb') as fh:
+        with _mmap.mmap(fh.fileno(), 0, access=_mmap.ACCESS_READ) as mm:
+            p = regex.compile_bytes(rb'order', regex.IGNORECASE)
+            yielded = []
+            for m in p.finditer(mm):
+                start = max(0, mm.rfind(b'\n', 0, m.start()) + 1)
+                end = mm.find(b'\n', m.end())
+                if end == -1:
+                    end = len(mm)
+                yielded.append(mm[start:end])
+    assert yielded == [b'world ORDER 42']
+
+
+def test_bytes_finditer_outlives_mmap(tmp_path):
+    """Match objects are owned; safe to use after the mmap closes."""
+    path = tmp_path / 'sample.txt'
+    path.write_bytes(b'foo=1 bar=22')
+    with open(path, 'rb') as fh:
+        with _mmap.mmap(fh.fileno(), 0, access=_mmap.ACCESS_READ) as mm:
+            p = regex.compile_bytes(rb'(\w+)=(\d+)')
+            matches = list(p.finditer(mm))
+    # After mm.close(): captured bytes are still valid because they're owned.
+    assert [(m.group(1), m.group(2)) for m in matches] == [(b'foo', b'1'), (b'bar', b'22')]
+
+
+def test_bytes_iter_iteration_protocol():
+    """finditer is a lazy iterator -- for-loop yields matches in order."""
+    p = regex.compile_bytes(rb'\d+')
+    it = p.finditer(b'1 22 333')
+    out = []
+    for m in it:
+        out.append(m.group(0))
+    assert out == [b'1', b'22', b'333']
+    # Once exhausted, __next__ returns None (StopIteration at the Python level).
+    assert next(iter(it), None) is None
+
+
+def test_bytes_pattern_getters():
+    p = regex.compile_bytes(rb'(?P<name>\w+)', 0)
+    assert p.groups == 1
+    assert p.pattern == rb'(?P<name>\w+)'
+    # No named-group accessor on the bytes subset (kept minimal); ensure
+    # the pattern still produces a sensible groups() on a match.
+    m = p.search(b'hello world')
+    assert m.group(1) == b'hello'

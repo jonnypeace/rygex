@@ -544,11 +544,6 @@ impl PyMatch {
             _flags: flags,
         }
     }
-
-    /// True if this PyMatch is the null sentinel (i.e. represents None).
-    fn is_null(&self) -> bool {
-        self.spans.first().map(|(s, _)| *s == usize::MAX).unwrap_or(true)
-    }
 }
 
 /// Iterator over a Match's groups (group 0 excluded), as in Python's `for g in m:`.
@@ -619,6 +614,465 @@ impl PyFindIter {
         );
         Ok(Some(Bound::new(py, m)?))
     }
+}
+
+// ---------------------------------------------------------------------------
+// Minimal bytes API: mirrors `re.compile(bytes)` over `&[u8]` haystacks
+// (mmap, bytes, bytearray, memoryview). Designed for `mmap_reader` so the
+// mmap is searched in place without a UTF-8 -> str decode (which would
+// ~4x memory and OOM on big files). Subset of the str API: enough for the
+// file-scan path -- search, finditer, findall_captures, groups, flags.
+// ---------------------------------------------------------------------------
+
+/// Borrow a contiguous 1-D `&[u8]` view from any Python object exposing
+/// the buffer protocol (bytes, bytearray, memoryview, mmap). No copy: the
+/// returned slice aliases the source object's storage for as long as the
+/// `PyUntypedBuffer` is alive (the caller must keep it dropped after use).
+///
+/// Subscriptable-but-not-buffer objects fall through to a `bytes(obj)`
+/// copy -- expected to be rare in the file-scan path.
+fn bytes_view_from_any<'py>(
+    py: Python<'py>,
+    obj: &Bound<'py, PyAny>,
+) -> PyResult<(pyo3::buffer::PyUntypedBuffer, &'py [u8])> {
+    use pyo3::buffer::PyUntypedBuffer;
+    // Fast path: bare `bytes` already casts cleanly.
+    if let Ok(b) = obj.cast::<pyo3::types::PyBytes>() {
+        // SAFETY: PyBytes is immutable and lives at least as long as 'py.
+        let slice: &'py [u8] = unsafe { std::mem::transmute::<&[u8], &'py [u8]>(b.as_bytes()) };
+        // Construct a no-op buffer just so the return type is uniform; we
+        // don't actually use it for the bytes-fast path. Use a 1-byte
+        // empty bytes object so PyUntypedBuffer::get succeeds cheaply.
+        let dummy = PyUntypedBuffer::get(&pyo3::types::PyBytes::new(py, b""))?;
+        return Ok((dummy, slice));
+    }
+    let buf = PyUntypedBuffer::get(obj)?;
+    if buf.dimensions() != 1 || buf.item_size() != 1 {
+        return Err(PyValueError::new_err(
+            "haystack must be a 1-D bytes-like object (bytes, bytearray, memoryview, or mmap)",
+        ));
+    }
+    let len = buf.len_bytes();
+    // SAFETY: 1-D, itemsize==1, C-contiguous (mmap/bytes/bytearray/memoryview-of-bytes
+    // are all C-contiguous). The pointer is valid for `len` bytes while `buf` is alive,
+    // and we tie the slice's lifetime to 'py (which bounds `buf`'s drop).
+    let ptr = buf.buf_ptr() as *const u8;
+    let slice: &'py [u8] = unsafe { std::slice::from_raw_parts(ptr, len) };
+    Ok((buf, slice))
+}
+
+/// A `re.Match`-compatible object for bytes haystacks.
+#[pyclass(module = "rygex_ext", name = "PyBytesMatch")]
+pub struct PyBytesMatch {
+    /// `(start, end)` byte offsets for each group, group 0 first.
+    /// `usize::MAX` sentinel marks unmatched groups.
+    spans: Vec<(usize, usize)>,
+    /// Captured bytes for each group; `None` for unmatched.
+    /// Owned so the match outlives the original mmap/buffer.
+    groups: Vec<Option<Vec<u8>>>,
+    _pos: usize,
+    _endpos: usize,
+    _pattern_bytes: Vec<u8>,
+    _flags: u32,
+}
+
+impl PyBytesMatch {
+    fn from_captures(
+        caps: &regex::bytes::Captures<'_>,
+        base: usize,
+        pos: usize,
+        endpos: usize,
+        pattern_bytes: &[u8],
+        flags: u32,
+    ) -> Self {
+        let mut spans = Vec::with_capacity(caps.len());
+        let mut groups = Vec::with_capacity(caps.len());
+        for i in 0..caps.len() {
+            match caps.get(i) {
+                Some(m) => {
+                    spans.push((base + m.start(), base + m.end()));
+                    groups.push(Some(m.as_bytes().to_vec()));
+                }
+                None => {
+                    spans.push((usize::MAX, usize::MAX));
+                    groups.push(None);
+                }
+            }
+        }
+        PyBytesMatch {
+            spans,
+            groups,
+            _pos: pos,
+            _endpos: endpos,
+            _pattern_bytes: pattern_bytes.to_vec(),
+            _flags: flags,
+        }
+    }
+
+    fn null(pos: usize, endpos: usize, pattern_bytes: &[u8], flags: u32) -> Self {
+        PyBytesMatch {
+            spans: vec![(usize::MAX, usize::MAX)],
+            groups: vec![None],
+            _pos: pos,
+            _endpos: endpos,
+            _pattern_bytes: pattern_bytes.to_vec(),
+            _flags: flags,
+        }
+    }
+
+    fn is_null(&self) -> bool {
+        self.spans.first().map(|(s, _)| *s == usize::MAX).unwrap_or(true)
+    }
+}
+
+#[pymethods]
+impl PyBytesMatch {
+    #[getter]
+    fn pos(&self) -> usize { self._pos }
+    #[getter]
+    fn endpos(&self) -> usize { self._endpos }
+    #[getter]
+    fn lastindex(&self) -> Option<usize> {
+        self.spans.iter().enumerate().rev()
+            .find(|(_, (s, _))| *s != usize::MAX)
+            .map(|(i, _)| if i == 0 { 0 } else { i })
+    }
+    #[getter]
+    fn pattern(&self) -> &[u8] { &self._pattern_bytes }
+    #[getter]
+    fn flags(&self) -> u32 { self._flags }
+
+    /// `m.start(group=0)` -> byte offset; -1 if group did not match.
+    #[pyo3(signature = (group=0))]
+    fn start(&self, group: isize) -> isize {
+        match resolve_group_index(group, self.spans.len()) {
+            Some(i) => match self.spans.get(i) {
+                Some((s, _)) if *s != usize::MAX => *s as isize,
+                _ => -1,
+            },
+            None => -1,
+        }
+    }
+
+    /// `m.end(group=0)` -> byte offset; -1 if group did not match.
+    #[pyo3(signature = (group=0))]
+    fn end(&self, group: isize) -> isize {
+        match resolve_group_index(group, self.spans.len()) {
+            Some(i) => match self.spans.get(i) {
+                Some((_, e)) if *e != usize::MAX => *e as isize,
+                _ => -1,
+            },
+            None => -1,
+        }
+    }
+
+    /// `m.span(group=0)` -> `(start, end)` tuple; `(-1, -1)` if unmatched.
+    #[pyo3(signature = (group=0))]
+    fn span(&self, group: isize) -> (isize, isize) {
+        (self.start(group), self.end(group))
+    }
+
+    /// `m.group(*args)` -> bytes | None | tuple[bytes | None, ...].
+    /// No args -> group 0. One arg -> that group. N args -> tuple.
+    /// Each arg is an int (negative indexing allowed).
+    #[pyo3(signature = (*args))]
+    fn group<'py>(
+        &self,
+        py: Python<'py>,
+        args: &Bound<'py, PyTuple>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        if args.is_empty() {
+            return group_to_pybytes(py, self.groups.get(0).cloned().flatten());
+        }
+        if args.len() == 1 {
+            let item = args.get_borrowed_item(0)?;
+            let g: isize = item.extract()?;
+            let i = resolve_group_index(g, self.spans.len());
+            let v = i.and_then(|idx| self.groups.get(idx).cloned().flatten());
+            return group_to_pybytes(py, v);
+        }
+        let mut out: Vec<Bound<'py, PyAny>> = Vec::with_capacity(args.len());
+        for arg in args.iter() {
+            let g: isize = arg.extract()?;
+            let i = resolve_group_index(g, self.spans.len());
+            let v = i.and_then(|idx| self.groups.get(idx).cloned().flatten());
+            out.push(group_to_pybytes(py, v)?);
+        }
+        Ok(PyTuple::new(py, out)?.into_any())
+    }
+
+    /// `m.groups(default=None)` -> tuple of groups 1..N.
+    #[pyo3(signature = (default=None))]
+    fn groups<'py>(
+        &self,
+        py: Python<'py>,
+        default: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, PyTuple>> {
+        let mut out: Vec<Bound<'py, PyAny>> = Vec::with_capacity(self.groups.len().saturating_sub(1));
+        for g in self.groups.iter().skip(1) {
+            match g {
+                Some(v) => out.push(group_to_pybytes(py, Some(v.clone()))?),
+                None => out.push(default.clone().unwrap_or_else(|| py.None().into_bound(py))),
+            }
+        }
+        Ok(PyTuple::new(py, out)?)
+    }
+
+    fn __len__(&self) -> usize { self.groups.len().saturating_sub(1) }
+    fn __bool__(&self) -> bool { !self.is_null() }
+    fn __repr__(&self) -> String {
+        if self.is_null() {
+            return "<rygex.PyBytesMatch object; span=(-1, -1); match=None>".to_string();
+        }
+        let (s, e) = self.spans[0];
+        let m = self.groups.get(0).and_then(|g| g.as_ref())
+            .map(|b| String::from_utf8_lossy(b).to_string())
+            .unwrap_or_default();
+        format!("<rygex.PyBytesMatch object; span=({}, {}); match={:?}>", s, e, m)
+    }
+}
+
+/// Resolve a Python group index (negative indexing allowed) to a `usize`,
+/// returning None if out of range (group 0 is included).
+fn resolve_group_index(group: isize, n_groups: usize) -> Option<usize> {
+    if n_groups == 0 { return None; }
+    let len = n_groups as isize;
+    let idx = if group < 0 { len + group } else { group };
+    if idx < 0 || idx >= len { None } else { Some(idx as usize) }
+}
+
+fn group_to_pybytes<'py>(
+    py: Python<'py>,
+    v: Option<Vec<u8>>,
+) -> PyResult<Bound<'py, PyAny>> {
+    match v {
+        Some(b) => Ok(pyo3::types::PyBytes::new(py, &b).into_any()),
+        None => Ok(py.None().into_bound(py).into_any()),
+    }
+}
+
+/// Wrapper around a raw byte pointer that is safe to send/share across
+/// threads because the bytes are read-only and pinned for as long as the
+/// owning `Py<PyAny>` source reference (held alongside this pointer in
+/// `PyBytesFindIter`) keeps the underlying Python buffer alive.
+#[repr(transparent)]
+struct SyncBytePtr(*const u8);
+unsafe impl Send for SyncBytePtr {}
+unsafe impl Sync for SyncBytePtr {}
+
+/// Iterator yielding `PyBytesMatch` objects, returned by
+/// `PyBytesPattern.finditer()`. **Lazy**: each `__next__` advances a cursor
+/// through the haystack via `Regex::captures_at`, so peak memory is one
+/// match at a time plus the mmap/bytes buffer the caller already owns.
+/// The caller's mmap may be released once iteration ends -- captured bytes
+/// are copied into each `PyBytesMatch` at yield time.
+#[pyclass(module = "rygex_ext", name = "PyBytesFindIter")]
+pub struct PyBytesFindIter {
+    /// Owned regex clone -- lets us call `captures_at` on each `__next__`
+    /// without holding a borrow of the `PyBytesPattern`.
+    regex: RustRegexBytes,
+    /// Python reference to the source buffer (mmap/bytes/bytearray/memoryview);
+    /// held so the underlying buffer outlives `haystack_ptr`. Read by Drop.
+    _source: Py<PyAny>,
+    /// Raw pointer to the buffer's bytes. Valid for as long as `source` is.
+    haystack_ptr: SyncBytePtr,
+    /// Length of the buffer in bytes.
+    haystack_len: usize,
+    /// Cursor: byte offset of the next `captures_at` search.
+    cursor: usize,
+    pos: usize,
+    endpos: usize,
+    pattern_bytes: Vec<u8>,
+    flags: u32,
+}
+
+impl Drop for PyBytesFindIter {
+    fn drop(&mut self) {
+        // Drop the source reference first; doing it implicitly via Rust's
+        // field-order drop is fine, but Python refcount decrements under GIL
+        // are safer to make explicit. We rely on Rust's default Drop here --
+        // `Py<PyAny>::drop` re-acquires the GIL internally and is correct.
+    }
+}
+
+#[pymethods]
+impl PyBytesFindIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> { slf }
+    fn __next__<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        py: Python<'py>,
+    ) -> PyResult<Option<Bound<'py, PyBytesMatch>>> {
+        if slf.haystack_ptr.0.is_null() || slf.cursor > slf.haystack_len {
+            return Ok(None);
+        }
+        // SAFETY: `source` (a `Py<PyAny>` held in this iterator) keeps the
+        // buffer alive, so the pointer stays valid for this call. Read-only.
+        let slice: &[u8] = unsafe {
+            std::slice::from_raw_parts(slf.haystack_ptr.0, slf.haystack_len)
+        };
+        let cap = match slf.regex.captures_at(slice, slf.cursor) {
+            Some(c) => c,
+            None => return Ok(None),
+        };
+        let (m_start, m_end) = cap
+            .get(0)
+            .map(|m| (m.start(), m.end()))
+            .unwrap_or((slf.cursor, slf.cursor));
+        // Advance the cursor past this match. For zero-width matches, bump
+        // one byte to guarantee forward progress (mirrors regex::find_iter).
+        slf.cursor = if m_end == m_start { m_end + 1 } else { m_end };
+        let m = PyBytesMatch::from_captures(
+            &cap, 0, slf.pos, slf.endpos,
+            &slf.pattern_bytes, slf.flags,
+        );
+        Ok(Some(Bound::new(py, m)?))
+    }
+}
+
+/// A compiled regex pattern over bytes haystacks, mirroring the subset of
+/// `re.Pattern[bytes]` needed for the file-scan CLI path.
+#[pyclass(module = "rygex_ext", name = "PyBytesPattern")]
+pub struct PyBytesPattern {
+    inner: RustRegexBytes,
+    pattern_bytes: Vec<u8>,
+    flags: u32,
+}
+
+impl PyBytesPattern {
+    fn new(pattern: &[u8], flags: u32) -> PyResult<Self> {
+        let processed = match std::str::from_utf8(pattern) {
+            Ok(s) => apply_flags(s, flags),
+            Err(_) => {
+                let lossy = String::from_utf8_lossy(pattern);
+                apply_flags(&lossy, flags)
+            }
+        };
+        let processed_str = processed;
+        let inner = RustRegexBytes::new(&processed_str)
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(PyBytesPattern {
+            inner,
+            pattern_bytes: pattern.to_vec(),
+            flags,
+        })
+    }
+}
+
+#[pymethods]
+impl PyBytesPattern {
+    #[getter]
+    fn pattern(&self) -> &[u8] { &self.pattern_bytes }
+    #[getter]
+    fn flags(&self) -> u32 { self.flags }
+    #[getter]
+    fn groups(&self) -> usize {
+        self.inner.captures_len().saturating_sub(1)
+    }
+
+    /// `p.search(haystack)` -> PyBytesMatch | null match.
+    /// `haystack` may be bytes, bytearray, memoryview, or mmap.
+    fn search<'py>(
+        &self,
+        py: Python<'py>,
+        haystack: &Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyBytesMatch>> {
+        let (_buf, slice) = bytes_view_from_any(py, haystack)?;
+        match self.inner.captures(slice) {
+            Some(caps) => {
+                let bm = PyBytesMatch::from_captures(
+                    &caps, 0, 0, slice.len(),
+                    &self.pattern_bytes, self.flags,
+                );
+                Ok(Bound::new(py, bm)?)
+            }
+            None => {
+                let bm = PyBytesMatch::null(0, slice.len(), &self.pattern_bytes, self.flags);
+                Ok(Bound::new(py, bm)?)
+            }
+        }
+    }
+
+    /// `p.finditer(haystack)` -> PyBytesFindIter.
+    /// Lazy: yields one `PyBytesMatch` at a time via `captures_at`, so peak
+    /// memory stays close to the size of `haystack` (no eager collection).
+    fn finditer<'py>(
+        &self,
+        py: Python<'py>,
+        haystack: &Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyBytesFindIter>> {
+        let (buf, slice) = bytes_view_from_any(py, haystack)?;
+        let ptr = slice.as_ptr();
+        let len = slice.len();
+        // Keep `buf` (the PyUntypedBuffer) and the Python source alive via a
+        // Py<PyAny> reference so the underlying memory isn't released before
+        // the iterator drops. `buf` itself is dropped at end of this call;
+        // its buffer is owned by `source`, not by `buf`, so that's safe.
+        // The slice aliases memory owned by `source`; we hold `source` here.
+        let _ = buf; // (kept only to extend the borrow window during setup)
+        let it = PyBytesFindIter {
+            regex: self.inner.clone(),
+            _source: haystack.clone().unbind(),
+            haystack_ptr: SyncBytePtr(ptr),
+            haystack_len: len,
+            cursor: 0,
+            pos: 0,
+            endpos: len,
+            pattern_bytes: self.pattern_bytes.clone(),
+            flags: self.flags,
+        };
+        Ok(Bound::new(py, it)?)
+    }
+
+    /// `p.findall_captures(haystack)` -> list[tuple[bytes | None, ...]]
+    /// Each match returned as ``(full, group1, group2, ...)``.
+    fn findall_captures<'py>(
+        &self,
+        py: Python<'py>,
+        haystack: &Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyList>> {
+        let (_buf, slice) = bytes_view_from_any(py, haystack)?;
+        let mut out: Vec<Bound<'py, PyTuple>> = Vec::new();
+        for caps in self.inner.captures_iter(slice) {
+            let mut row: Vec<Bound<'py, PyAny>> = Vec::with_capacity(caps.len());
+            for i in 0..caps.len() {
+                let v = caps.get(i).map(|m| m.as_bytes().to_vec());
+                row.push(group_to_pybytes(py, v)?);
+            }
+            out.push(PyTuple::new(py, row)?);
+        }
+        Ok(PyList::new(py, out)?)
+    }
+
+    /// `p.count(haystack)` -> non-overlapping match count.
+    fn count<'py>(
+        &self,
+        py: Python<'py>,
+        haystack: &Bound<'py, PyAny>,
+    ) -> PyResult<usize> {
+        let (_buf, slice) = bytes_view_from_any(py, haystack)?;
+        Ok(self.inner.find_iter(slice).count())
+    }
+
+    /// `p.is_match(haystack)` -> bool, cheap.
+    fn is_match<'py>(
+        &self,
+        py: Python<'py>,
+        haystack: &Bound<'py, PyAny>,
+    ) -> PyResult<bool> {
+        let (_buf, slice) = bytes_view_from_any(py, haystack)?;
+        Ok(self.inner.is_match(slice))
+    }
+
+    fn __repr__(&self) -> String {
+        format!("re.compile({:?})", String::from_utf8_lossy(&self.pattern_bytes))
+    }
+}
+
+/// Module-level: `rygex_ext.compile_bytes(pattern, flags=0) -> PyBytesPattern`.
+#[pyfunction]
+#[pyo3(signature = (pattern, flags=0))]
+fn compile_bytes(pattern: &[u8], flags: u32) -> PyResult<PyBytesPattern> {
+    PyBytesPattern::new(pattern, flags)
 }
 
 /// A compiled regex pattern, fully compatible with Python's `re.Pattern`.
@@ -1057,7 +1511,7 @@ impl PyPattern {
 
 #[pyfunction]
 #[pyo3(signature = (pattern, flags=0))]
-fn compile_with_flags(pattern: &str, flags: u32) -> PyResult<PyPattern> {
+fn compile(pattern: &str, flags: u32) -> PyResult<PyPattern> {
     PyPattern::new_with_flags(pattern, flags)
 }
 
@@ -1259,57 +1713,6 @@ impl RustRegexGen {
             }
         }
     }
-}
-
-#[pyclass]
-struct Regex {
-    inner: RustRegex,
-}
-
-#[pymethods]
-impl Regex {
-    #[new]
-    fn new(pattern: &str) -> PyResult<Self> {
-        match RustRegex::new(pattern) {
-            Ok(inner) => Ok(Regex { inner }),
-            Err(e) => Err(PyValueError::new_err(e.to_string())),
-        }
-    }
-
-    fn search(&self, text: &str) -> Option<Match> {
-        self.inner.find(text).map(|m| Match {
-            start: m.start() as isize,
-            end: m.end() as isize,
-            group: m.as_str().to_string(),
-        })
-    }
-
-    /// Number of capturing groups (excl. group 0), mirroring `re.Pattern.groups`.
-    #[getter]
-    fn groups(&self) -> usize {
-        self.inner.captures_len().saturating_sub(1)
-    }
-}
-
-#[pyclass]
-struct Match {
-    #[pyo3(get)]
-    start: isize,
-    #[pyo3(get)]
-    end: isize,
-    #[pyo3(get)]
-    group: String,
-}
-
-#[pyfunction]
-fn compile(pattern: &str) -> PyResult<Regex> {
-    Regex::new(pattern)
-}
-
-#[pyfunction]
-fn search(pattern: &str, text: &str) -> PyResult<Option<Match>> {
-    let regex = Regex::new(pattern)?;
-    Ok(regex.search(text))
 }
 
 #[pyfunction]
@@ -1964,21 +2367,20 @@ fn total_count_fixed_str(
 
 #[pymodule]
 fn rygex_ext(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // Legacy classes - kept for backwards compatibility.
-    m.add_class::<Regex>()?;
-    m.add_class::<Match>()?;
     m.add_class::<RustRegexGen>()?;
     m.add_class::<FileRegexGen>()?;
 
-    // New, re-compatible classes added for the drop-in replacement API.
     m.add_class::<PyMatch>()?;
     m.add_class::<PyMatchIter>()?;
     m.add_class::<PyPattern>()?;
     m.add_class::<PyFindIter>()?;
+    m.add_class::<PyBytesMatch>()?;
+    m.add_class::<PyBytesFindIter>()?;
+    m.add_class::<PyBytesPattern>()?;
 
     // Legacy / pre-existing module-level functions.
     m.add_function(wrap_pyfunction!(compile, m)?)?;
-    m.add_function(wrap_pyfunction!(search, m)?)?;
+    m.add_function(wrap_pyfunction!(compile_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(findall_captures_str, m)?)?;
     m.add_function(wrap_pyfunction!(findall_captures_list_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(findall_captures_list, m)?)?;
@@ -2002,7 +2404,6 @@ fn rygex_ext(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // finditer/sub/subn/split/compile. The original `compile` and `search`
     // (defined above) used the legacy Match type; the re-compatible versions
     // are exposed under distinct names so that both APIs remain usable.
-    m.add_function(wrap_pyfunction!(compile_with_flags, m)?)?;
     m.add_function(wrap_pyfunction!(search_re, m)?)?;
     m.add_function(wrap_pyfunction!(match_re, m)?)?;
     m.add_function(wrap_pyfunction!(fullmatch_re, m)?)?;

@@ -1,5 +1,5 @@
 from typing import Iterable, Literal, TypedDict, Any, Generator
-import re, mmap, os, math, sys, gc
+import mmap, os, math, sys, gc
 from pathlib import Path
 from rygex.args import PythonArgs
 from functools import partial
@@ -49,9 +49,11 @@ def mmap_reader(file_path: str, regex_pattern: str,
 
     with open(file_path, 'rb', buffering=0) as file:
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-            # Compile the regular expression pattern
-            pattern = re.compile(regex_pattern.encode('utf-8'), re.IGNORECASE) if insensitive else re.compile(regex_pattern.encode('utf-8'))
-            # Search using the pattern, yielding match objects
+            # Compile the regex on the Rust side (regex::bytes::Regex). The
+            # mmap is borrowed in place via the buffer protocol -- no UTF-8
+            # decode, no copy of the file into a Python str.
+            pattern = rx.compile_bytes(regex_pattern.encode('utf-8'), rx.IGNORECASE) if insensitive else rx.compile_bytes(regex_pattern.encode('utf-8'))
+            # Search using the pattern, yielding match objects.
             match criteria:
                 case 'line':
                     for match in pattern.finditer(mm):
@@ -60,11 +62,11 @@ def mmap_reader(file_path: str, regex_pattern: str,
                         if end == -1:
                             end = len(mm)  # Handle case where the match is in the last line
                         # Append the whole line encoded as a tuple to match generator return type.
-                        yield mm[start:end], 
+                        yield mm[start:end],
                 case 'match':
                     for match in pattern.finditer(mm):
-                        yield match.groups() # type: ignore match.groups is returning tuple[bytes, Any]
-                
+                        yield match.groups()  # type: ignore  match.groups is tuple[bytes | None, ...] per the stub
+
                 case _:
                     print_err('Internal error with criteria matching')
 
@@ -79,7 +81,11 @@ class ParserPyReg:
 
 def rygex_parser(args: PythonArgs):
 
-    test_reg: rx.PyPattern = rx.compile_with_flags(args.pyreg[0], rx.IGNORECASE) if args.insensitive else rx.compile_with_flags(args.pyreg[0])
+    if args.pyreg:
+        test_reg: rx.PyPattern = rx.compile(args.pyreg[0], rx.IGNORECASE) if args.insensitive else rx.compile(args.pyreg[0])
+    else:
+        print('No regex found')
+        sys.exit(1)
     # Splitting the arg for capture groups into a list
     split_int = getting_slice(args.pyreg)
 

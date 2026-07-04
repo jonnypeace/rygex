@@ -4,12 +4,12 @@ Reference documentation for the Rust extension that powers `rygex_ext`,
 exposed to Python via [PyO3](https://pyo3.rs) and built with
 [`maturin`](https://www.maturin.rs/).
 
-The extension mixes two layers:
+The extension exposes two kinds of surface area:
 
 | Layer | Purpose |
 |-------|---------|
-| **Legacy API** | Original helper classes/functions used by the `rygex` CLI for high-throughput file scanning. |
 | **`re`-compatible API** | Drop-in replacements for the most common Python `re` module calls (`search`, `match`, `fullmatch`, `findall`, `finditer`, `sub`, `subn`, `split`, `compile`). |
+| **File-scanning helpers** | High-throughput helpers (`FileRegexGen`, `extract_fixed_spans_*`, `total_count*`, `find_joined_matches_*`, ...) used by the `rygex` CLI. |
 
 The `re`-compatible layer is built on the Rust [`regex`](https://docs.rs/regex)
 crate and is intended to behave like the Python standard library for the
@@ -59,14 +59,12 @@ Any other bits set in a `flags` value are ignored.
 
 ## `re`-compatible module-level functions
 
-These are exposed alongside the legacy functions so both code paths can be
-used interchangeably.  They each compile a fresh internal pattern on every
-call; for repeated use, prefer the `PyPattern` returned by
-`compile_with_flags`.
+These each compile a fresh internal pattern on every call; for repeated use,
+prefer the `PyPattern` returned by `compile`.
 
 | Function | Signature (defaults) | Returns |
 |----------|----------------------|---------|
-| `compile_with_flags` | `(pattern, flags=0)`                       | `PyPattern` |
+| `compile`            | `(pattern, flags=0)`                       | `PyPattern` |
 | `search_re`          | `(pattern, string, pos=0, endpos=None, flags=0)`    | `PyMatch` |
 | `match`              | `(pattern, string, pos=0, endpos=None, flags=0)`    | `PyMatch` |
 | `fullmatch_re`       | `(pattern, string, pos=0, endpos=None, flags=0)`    | `PyMatch` |
@@ -77,23 +75,18 @@ call; for repeated use, prefer the `PyPattern` returned by
 | `split_re`           | `(pattern, string, maxsplit=0, flags=0)`            | `list` |
 | `purge`              | `()`                                                | `True` (no-op cache, kept for API parity) |
 
-> **Note on `match`**: the legacy `compile`/`search` functions and the
-> `re`-compatible `match` both live in the same module.  The new
-> `match` returns a `PyMatch`; the original `search` returns the legacy
-> `Match`.  Use `PyPattern`/`compile_with_flags` for the new API.
-
 ---
 
 ## `PyPattern` – compiled pattern
 
-Built with `compile_with_flags(pattern, flags=0)` or obtained from the
+Built with `compile(pattern, flags=0)` or obtained from the
 module-level helpers above.  Mirrors `re.Pattern`.
 
 ### Properties
 
 | Property     | Type  | Notes |
 |--------------|-------|-------|
-| `pattern`    | `str` | Source pattern string passed to `compile_with_flags`. |
+| `pattern`    | `str` | Source pattern string passed to `compile`. |
 | `flags`      | `int` | The flag int it was compiled with. |
 | `groups`     | `int` | Number of capturing groups, excluding group 0. |
 | `groupindex` | `dict[str, int]` | Fresh dict mapping named groups to their group number. |
@@ -102,7 +95,7 @@ module-level helpers above.  Mirrors `re.Pattern`.
 
 | Method                                | Behaviour |
 |---------------------------------------|-----------|
-| `search(string, pos=0, endpos=None)`  | Returns a `PyMatch` for the first match in `string[pos:endpos]`, or a null `PyMatch` (truthy-null via `is_null` semantics) when no match. |
+| `search(string, pos=0, endpos=None)`  | Returns a `PyMatch` for the first match in `string[pos:endpos]`, or a falsy null `PyMatch` when no match. |
 | `match(string, pos=0, endpos=None)`   | Like `search`, but the match must start at `pos`. |
 | `fullmatch(string, pos=0, endpos=None)` | Like `match`, but the match must also end at `endpos`. |
 | `findall(string, pos=0, endpos=None)` | Python-style list: 0 groups -> `list[str]`; 1 group -> `list[str \| None]`; N groups -> `list[tuple[str \| None; N]]`. |
@@ -120,7 +113,7 @@ module-level helpers above.  Mirrors `re.Pattern`.
 `sub`/`subn` accept either a string template or a callable:
 
 ```python
-pat = rx.compile_with_flags(r"(\w+)=(\d+)")
+pat = rx.compile(r"(\w+)=(\d+)")
 
 out = pat.sub(r"\2=\1", "name=42 age=7")          # "42=name 7=age"
 out = pat.sub(lambda m: f"{m.group(1).upper()}={m.group(2)}", "name=42")  # "NAME=42"
@@ -186,25 +179,12 @@ lifetime) and yields a fresh `PyMatch` per `__next__`.  Supports `__len__`.
 
 ---
 
-## Legacy API
+## File-scanning helpers
 
-These predate the `re`-compatible layer and are still used by the CLI.
+High-throughput helpers used by the `rygex` CLI; not part of the
+`re`-compatible API.
 
 ### Classes
-
-#### `Regex`
-Minimal compiled pattern returning the legacy `Match`.
-
-```python
-pat = rx.compile(r"\d+")
-m = pat.search("hello 42")     # -> Match | None
-m.start, m.end, m.group        # ints, ints, str
-```
-
-#### `Match`
-Legacy match object exposing `start`, `end`, `group` as plain attributes
-(not methods).  Returned by `Regex.search` and the module-level `search`
-function.
 
 #### `RustRegexGen`
 ```python
@@ -225,8 +205,6 @@ files where loading the whole file into a Python `str` is undesirable.
 
 | Function | Description |
 |----------|-------------|
-| `compile(pattern)`                          | Returns a `Regex`. |
-| `search(pattern, text)`                     | Returns `Optional[Match]` (legacy). |
 | `findall_captures_str(pattern, text)`       | `list[list[Optional[str]]]` per match. |
 | `findall_captures_list(pattern, texts)`     | Same, applied to a list of strings. |
 | `findall_captures_list_parallel(...)`       | Parallel (rayon) variant of the above. |
